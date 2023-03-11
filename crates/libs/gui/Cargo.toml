@@ -1,0 +1,20 @@
+[package]
+name = "gui"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log.workspace = true
+anyhow.workspace = true
+winit.workspace = true
+#egui.workspace = true
+#egui-winit.workspace = true
+#egui-winit-ash-integration.workspace = true
+
+imgui.workspace = true
+imgui-winit-support.workspace = true
+imgui-rs-vulkan-renderer.workspace = true
+vulkan = { path = "../vulkan" }

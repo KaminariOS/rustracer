@@ -1,0 +1,37 @@
+[workspace]
+members = [
+    "crates/examples/*",
+    "crates/libs/*",
+]
+
+[workspace.package]
+authors = ["Kosumi <chankocyo@gmail.com>"]
+version = "0.1.0"
+edition = "2021"
+
+[workspace.dependencies]
+winit = "0.27.5"
+nalgebra = "*"
+ash = {version = "0.37.2", features = ["linked", "debug"]}
+memoffset = "0.8.0"
+tobj = "3.2.4"
+gltf = {version = "1.1.0", features = ["KHR_materials_ior"]}
+egui = "0.21.0"
+egui-winit = "0.21.1"
+egui-winit-ash-integration = "0.3.0"
+log = "0.4.17"
+anyhow = "*"
+pretty_env_logger = "0.4.0"
+gpu-allocator = { version = "0.22", default-features = false, features = ["vulkan"] }
+
+imgui = "0.10.0"
+imgui-winit-support = "0.10.0"
+imgui-rs-vulkan-renderer = { version = "1.6", features = ["gpu-allocator", "dynamic-rendering"] }
+
+thiserror = "1.0"
+
+glam = { version = "0.22", features = ["serde"] }
+
+glsl-to-spirv = "0.1.7"
+
+rand = "0.8.5"

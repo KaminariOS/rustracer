@@ -1,0 +1,11 @@
+[package]
+name = "triangle"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+app = { path = "../../libs/app" }
+#vulkan-sys = { path = "../../libs/vulkan_sys" }

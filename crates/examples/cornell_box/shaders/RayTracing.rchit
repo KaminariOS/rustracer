@@ -5,14 +5,18 @@
 //#include "Material.glsl"
 #include "lib/Random.glsl"
 #include "lib/RayTracingCommons.glsl"
+#include "lib/PBR.glsl"
 
 struct GeometryInfo {
 	mat4 transform;
 	vec4 baseColor;
 	vec4 emissive_factor;
-	vec4 roughnessFactor;
 	int baseColorTextureIndex;
 	float metallicFactor;
+	float roughnessFactor;
+	float ior;
+	float _padding;
+	float _padding2;
 	uint vertexOffset;
 	uint indexOffset;
 };
@@ -84,15 +88,35 @@ void main()
 
 	vec3 emittance = geometryInfo.emissive_factor.rgb;
 	float metallic = geometryInfo.metallicFactor;
-	float roughness = geometryInfo.roughnessFactor[0];
+	float roughness = geometryInfo.roughnessFactor;
+	float ior = geometryInfo.ior;
 
 	Ray.hitPoint = origin;
 	Ray.t = gl_HitTEXT;
+	uint seed = Ray.RandomSeed;
 
-	if (length(emittance) < 0.01 && roughness >= 1.) {
+
+	if (ior > 1.) {
+		const float dot = dot(gl_WorldRayDirectionEXT, normal);
+		const vec3 outwardNormal = dot > 0 ? -normal : normal;
+		const float niOverNt = dot > 0 ? ior : 1 / ior;
+		const float cosine = dot > 0 ? ior * dot : -dot;
+		const vec3 refracted = refract(gl_WorldRayDirectionEXT, outwardNormal, niOverNt);
+		const float reflectProb = refracted != vec3(0) ? Schlick(cosine, ior) : 1;
+
+		Ray.hitValue =  color;
+		Ray.needScatter = true;
+
+		 if (RandomFloat(seed) < reflectProb) {
+			 Ray.scatterDirection = reflect(gl_WorldRayDirectionEXT, normal);
+		 } else {
+			 Ray.scatterDirection = refracted;
+		 }
+	}
+	else if (length(emittance) < 0.01 && roughness >= 1.) {
 
 		const bool isScattered = dot(gl_WorldRayDirectionEXT, normal) < 0.;
-		const vec3 scatter = vec3(normal + RandomInUnitSphere(Ray.RandomSeed));
+		const vec3 scatter = vec3(normal + RandomInUnitSphere(seed));
 		Ray.needScatter = isScattered;
 		Ray.scatterDirection = scatter;
 		Ray.hitValue = isScattered? color: vec3(0.);
@@ -105,7 +129,9 @@ void main()
 		Ray.scatterDirection = reflected;
 	}
 	else {
-		Ray.hitValue = emittance * 10.;
+		Ray.hitValue = color * emittance;
 		Ray.needScatter = false;
 	}
+
+	Ray.RandomSeed = seed;
 }

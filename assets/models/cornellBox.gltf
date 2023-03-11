@@ -779,6 +779,7 @@
                 "NV_materials_mdl": {
                     "mdl_shader": 9
                 }
+
             },
             "name": "sphere_instance_material",
             "pbrMetallicRoughness": {
@@ -796,7 +797,10 @@
             "extensions": {
                 "NV_materials_mdl": {
                     "mdl_shader": 11
-                }
+                },
+                "KHR_materials_ior": {
+                                     "ior": 1.76
+                                  }
             },
             "name": "sphere_instance_22_material",
             "pbrMetallicRoughness": {

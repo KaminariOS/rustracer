@@ -76,6 +76,10 @@ impl App for Triangle {
     fn on_recreate_swapchain(&mut self, _: &BaseApp<Self>) -> Result<()> {
         Ok(())
     }
+
+    fn state_change(&mut self, _base: &BaseApp<Self>, _gui_state: &Self::Gui) {
+
+    }
 }
 
 #[derive(Debug, Clone, Copy)]

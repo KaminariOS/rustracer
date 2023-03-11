@@ -85,7 +85,6 @@ impl GuiContext {
 
     pub fn cmd_draw(&mut self, buffer: &CommandBuffer, draw_data: &DrawData) -> Result<()> {
         self.renderer.cmd_draw(buffer.inner, draw_data)?;
-
         Ok(())
     }
 }

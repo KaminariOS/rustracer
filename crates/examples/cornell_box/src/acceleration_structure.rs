@@ -60,7 +60,10 @@ pub fn create_bottom_as(context: &mut Context, model: &Model) -> Result<BottomAS
                 .base_color_texture_index
                 .map_or(-1, |i| i as _),
             metallic_factor: mesh.material.metallic_factor,
-            roughness: [mesh.material.roughness; 4],
+            roughness: mesh.material.roughness,
+            ior: mesh.material.ior,
+            _padding: 0.0,
+            _padding2: 0.0,
             vertex_offset: mesh.vertex_offset,
             index_offset: mesh.index_offset,
             emissive_factor: mesh.material.emissive_factor,

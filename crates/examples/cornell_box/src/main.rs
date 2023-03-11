@@ -28,9 +28,11 @@ const APP_NAME: &str = "Ray traced cornell box";
 
 const MODEL_PATH: &str = "./assets/models/cornellBox.gltf";
 const ACC_BIND: u32 = 8;
+const STORAGE_BIND: u32 = 1;
+const ENABLE_RAYTRACING: bool = true;
 
 fn main() -> Result<()> {
-    app::run::<CornellBox>(APP_NAME, WIDTH, HEIGHT, true)
+    app::run::<CornellBox>(APP_NAME, WIDTH, HEIGHT, ENABLE_RAYTRACING)
 }
 
 struct CornellBox {
@@ -229,12 +231,14 @@ pub struct GeometryInfo {
     transform: Mat4,
     base_color: [f32; 4],
     emissive_factor: [f32; 4],
-    roughness: [f32; 4],
     base_color_texture_index: i32,
     metallic_factor: f32,
+    roughness: f32,
+    ior: f32,
+    _padding: f32,
+    _padding2: f32,
     vertex_offset: u32,
     index_offset: u32,
 }
-
 
 

@@ -116,3 +116,7 @@ pub fn create_pipeline(context: &Context, model: &Model) -> Result<PipelineRes> 
         dynamic_dsl,
     })
 }
+
+pub fn create_ras_pipeline(context: &Context, model: &Model) {
+
+}

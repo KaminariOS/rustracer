@@ -27,7 +27,7 @@ impl app::Gui for Gui {
             aperture: 0.01,
             focus_distance: 10.0,
             number_of_samples: 3,
-            number_of_bounces: 3,
+            number_of_bounces: 5,
             ray_tracing: true,
             acc: true,
             heatmap: false,

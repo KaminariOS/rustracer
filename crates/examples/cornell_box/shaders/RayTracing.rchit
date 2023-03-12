@@ -5,22 +5,8 @@
 //#include "Material.glsl"
 #include "lib/Random.glsl"
 #include "lib/RayTracingCommons.glsl"
+#include "lib/GeometryInfo.glsl"
 #include "lib/PBR.glsl"
-
-struct GeometryInfo {
-	mat4 transform;
-	vec4 baseColor;
-	vec4 emissive_factor;
-	int baseColorTextureIndex;
-	float metallicFactor;
-	float roughnessFactor;
-	float ior;
-	float _padding;
-	float _padding2;
-	uint vertexOffset;
-	uint indexOffset;
-};
-
 
 struct Vertex {
 	vec3 pos;
@@ -98,11 +84,12 @@ void main()
 
 	if (ior > 1.) {
 		const float dot = dot(gl_WorldRayDirectionEXT, normal);
-		const vec3 outwardNormal = dot > 0 ? -normal : normal;
-		const float niOverNt = dot > 0 ? ior : 1 / ior;
-		const float cosine = dot > 0 ? ior * dot : -dot;
-		const vec3 refracted = refract(gl_WorldRayDirectionEXT, outwardNormal, niOverNt);
-		const float reflectProb = refracted != vec3(0) ? Schlick(cosine, ior) : 1;
+		const bool frontFace = dot < 0.;
+		const vec3 outwardNormal = frontFace ? normal : -normal;
+		const float refraction_ratio = frontFace ? 1 / ior: ior;
+		const float cos_theta = abs(dot);
+		const vec3 refracted = refract(gl_WorldRayDirectionEXT, outwardNormal, refraction_ratio);
+		const float reflectProb = refracted != vec3(0) ? Schlick(cos_theta, refraction_ratio) : 1;
 
 		Ray.hitValue =  color;
 		Ray.needScatter = true;
@@ -113,23 +100,21 @@ void main()
 			 Ray.scatterDirection = refracted;
 		 }
 	}
-	else if (length(emittance) < 0.01 && roughness >= 1.) {
-
+	else if (length(emittance) < 0.01 && roughness > 0.) {
 		const bool isScattered = dot(gl_WorldRayDirectionEXT, normal) < 0.;
 		const vec3 scatter = vec3(normal + RandomInUnitSphere(seed));
 		Ray.needScatter = isScattered;
 		Ray.scatterDirection = scatter;
 		Ray.hitValue = isScattered? color: vec3(0.);
 	} else if (metallic > 0.) {
-
 		const vec3 reflected = reflect(gl_WorldRayDirectionEXT, normal);
 		const bool isScattered = dot(reflected, normal) > 0;
 		Ray.needScatter = isScattered;
 		Ray.hitValue = isScattered? color: vec3(0.);
-		Ray.scatterDirection = reflected;
+		Ray.scatterDirection = reflected + 0.08 * RandomInUnitSphere(seed);
 	}
 	else {
-		Ray.hitValue = color * emittance;
+		Ray.hitValue = color * emittance * 5.0;
 		Ray.needScatter = false;
 	}
 

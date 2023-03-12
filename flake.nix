@@ -47,7 +47,7 @@ devShell = pkgs.mkShell rec {
 #    fontconfig
 #    freetype
 #    libxkbcommon
-#    pkg-config
+     pkg-config
 #    spirv-tools
     #udev
 

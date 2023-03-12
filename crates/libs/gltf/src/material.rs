@@ -1,12 +1,15 @@
 use app::a3toa4;
-#[derive(Debug, Clone, Copy)]
+use crate::{get_name, Name};
+
+#[derive(Debug, Clone)]
 pub struct Material {
     pub base_color: [f32; 4],
     pub base_color_texture_index: Option<usize>,
     pub metallic_factor: f32,
     pub emissive_factor: [f32; 4],
     pub roughness: f32,
-    pub ior: f32
+    pub ior: f32,
+    pub name: Name
 }
 
 impl<'a> From<gltf::Material<'a>> for Material {
@@ -18,7 +21,8 @@ impl<'a> From<gltf::Material<'a>> for Material {
             metallic_factor: pbr.metallic_factor(),
             emissive_factor: a3toa4(&material.emissive_factor(), 0.),
             roughness: pbr.roughness_factor(),
-            ior: material.ior().unwrap_or(0.)
+            ior: material.ior().unwrap_or(0.),
+            name: get_name(material.name()),
         }
     }
 }

@@ -5,7 +5,7 @@ pub use vulkan;
 pub mod camera;
 pub mod types;
 pub use types::a3toa4;
-pub use resource_manager::load_spv;
+pub use resource_manager::{load_spv};
 
 use anyhow::Result;
 use ash::vk::{self};
@@ -56,7 +56,7 @@ pub trait App: Sized {
 
     fn update(
         &mut self,
-        base: &BaseApp<Self>,
+        base: &mut BaseApp<Self>,
         gui: &mut Self::Gui,
         image_index: usize,
         delta_time: Duration,
@@ -91,7 +91,9 @@ pub trait App: Sized {
     }
 
     fn on_recreate_swapchain(&mut self, base: &BaseApp<Self>) -> Result<()>;
-    fn state_change(&mut self, base: &BaseApp<Self>, gui_state: &Self::Gui);
+    fn state_change(&mut self, _base: &mut BaseApp<Self>, _gui_state: &mut Self::Gui){
+
+    }
 }
 
 pub trait Gui: Sized + Clone  {

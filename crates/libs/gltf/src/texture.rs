@@ -1,7 +1,10 @@
-#[derive(Debug, Clone, Copy)]
+use crate::{get_name, Name};
+
+#[derive(Debug, Clone)]
 pub struct Texture {
     pub image_index: usize,
     pub sampler_index: usize,
+    pub name: Name,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -40,6 +43,7 @@ impl<'a> From<gltf::Texture<'a>> for Texture {
         Self {
             image_index: texture.source().index(),
             sampler_index: texture.sampler().index().map_or(0, |i| i + 1),
+            name: get_name(texture.name())
         }
     }
 }

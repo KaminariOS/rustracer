@@ -21,6 +21,7 @@ use gui_state::Gui;
 use ubo::UniformBufferObject;
 use pipeline_res::*;
 use desc_sets::*;
+use crate::gui_state::Scene;
 
 const WIDTH: u32 = 1920;
 const HEIGHT: u32 = 1080;
@@ -53,11 +54,8 @@ struct CornellBox {
     gui_state: Option<Gui>,
     old_camera: Option<Camera>,
 }
-
-impl App for CornellBox {
-    type Gui = Gui;
-
-    fn new(base: &mut BaseApp<Self>) -> Result<Self> {
+impl CornellBox {
+    fn new_with_scene(base: &mut BaseApp<Self>, scene: Scene) -> Result<Self> {
         let context = &mut base.context;
 
         let ubo_buffer = context.create_buffer(
@@ -66,7 +64,7 @@ impl App for CornellBox {
             size_of::<UniformBufferObject>() as _,
         )?;
 
-        let model = create_model(context)?;
+        let model = create_model(context, scene)?;
 
         let bottom_as = create_bottom_as(context, &model)?;
 
@@ -87,8 +85,8 @@ impl App for CornellBox {
             &ubo_buffer,
         )?;
 
-        base.camera.position = Point::new(-2.0, 1.5, 2.0);
-        base.camera.direction = Vec3::new(2.0, -0.5, -2.0);
+        base.camera.position = Point::new(0., 0.0, 16.0);
+        base.camera.direction = Vec3::new(0.0, -0.0, -2.0);
 
         Ok(Self {
             ubo_buffer,
@@ -100,13 +98,20 @@ impl App for CornellBox {
             descriptor_res,
             total_number_of_samples: 0,
             old_camera: None,
-            gui_state: None
+            gui_state: None,
         })
+    }
+}
+impl App for CornellBox {
+    type Gui = Gui;
+
+    fn new(base: &mut BaseApp<Self>) -> Result<Self> {
+        Self::new_with_scene(base, Scene::LucyInCornell)
     }
 
     fn update(
         &mut self,
-        base: &BaseApp<Self>,
+        base: &mut BaseApp<Self>,
         gui: &mut <Self as App>::Gui,
         _image_index: usize,
         _: Duration,
@@ -144,6 +149,7 @@ impl App for CornellBox {
 
         self.ubo_buffer.copy_data_to_buffer(&[ubo])?;
 
+
         Ok(())
     }
 
@@ -170,6 +176,7 @@ impl App for CornellBox {
             base.swapchain.extent.width,
             base.swapchain.extent.height,
         );
+
 
         Ok(())
     }
@@ -209,7 +216,7 @@ impl App for CornellBox {
         Ok(())
     }
 
-    fn state_change(&mut self, base: &BaseApp<Self>, gui_state: &<Self as App>::Gui) {
+    fn state_change(&mut self, base: &mut BaseApp<Self>, gui_state: &mut <Self as App>::Gui) {
         if self.old_camera.is_none() {
             self.old_camera = Some(base.camera);
         }
@@ -222,9 +229,13 @@ impl App for CornellBox {
             self.total_number_of_samples = 0;
         }
 
-        if self.gui_state.filter(|x| x != gui_state).is_some() {
+        if let Some(old_state) = self.gui_state.filter(|x| x != gui_state) {
+            if old_state.scene != gui_state.scene {
+                *self = Self::new_with_scene(base, gui_state.scene).unwrap();
+            }
             self.gui_state = Some(*gui_state);
             self.total_number_of_samples = 0;
+
         }
     }
 }

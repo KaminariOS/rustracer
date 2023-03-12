@@ -15,7 +15,7 @@ nalgebra = "*"
 ash = {version = "0.37.2", features = ["linked", "debug"]}
 memoffset = "0.8.0"
 tobj = "3.2.4"
-gltf = {version = "1.1.0", features = ["KHR_materials_ior", "names"]}
+gltf = {version = "1.1.0", features = ["KHR_materials_ior", "names", "extras"]}
 egui = "0.21.0"
 egui-winit = "0.21.1"
 egui-winit-ash-integration = "0.3.0"
@@ -36,3 +36,5 @@ glsl-to-spirv = "0.1.7"
 
 rand = "0.8.5"
 shellexpand = "3.0.0"
+strum = "0.24.1"
+strum_macros = "0.24.3"

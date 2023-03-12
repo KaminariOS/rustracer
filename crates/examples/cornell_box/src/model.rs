@@ -4,6 +4,7 @@ use app::vulkan::ash::vk;
 use app::vulkan::utils::create_gpu_only_buffer_from_data;
 use app::anyhow::Result;
 use app::vulkan::gpu_allocator::MemoryLocation;
+use crate::gui_state::Scene;
 
 pub struct Model {
     pub(crate) gltf: gltf::Model,
@@ -17,15 +18,13 @@ pub struct Model {
 }
 
 
-pub fn create_model(context: &Context) -> Result<Model> {
+pub fn create_model(context: &Context, scene: Scene) -> Result<Model> {
 
-    // let model_path: &str =  "cornellBox.gltf";
-    let  model_path: &str = "cornellBoxLucy.gltf";
     // let  model_path: &str = "DamagedHelmet/glTF-Binary/DamagedHelmet.glb";
     // let model_path: &str = "Sponza/glTF/Sponza.gltf";
     // let model_path: &str = "ABeautifulGame/glTF/ABeautifulGame.gltf";
 
-    let model = gltf::load_file(model_path)?;
+    let model = gltf::load_file(scene.path())?;
     let vertices = model.vertices.as_slice();
     let indices = model.indices.as_slice();
 

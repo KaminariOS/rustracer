@@ -9,10 +9,13 @@ pub use material::*;
 pub use texture::*;
 
 use std::{collections::HashMap, path::Path};
+use std::rc::Rc;
 
 use glam::{vec4, Vec2, Vec4};
 use gltf::{Primitive, Semantic};
 use gltf::camera::Projection;
+
+type Name = Option<Rc<String>>;
 
 #[derive(Debug, Clone)]
 pub struct Model {
@@ -24,19 +27,21 @@ pub struct Model {
     pub samplers: Vec<Sampler>,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Node {
     pub transform: [[f32; 4]; 4],
     pub mesh: Mesh,
+    pub name: Name
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Mesh {
     pub vertex_offset: u32,
     pub vertex_count: u32,
     pub index_offset: u32,
     pub index_count: u32,
     pub material: Material,
+    pub name: Name,
 }
 
 #[repr(C)]
@@ -52,6 +57,10 @@ pub struct Cam {
     pub fov: f32,
     pub znear: f32,
     pub zfar: f32,
+}
+
+fn get_name(name_opt: Option<&str>) -> Name {
+    name_opt.and_then(|n| Some(Rc::new(n.to_string())))
 }
 
 pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Model> {
@@ -126,6 +135,7 @@ pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Model> {
                     index_offset,
                     index_count,
                     material,
+                    name: get_name(mesh.name())
                 });
             }
         }
@@ -138,9 +148,9 @@ pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Model> {
         for primitive in gltf_mesh.primitives().filter(is_primitive_supported) {
             let og_index = (gltf_mesh.index(), primitive.index());
             let mesh_index = *mesh_index_redirect.get(&og_index).unwrap();
-            let mesh = meshes[mesh_index];
+            let mesh = meshes[mesh_index].clone();
 
-            nodes.push(Node { transform, mesh })
+            nodes.push(Node { transform, mesh, name: get_name(node.name()) })
         }
     }
 
@@ -148,7 +158,7 @@ pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Model> {
     cameras.iter().for_each(|c| {
         let proj = c.projection();
         if let Projection::Perspective(p) = proj {
-            let _ = c.extras();
+            let _raw = c.extras();
             let cam = Cam {
                 fov: p.yfov(),
                 znear: p.znear(),

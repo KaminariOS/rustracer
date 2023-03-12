@@ -51,6 +51,14 @@ pub fn load_model<P: AsRef<Path>>(path: P) -> PathBuf {
     }
 }
 
+// pub fn select_gltf<P: AsRef<Path>>(path: P) -> Option<PathBuf> {
+//     use native_dialog::FileDialog;
+//     FileDialog::new()
+//         .add_filter("gltf", &["gltf", "glb"])
+//         .set_location(&path)
+//         .show_open_single_file().unwrap()
+// }
+//
 #[test]
 fn test_load_spv() {
     load_spv("./src/main.rs");

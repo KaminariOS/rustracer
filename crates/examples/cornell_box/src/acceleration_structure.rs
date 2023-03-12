@@ -48,7 +48,7 @@ pub fn create_bottom_as(context: &mut Context, model: &Model) -> Result<BottomAS
     let mut max_primitive_counts = vec![];
 
     for (node_index, node) in model.gltf.nodes.iter().enumerate() {
-        let mesh = node.mesh;
+        let mesh = &node.mesh;
         // println!("{:?}", mesh.material.emissive_factor);
         let primitive_count = (mesh.index_count / 3) as u32;
         // mesh.material

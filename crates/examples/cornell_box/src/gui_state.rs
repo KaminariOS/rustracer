@@ -1,3 +1,5 @@
+use strum::IntoEnumIterator;
+use strum_macros::{AsRefStr, EnumIter};
 use gui::imgui::{Condition, Ui};
 use app::anyhow::Result;
 
@@ -13,6 +15,26 @@ pub struct Gui {
     pub sky: bool,
     pub heatmap_scale: f32,
     pub max_number_of_samples: u32,
+    pub scene: Scene,
+}
+
+#[derive(AsRefStr, EnumIter, PartialEq, Clone, Copy, Debug)]
+pub enum Scene {
+    LucyInCornell,
+    Cornell,
+    ABeautifulGame,
+    Sponza
+}
+
+impl Scene {
+    pub fn path(&self) -> &'static str {
+        match self {
+            Self::LucyInCornell => "cornellBoxLucy.gltf",
+            Self::Cornell => "cornellBox.gltf",
+            Self::ABeautifulGame => "DamagedHelmet/glTF-Binary/DamagedHelmet.glb",
+            Self::Sponza => "Sponza/glTF/Sponza.gltf",
+        }
+    }
 }
 
 
@@ -33,7 +55,8 @@ impl app::Gui for Gui {
             heatmap: false,
             heatmap_scale: 1.0,
             max_number_of_samples: 5000,
-            sky: false
+            sky: false,
+            scene: Scene::LucyInCornell,
         })
     }
 
@@ -63,10 +86,28 @@ impl app::Gui for Gui {
                 ui.slider("Focus", 0.1, 20., &mut self.focus_distance);
                 ui.slider("Heatmap Scale", 0.1, 10., &mut self.heatmap_scale);
 
-                // Light control
-                ui.text_wrapped("Light");
-                ui.separator();
+                let mut selected = self.scene;
+                if let Some(_) = ui.begin_combo("Scene", format!("{}", selected.as_ref())) {
+                for cur in Scene::iter() {
+                    if selected == cur {
+                        // Auto-scroll to selected item
+                        ui.set_item_default_focus();
+                    }
+                    // Create a "selectable"
+                    let clicked = ui.selectable_config(cur)
+                        .selected(selected == cur)
+                        .build();
+                    // When item is clicked, store it
+                    if clicked {
+                        selected = cur;
+                    }
+                }
+                    self.scene = selected;
+            }
 
+                // Light control
+                // ui.text_wrapped("Light");
+                ui.separator();
                 // ui.input_float3("direction", &mut self.light.direction)
                 //     .build();
 

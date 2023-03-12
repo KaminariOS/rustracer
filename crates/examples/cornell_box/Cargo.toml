@@ -11,3 +11,5 @@ app = { path = "../../libs/app" }
 gltf = { path = "../../libs/gltf" }
 gui = { path = "../../libs/gui" }
 rand.workspace = true
+strum.workspace = true
+strum_macros.workspace = true

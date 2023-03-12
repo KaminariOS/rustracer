@@ -43,25 +43,21 @@ devShell = pkgs.mkShell rec {
   ];
   buildInputs = with pkgs; [
 #    alsaLib
-    binaryen
-    fontconfig
-    freetype
-    libxkbcommon
-    pkg-config
-    spirv-tools
+#    binaryen
+#    fontconfig
+#    freetype
+#    libxkbcommon
+#    pkg-config
+#    spirv-tools
     #udev
 
     vulkan-loader
     vulkan-tools
-    glslang
 
-    xorg.libxcb
-    xorg.libX11
-    xorg.libXcursor
-    xorg.libXi
-    xorg.libXrandr
+#    xorg.libXi
+#    xorg.libXrandr
     shaderc
-    gcc-unwrapped.lib
+#    gcc-unwrapped.lib
   ];
 
   VULKAN_SDK = "${pkgs.vulkan-validation-layers}/share/vulkan/explicit_layer.d";

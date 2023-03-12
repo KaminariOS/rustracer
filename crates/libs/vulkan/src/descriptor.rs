@@ -168,9 +168,10 @@ impl DescriptorSet {
                         .build()
                 }
                 CombinedImageSampler {
-                    view,
-                    sampler,
-                    layout,
+                    // view,
+                    // sampler,
+                    // layout,
+                    ..
                 } => {
                     panic!("Should not use this function for textures");
                     // let img_info = vk::DescriptorImageInfo::builder()

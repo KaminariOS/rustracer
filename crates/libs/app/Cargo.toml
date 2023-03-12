@@ -13,6 +13,7 @@ anyhow.workspace = true
 winit.workspace = true
 nalgebra.workspace = true
 gpu-allocator.workspace = true
+resource_manager = {path = "../resource_manager"}
 
 vulkan = { path = "../vulkan" }
 gui = { path = "../gui" }

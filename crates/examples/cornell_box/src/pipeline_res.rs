@@ -1,8 +1,9 @@
 use app::vulkan::{Context, DescriptorSetLayout, PipelineLayout, RayTracingPipeline, RayTracingPipelineCreateInfo, RayTracingShaderCreateInfo, RayTracingShaderGroup};
 use crate::model::Model;
 use app::anyhow::Result;
+use app::load_spv;
 use app::vulkan::ash::vk;
-use crate::ACC_BIND;
+use crate::{ACC_BIND, AS_BIND, GEO_BIND, INDEX_BIND, STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND, VERTEX_BIND};
 
 pub struct PipelineRes {
     pub(crate) pipeline: RayTracingPipeline,
@@ -15,50 +16,50 @@ pub fn create_pipeline(context: &Context, model: &Model) -> Result<PipelineRes> 
     // descriptor and pipeline layouts
     let static_layout_bindings = [
         vk::DescriptorSetLayoutBinding::builder()
-            .binding(0)
+            .binding(AS_BIND)
             .descriptor_type(vk::DescriptorType::ACCELERATION_STRUCTURE_KHR)
             .descriptor_count(1)
             .stage_flags(vk::ShaderStageFlags::RAYGEN_KHR | vk::ShaderStageFlags::CLOSEST_HIT_KHR)
             .build(),
         vk::DescriptorSetLayoutBinding::builder()
-            .binding(2)
+            .binding(UNIFORM_BIND)
             .descriptor_type(vk::DescriptorType::UNIFORM_BUFFER)
             .descriptor_count(1)
             .stage_flags(vk::ShaderStageFlags::RAYGEN_KHR | vk::ShaderStageFlags::CLOSEST_HIT_KHR | vk::ShaderStageFlags::MISS_KHR)
             .build(),
         // Vertex buffer
         vk::DescriptorSetLayoutBinding::builder()
-            .binding(3)
+            .binding(VERTEX_BIND)
             .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
             .descriptor_count(1)
             .stage_flags(vk::ShaderStageFlags::CLOSEST_HIT_KHR)
             .build(),
         //Index buffer
         vk::DescriptorSetLayoutBinding::builder()
-            .binding(4)
+            .binding(INDEX_BIND)
             .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
             .descriptor_count(1)
             .stage_flags(vk::ShaderStageFlags::CLOSEST_HIT_KHR)
             .build(),
         // Geometry info buffer
         vk::DescriptorSetLayoutBinding::builder()
-            .binding(5)
+            .binding(GEO_BIND)
             .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
             .descriptor_count(1)
             .stage_flags(vk::ShaderStageFlags::CLOSEST_HIT_KHR)
             .build(),
         // Textures
         vk::DescriptorSetLayoutBinding::builder()
-            .binding(6)
+            .binding(TEXTURE_BIND)
             .descriptor_type(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
-            .descriptor_count(model.images.len() as _)
+            .descriptor_count(model.textures.len() as _)
             .stage_flags(vk::ShaderStageFlags::CLOSEST_HIT_KHR)
             .build()
     ];
 
     let dynamic_layout_bindings = [
         vk::DescriptorSetLayoutBinding::builder()
-            .binding(1)
+            .binding(STORAGE_BIND)
             .descriptor_type(vk::DescriptorType::STORAGE_IMAGE)
             .descriptor_count(1)
             .stage_flags(vk::ShaderStageFlags::RAYGEN_KHR)
@@ -78,15 +79,19 @@ pub fn create_pipeline(context: &Context, model: &Model) -> Result<PipelineRes> 
 
     let pipeline_layout = context.create_pipeline_layout(&dsls)?;
 
+
     // Shaders
+    let ray_gen = load_spv("RayTracing.rgen.spv");
+    let ray_miss = load_spv("RayTracing.rmiss.spv");
+    let ray_chit = load_spv("RayTracing.rchit.spv");
     let shaders_create_info = [
         RayTracingShaderCreateInfo {
-            source: &include_bytes!("../spv/RayTracing.rgen.spv")[..],
+            source: &ray_gen,
             stage: vk::ShaderStageFlags::RAYGEN_KHR,
             group: RayTracingShaderGroup::RayGen,
         },
         RayTracingShaderCreateInfo {
-            source: &include_bytes!("../spv/RayTracing.rmiss.spv")[..],
+            source: &ray_miss,
             stage: vk::ShaderStageFlags::MISS_KHR,
             group: RayTracingShaderGroup::Miss,
         },
@@ -96,7 +101,7 @@ pub fn create_pipeline(context: &Context, model: &Model) -> Result<PipelineRes> 
         //     group: RayTracingShaderGroup::Miss,
         // },
         RayTracingShaderCreateInfo {
-            source: &include_bytes!("../spv/RayTracing.rchit.spv")[..],
+            source: &ray_chit,
             stage: vk::ShaderStageFlags::CLOSEST_HIT_KHR,
             group: RayTracingShaderGroup::ClosestHit,
         },
@@ -116,7 +121,7 @@ pub fn create_pipeline(context: &Context, model: &Model) -> Result<PipelineRes> 
         dynamic_dsl,
     })
 }
-
-pub fn create_ras_pipeline(context: &Context, model: &Model) {
-
-}
+//
+// pub fn create_ras_pipeline(context: &Context, model: &Model) {
+//
+// }

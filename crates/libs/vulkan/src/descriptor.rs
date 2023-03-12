@@ -4,6 +4,7 @@ use anyhow::Result;
 use ash::vk;
 
 use crate::{device::Device, AccelerationStructure, Buffer, Context, ImageView, Sampler};
+use crate::WriteDescriptorSetKind::CombinedImageSampler;
 
 pub struct DescriptorSetLayout {
     device: Arc<Device>,
@@ -171,23 +172,67 @@ impl DescriptorSet {
                     sampler,
                     layout,
                 } => {
-                    let img_info = vk::DescriptorImageInfo::builder()
-                        .image_view(view.inner)
-                        .sampler(sampler.inner)
-                        .image_layout(layout);
-
-                    img_infos.push(img_info);
-
-                    vk::WriteDescriptorSet::builder()
-                        .descriptor_type(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
-                        .dst_binding(write.binding)
-                        .dst_set(self.inner)
-                        .image_info(std::slice::from_ref(img_infos.last().unwrap()))
-                        .build()
+                    panic!("Should not use this function for textures");
+                    // let img_info = vk::DescriptorImageInfo::builder()
+                    //     .image_view(view.inner)
+                    //     .sampler(sampler.inner)
+                    //     .image_layout(layout);
+                    //
+                    // img_infos.push(img_info);
+                    //
+                    // vk::WriteDescriptorSet::builder()
+                    //     .descriptor_type(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
+                    //     .dst_binding(write.binding)
+                    //     .dst_set(self.inner)
+                    //     .image_info(std::slice::from_ref(img_infos.last().unwrap()))
+                    //     .build()
                 }
             })
             .collect::<Vec<_>>();
 
+        unsafe {
+            self.device
+                .inner
+                .update_descriptor_sets(&descriptor_writes, &[])
+        };
+    }
+
+    // All write in writes should write to the same texture array in order, starting at 0
+    pub fn update_texture_array(&self, writes: &[WriteDescriptorSet]) {
+        // println!("Texture array size:{}", writes.len());
+        if writes.is_empty() {
+            return;
+        }
+        let mut img_infos = vec![];
+        assert!(writes.iter().all(|w| w.binding == writes[0].binding));
+        writes.iter()
+            .for_each(|write| {
+                match write.kind {
+                    CombinedImageSampler{
+                        view,
+                        sampler,
+                        layout,
+                    } => {
+                        let img_info = vk::DescriptorImageInfo::builder()
+                            .image_view(view.inner)
+                            .sampler(sampler.inner)
+                            .image_layout(layout).build();
+                        img_infos.push(img_info);
+                    }
+                    _ => panic!("Only for sampling")
+                }
+            } );
+
+
+        let descriptor_writes = [
+            vk::WriteDescriptorSet::builder()
+                .descriptor_type(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
+                .dst_binding(writes[0].binding)
+                .dst_set(self.inner)
+                .image_info(img_infos.as_slice())
+                .dst_array_element(0)
+                .build()
+        ];
         unsafe {
             self.device
                 .inner

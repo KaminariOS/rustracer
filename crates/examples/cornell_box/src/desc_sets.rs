@@ -2,7 +2,7 @@ use app::vulkan::ash::vk;
 use app::vulkan::{Buffer, Context, DescriptorPool, DescriptorSet, WriteDescriptorSet, WriteDescriptorSetKind};
 use app::anyhow::Result;
 use app::ImageAndView;
-use crate::ACC_BIND;
+use crate::{ACC_BIND, AS_BIND, GEO_BIND, INDEX_BIND, STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND, VERTEX_BIND};
 use crate::acceleration_structure::{BottomAS, TopAS};
 use crate::model::Model;
 use crate::pipeline_res::PipelineRes;
@@ -50,10 +50,11 @@ pub fn create_descriptor_sets(
             .build(),
         vk::DescriptorPoolSize::builder()
             .ty(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
-            .descriptor_count(model.images.len() as _)
+            .descriptor_count(model.textures.len() as _)
             .build(),
     ];
 
+    // println!("Image array size:{}", model.images.len());
     let pool = context.create_descriptor_pool(set_count + 1, &pool_sizes)?;
 
     let static_set = pool.allocate_set(&pipeline_res.static_dsl)?;
@@ -61,55 +62,56 @@ pub fn create_descriptor_sets(
 
     static_set.update(&[
         WriteDescriptorSet {
-            binding: 0,
+            binding: AS_BIND,
             kind: WriteDescriptorSetKind::AccelerationStructure {
                 acceleration_structure: &top_as.inner,
             },
         },
         WriteDescriptorSet {
-            binding: 2,
+            binding: UNIFORM_BIND,
             kind: WriteDescriptorSetKind::UniformBuffer { buffer: ubo_buffer },
         },
         WriteDescriptorSet {
-            binding: 3,
+            binding: VERTEX_BIND,
             kind: WriteDescriptorSetKind::StorageBuffer {
                 buffer: &model.vertex_buffer,
             },
         },
         WriteDescriptorSet {
-            binding: 4,
+            binding: INDEX_BIND,
             kind: WriteDescriptorSetKind::StorageBuffer {
                 buffer: &model.index_buffer,
             },
         },
         WriteDescriptorSet {
-            binding: 5,
+            binding: GEO_BIND,
             kind: WriteDescriptorSetKind::StorageBuffer {
                 buffer: &bottom_as.geometry_info_buffer,
             },
         },
     ]);
 
+    let mut writes = vec![];
     for (image_index, sampler_index) in model.textures.iter() {
         let view = &model.views[*image_index];
         let sampler = &model.samplers[*sampler_index];
-
-        static_set.update(&[
+        writes.push(
             WriteDescriptorSet {
-                binding: 6,
+                binding: TEXTURE_BIND,
                 kind: WriteDescriptorSetKind::CombinedImageSampler {
                     view,
                     sampler,
                     layout: vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
                 },
             }
-        ]);
+        );
     }
+    static_set.update_texture_array(&writes);
 
     dynamic_sets.iter().enumerate().for_each(|(index, set)| {
         set.update(&[
             WriteDescriptorSet {
-                binding: 1,
+                binding: STORAGE_BIND,
                 kind: WriteDescriptorSetKind::StorageImage {
                     layout: vk::ImageLayout::GENERAL,
                     view: &storage_imgs[index].view,

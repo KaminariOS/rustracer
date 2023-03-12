@@ -5,6 +5,7 @@ pub use vulkan;
 pub mod camera;
 pub mod types;
 pub use types::a3toa4;
+pub use resource_manager::load_spv;
 
 use anyhow::Result;
 use ash::vk::{self};

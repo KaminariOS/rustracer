@@ -11,4 +11,5 @@ log.workspace = true
 thiserror.workspace = true
 gltf.workspace = true
 glam.workspace = true
+resource_manager = {path = "../resource_manager"}
 app = {path = "../app"}

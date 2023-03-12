@@ -14,7 +14,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             let in_path = entry.path();
             let path_str = in_path.to_str().unwrap();
             let stat = Command::new("glslc").args(&[path_str, "--target-env=vulkan1.2", "-o"])
-                .arg(&format!("spv/{}.spv", entry.file_name().into_string().unwrap()))
+                .arg(&format!("../../../spv/{}.spv", entry.file_name().into_string().unwrap()))
                 .status()
                 .expect(&*format!("Failed to invoke glslc"));
 

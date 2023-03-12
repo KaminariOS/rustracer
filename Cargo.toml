@@ -35,3 +35,4 @@ glam = { version = "0.22", features = ["serde"] }
 glsl-to-spirv = "0.1.7"
 
 rand = "0.8.5"
+shellexpand = "3.0.0"

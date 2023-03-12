@@ -26,9 +26,15 @@ const WIDTH: u32 = 1920;
 const HEIGHT: u32 = 1080;
 const APP_NAME: &str = "Ray traced cornell box";
 
-const MODEL_PATH: &str = "./assets/models/cornellBox.gltf";
-const ACC_BIND: u32 = 8;
+
+const AS_BIND: u32 = 0;
 const STORAGE_BIND: u32 = 1;
+const UNIFORM_BIND: u32 = 2;
+const VERTEX_BIND: u32 = 3;
+const INDEX_BIND: u32 = 4;
+const GEO_BIND: u32 = 5;
+const TEXTURE_BIND: u32 = 6;
+const ACC_BIND: u32 = 8;
 const ENABLE_RAYTRACING: bool = true;
 
 fn main() -> Result<()> {
@@ -176,7 +182,7 @@ impl App for CornellBox {
                 let set = &self.descriptor_res.dynamic_sets[index];
 
                 set.update(&[WriteDescriptorSet {
-                    binding: 1,
+                    binding: STORAGE_BIND,
                     kind: WriteDescriptorSetKind::StorageImage {
                         layout: vk::ImageLayout::GENERAL,
                         view: &img.view,

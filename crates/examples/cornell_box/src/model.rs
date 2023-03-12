@@ -2,7 +2,6 @@ use std::mem::size_of_val;
 use app::vulkan::{Buffer, Context, Image, ImageBarrier, ImageView, Sampler};
 use app::vulkan::ash::vk;
 use app::vulkan::utils::create_gpu_only_buffer_from_data;
-use crate::{MODEL_PATH};
 use app::anyhow::Result;
 use app::vulkan::gpu_allocator::MemoryLocation;
 
@@ -11,7 +10,7 @@ pub struct Model {
     pub(crate) vertex_buffer: Buffer,
     pub(crate) index_buffer: Buffer,
     pub(crate) transform_buffer: Buffer,
-    pub(crate) images: Vec<Image>,
+    pub(crate) _images: Vec<Image>,
     pub(crate) views: Vec<ImageView>,
     pub(crate) samplers: Vec<Sampler>,
     pub(crate) textures: Vec<(usize, usize)>,
@@ -19,7 +18,14 @@ pub struct Model {
 
 
 pub fn create_model(context: &Context) -> Result<Model> {
-    let model = gltf::load_file(MODEL_PATH)?;
+
+    // let model_path: &str =  "cornellBox.gltf";
+    let  model_path: &str = "cornellBoxLucy.gltf";
+    // let  model_path: &str = "DamagedHelmet/glTF-Binary/DamagedHelmet.glb";
+    // let model_path: &str = "Sponza/glTF/Sponza.gltf";
+    // let model_path: &str = "ABeautifulGame/glTF/ABeautifulGame.gltf";
+
+    let model = gltf::load_file(model_path)?;
     let vertices = model.vertices.as_slice();
     let indices = model.indices.as_slice();
 
@@ -182,7 +188,7 @@ pub fn create_model(context: &Context) -> Result<Model> {
         vertex_buffer,
         index_buffer,
         transform_buffer,
-        images,
+        _images: images,
         views,
         samplers,
         textures,

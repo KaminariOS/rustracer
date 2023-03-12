@@ -12,6 +12,7 @@ use std::{collections::HashMap, path::Path};
 
 use glam::{vec4, Vec2, Vec4};
 use gltf::{Primitive, Semantic};
+use gltf::camera::Projection;
 
 #[derive(Debug, Clone)]
 pub struct Model {
@@ -47,9 +48,15 @@ pub struct Vertex {
     pub uvs: Vec2,
 }
 
+pub struct Cam {
+    pub fov: f32,
+    pub znear: f32,
+    pub zfar: f32,
+}
+
 pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Model> {
     let (document, buffers, gltf_images) =
-        gltf::import(&path).map_err(|e| Error::Load(e.to_string()))?;
+        gltf::import(resource_manager::load_model(path)).map_err(|e| Error::Load(e.to_string()))?;
 
     let mut vertices = vec![];
     let mut indices = vec![];
@@ -123,11 +130,11 @@ pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Model> {
             }
         }
     }
-
+    let mut cameras = vec![];
     for node in document.nodes().filter(|n| n.mesh().is_some()) {
         let transform = node.transform().matrix();
         let gltf_mesh = node.mesh().unwrap();
-
+        node.camera().map(|c| cameras.push(c));
         for primitive in gltf_mesh.primitives().filter(is_primitive_supported) {
             let og_index = (gltf_mesh.index(), primitive.index());
             let mesh_index = *mesh_index_redirect.get(&og_index).unwrap();
@@ -136,6 +143,21 @@ pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Model> {
             nodes.push(Node { transform, mesh })
         }
     }
+
+    let mut cams = vec![];
+    cameras.iter().for_each(|c| {
+        let proj = c.projection();
+        if let Projection::Perspective(p) = proj {
+            let _ = c.extras();
+            let cam = Cam {
+                fov: p.yfov(),
+                znear: p.znear(),
+                zfar: p.zfar().unwrap_or(1000.)
+            };
+            cams.push(cam)
+        }
+    }
+    );
 
     let images = gltf_images
         .iter()

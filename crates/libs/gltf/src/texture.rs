@@ -3,6 +3,7 @@ use crate::{get_name, Name};
 #[derive(Debug, Clone)]
 pub struct Texture {
     pub image_index: usize,
+    pub texture_index: usize,
     pub sampler_index: usize,
     pub name: Name,
 }
@@ -40,8 +41,12 @@ pub enum WrapMode {
 
 impl<'a> From<gltf::Texture<'a>> for Texture {
     fn from(texture: gltf::Texture) -> Self {
+        if texture.index() != texture.source().index() {
+            println!("{} {}", texture.index(), texture.source().index());
+        }
         Self {
             image_index: texture.source().index(),
+            texture_index: texture.index(),
             sampler_index: texture.sampler().index().map_or(0, |i| i + 1),
             name: get_name(texture.name())
         }

@@ -55,15 +55,15 @@ pub fn create_bottom_as(context: &mut Context, model: &Model) -> Result<BottomAS
         geometry_infos.push(GeometryInfo {
             transform: Mat4::from_iterator( node.transform.iter().flatten().map(|x| *x)),
             base_color: mesh.material.base_color,
-            base_color_texture_index: mesh
+            base_color_texture: mesh
                 .material
-                .base_color_texture_index
-                .map_or(-1, |i| i as _),
+                .base_color_texture,
+            normal_texture: mesh.material.normal_texture,
+            metallic_roughness_texture: mesh.material.metallic_roughness_texture,
             metallic_factor: mesh.material.metallic_factor,
             roughness: mesh.material.roughness,
             ior: mesh.material.ior,
             _padding: 0.0,
-            _padding2: 0.0,
             vertex_offset: mesh.vertex_offset,
             index_offset: mesh.index_offset,
             emissive_factor: mesh.material.emissive_factor,

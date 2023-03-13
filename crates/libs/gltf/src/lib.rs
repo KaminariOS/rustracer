@@ -87,11 +87,25 @@ pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Model> {
                 let vertex_offset = vertices.len() as _;
                 let vertex_count = vertex_reader.len() as _;
 
-                let normals = reader
-                    .read_normals()
-                    .unwrap()
-                    .map(|n| vec4(n[0], n[1], n[2], 0.0))
-                    .collect::<Vec<_>>();
+                let material = primitive.material();
+
+                let normal_texture = material.normal_texture().map(|t| t.tex_coord());
+                let normals =
+                // if let Some(coord) = normal_texture {
+                //     reader
+                //         .read_tex_coords(coord)
+                //         .map(|rt| reader.into_f32().map(Vec2::from)
+                //         )
+                //         .map(|coord| vec4(coord[0], coord[1], 0., 0.))
+                //         .collect::<Vec<_>>()
+                // } else {
+                    reader
+                        .read_normals()
+                        .unwrap()
+                        .map(|n| vec4(n[0], n[1], n[2], 0.0))
+                        .collect::<Vec<_>>()
+                // }
+            ;
 
                 let colors = reader
                     .read_colors(0)

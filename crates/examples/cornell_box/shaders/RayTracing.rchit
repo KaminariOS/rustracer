@@ -64,8 +64,8 @@ void main()
 	vec3 baseColor = geometryInfo.baseColor.xyz;
 	vec3 color = vertexColor * baseColor;
 
-	if (geometryInfo.baseColorTextureIndex > -1) {
-		color = color * texture(textures[geometryInfo.baseColorTextureIndex], uvs).rgb;
+	if (geometryInfo.baseColorTexture.index > -1) {
+		color = color * texture(textures[geometryInfo.baseColorTexture.index], uvs).rgb;
 	}
 
 	const vec3 pos = Mix(v0.pos, v1.pos, v2.pos, barycentricCoords);

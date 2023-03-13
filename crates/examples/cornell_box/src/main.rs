@@ -21,6 +21,7 @@ use gui_state::Gui;
 use ubo::UniformBufferObject;
 use pipeline_res::*;
 use desc_sets::*;
+use gltf::TextureInfo;
 use crate::gui_state::Scene;
 
 const WIDTH: u32 = 1920;
@@ -117,7 +118,7 @@ impl App for CornellBox {
         _: Duration,
     ) -> Result<()> {
         self.state_change(base, gui);
-        let view = base.camera.view_matrix();
+        let view = base.camera.view_matrix() * gui.scale;
         let inverted_view = view.try_inverse().expect("Should be invertible");
 
         let proj = base.camera.projection_matrix();
@@ -248,12 +249,13 @@ pub struct GeometryInfo {
     transform: Mat4,
     base_color: [f32; 4],
     emissive_factor: [f32; 4],
-    base_color_texture_index: i32,
+    base_color_texture: TextureInfo,
+    normal_texture: TextureInfo,
+    metallic_roughness_texture: TextureInfo,
     metallic_factor: f32,
     roughness: f32,
     ior: f32,
     _padding: f32,
-    _padding2: f32,
     vertex_offset: u32,
     index_offset: u32,
 }

@@ -1,13 +1,21 @@
+struct TextureInfo {
+    int index;
+    int coord;
+};
+
 struct GeometryInfo {
 	mat4 transform;
 	vec4 baseColor;
 	vec4 emissive_factor;
-	int baseColorTextureIndex;
+
+	TextureInfo baseColorTexture;
+	TextureInfo normal_texture;
+    TextureInfo metallic_roughness_texture;
+
 	float metallicFactor;
 	float roughnessFactor;
 	float ior;
 	float _padding;
-	float _padding2;
 	uint vertexOffset;
 	uint indexOffset;
 };

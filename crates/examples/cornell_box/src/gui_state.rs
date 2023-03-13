@@ -15,6 +15,7 @@ pub struct Gui {
     pub sky: bool,
     pub heatmap_scale: f32,
     pub max_number_of_samples: u32,
+    pub scale: f32,
     pub scene: Scene,
 }
 
@@ -23,7 +24,9 @@ pub enum Scene {
     LucyInCornell,
     Cornell,
     ABeautifulGame,
-    Sponza
+    Sponza,
+    Type59,
+    DamagedHelmet,
 }
 
 impl Scene {
@@ -31,7 +34,9 @@ impl Scene {
         match self {
             Self::LucyInCornell => "cornellBoxLucy.gltf",
             Self::Cornell => "cornellBox.gltf",
-            Self::ABeautifulGame => "DamagedHelmet/glTF-Binary/DamagedHelmet.glb",
+            Self::Type59 => "type59.gltf",
+            Self::DamagedHelmet => "DamagedHelmet/glTF/DamagedHelmet.gltf",
+            Self::ABeautifulGame => "ABeautifulGame/glTF/ABeautifulGame.gltf",
             Self::Sponza => "Sponza/glTF/Sponza.gltf",
         }
     }
@@ -57,6 +62,7 @@ impl app::Gui for Gui {
             max_number_of_samples: 5000,
             sky: false,
             scene: Scene::LucyInCornell,
+            scale: 1.,
         })
     }
 
@@ -81,7 +87,7 @@ impl app::Gui for Gui {
                 ui.input_int("Max Number of bounces", &mut number_of_bounces)
                     .build();
                 self.number_of_bounces = number_of_bounces as _;
-
+                ui.slider("scale",0.1, 10., &mut self.scale);
                 ui.slider("Apertures", 0., 1., &mut self.aperture);
                 ui.slider("Focus", 0.1, 20., &mut self.focus_distance);
                 ui.slider("Heatmap Scale", 0.1, 10., &mut self.heatmap_scale);

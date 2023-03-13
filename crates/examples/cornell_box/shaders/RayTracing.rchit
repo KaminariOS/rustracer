@@ -55,6 +55,9 @@ void main()
 	// Compute the ray hit point properties.
 	const vec3 barycentricCoords = vec3(1.0 - HitAttributes.x - HitAttributes.y, HitAttributes.x, HitAttributes.y);
 	vec3 normal = normalize(Mix(v0.normal, v1.normal, v2.normal, barycentricCoords));
+//	if (geometryInfo.normal_texture.index > -1) {
+//		normal = texture(textures[geometryInfo.normal_texture.index], normal.xy).xyz;
+//	}
 //	normal = normalize(vec3(normal * gl_WorldToObjectEXT));
 	normal = normalize(geometryInfo.transform * vec4(normal, 0.0)).xyz;
 	const vec2 uvs = Mix(v0.uvs, v1.uvs, v2.uvs, barycentricCoords);

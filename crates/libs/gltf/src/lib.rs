@@ -92,12 +92,13 @@ pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Model> {
                 let normal_texture = material.normal_texture().map(|t| t.tex_coord());
                 let normals =
                 // if let Some(coord) = normal_texture {
-                //     reader
+                //      reader
                 //         .read_tex_coords(coord)
-                //         .map(|rt| reader.into_f32().map(Vec2::from)
-                //         )
-                //         .map(|coord| vec4(coord[0], coord[1], 0., 0.))
-                //         .collect::<Vec<_>>()
+                //          .expect("Expect normal texture")
+                //         .into_f32().map(Vec2::from)
+                //         .map(|coord|
+                //              vec4(coord[0], coord[1], 0., 0.)
+                //         ).collect::<Vec<_>>()
                 // } else {
                     reader
                         .read_normals()

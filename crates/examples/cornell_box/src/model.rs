@@ -14,7 +14,7 @@ pub struct Model {
     pub(crate) _images: Vec<Image>,
     pub(crate) views: Vec<ImageView>,
     pub(crate) samplers: Vec<Sampler>,
-    pub(crate) textures: Vec<(usize, usize)>,
+    pub(crate) textures: Vec<[usize; 3]>,
 }
 
 
@@ -27,6 +27,7 @@ pub fn create_model(context: &Context, scene: Scene) -> Result<Model> {
     let model = gltf::load_file(scene.path())?;
     let vertices = model.vertices.as_slice();
     let indices = model.indices.as_slice();
+
 
     let vertex_buffer = create_gpu_only_buffer_from_data(
         context,
@@ -174,12 +175,12 @@ pub fn create_model(context: &Context, scene: Scene) -> Result<Model> {
     let mut textures = model
         .textures
         .iter()
-        .map(|t| (t.image_index, t.sampler_index))
+        .map(|t| [t.texture_index, t.image_index, t.sampler_index])
         .collect::<Vec<_>>();
 
     // Dummy texture
     if textures.is_empty() {
-        textures.push((0, 0));
+        textures.push([0; 3]);
     }
 
     Ok(Model {

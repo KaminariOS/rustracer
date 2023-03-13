@@ -92,7 +92,7 @@ pub fn create_descriptor_sets(
     ]);
 
     let mut writes = vec![];
-    for (image_index, sampler_index) in model.textures.iter() {
+    for [_texture_index, image_index, sampler_index] in model.textures.iter() {
         let view = &model.views[*image_index];
         let sampler = &model.samplers[*sampler_index];
         writes.push(

@@ -41,9 +41,9 @@ pub enum WrapMode {
 
 impl<'a> From<gltf::Texture<'a>> for Texture {
     fn from(texture: gltf::Texture) -> Self {
-        if texture.index() != texture.source().index() {
-            println!("{} {}", texture.index(), texture.source().index());
-        }
+            // println!("Tex: {} Image:{} sampler: {}", texture.index(), texture.source().index(),
+            //          texture.sampler().index().map_or(0, |i| i + 1)
+            // );
         Self {
             image_index: texture.source().index(),
             texture_index: texture.index(),

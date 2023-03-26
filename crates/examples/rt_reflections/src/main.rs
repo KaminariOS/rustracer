@@ -1,15 +1,14 @@
 use app::anyhow::Result;
+use app::types::*;
 use app::vulkan::ash::vk::{self, Packed24_8};
 use app::vulkan::gpu_allocator::MemoryLocation;
 use app::vulkan::utils::*;
 use app::{vulkan::*, BaseApp};
 use app::{App, ImageAndView};
-use gltf::Vertex;
+use gltf::{TextureInfo, Vertex};
 use gui::imgui::{Condition, Ui};
 use std::mem::{size_of, size_of_val};
 use std::time::Duration;
-use app::types::*;
-
 
 const WIDTH: u32 = 1920;
 const HEIGHT: u32 = 1080;
@@ -80,7 +79,7 @@ impl App for Reflections {
 
     fn update(
         &mut self,
-        base: &BaseApp<Self>,
+        base: &mut BaseApp<Self>,
         gui: &mut <Self as App>::Gui,
         _image_index: usize,
         _: Duration,
@@ -261,7 +260,7 @@ pub struct SceneUBO {
 pub struct GeometryInfo {
     transform: Mat4,
     base_color: [f32; 4],
-    base_color_texture_index: i32,
+    base_color_texture_index: TextureInfo,
     metallic_factor: f32,
     vertex_offset: u32,
     index_offset: u32,
@@ -487,17 +486,14 @@ fn create_bottom_as(context: &mut Context, model: &Model) -> Result<BottomAS> {
     let mut max_primitive_counts = vec![];
 
     for (node_index, node) in model.gltf.nodes.iter().enumerate() {
-        let mesh = node.mesh;
+        let mesh = &node.mesh;
 
         let primitive_count = (mesh.index_count / 3) as u32;
 
         geometry_infos.push(GeometryInfo {
-            transform: Mat4::from_iterator( node.transform.iter().flatten().map(|x| *x)),
+            transform: Mat4::from_iterator(node.transform.iter().flatten().map(|x| *x)),
             base_color: mesh.material.base_color,
-            base_color_texture_index: mesh
-                .material
-                .base_color_texture_index
-                .map_or(-1, |i| i as _),
+            base_color_texture_index: mesh.material.base_color_texture,
             metallic_factor: mesh.material.metallic_factor,
             vertex_offset: mesh.vertex_offset,
             index_offset: mesh.index_offset,

@@ -57,6 +57,7 @@ devShell = pkgs.mkShell rec {
 #    xorg.libXi
 #    xorg.libXrandr
     shaderc
+    renderdoc
 #    gcc-unwrapped.lib
   ];
 

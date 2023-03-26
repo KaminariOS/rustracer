@@ -1,7 +1,7 @@
+use app::anyhow::Result;
+use gui::imgui::{Condition, Ui};
 use strum::IntoEnumIterator;
 use strum_macros::{AsRefStr, EnumIter};
-use gui::imgui::{Condition, Ui};
-use app::anyhow::Result;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Gui {
@@ -41,7 +41,6 @@ impl Scene {
         }
     }
 }
-
 
 impl app::Gui for Gui {
     fn new() -> Result<Self> {
@@ -87,29 +86,27 @@ impl app::Gui for Gui {
                 ui.input_int("Max Number of bounces", &mut number_of_bounces)
                     .build();
                 self.number_of_bounces = number_of_bounces as _;
-                ui.slider("scale",0.1, 10., &mut self.scale);
+                ui.slider("scale", 0.1, 10., &mut self.scale);
                 ui.slider("Apertures", 0., 1., &mut self.aperture);
                 ui.slider("Focus", 0.1, 20., &mut self.focus_distance);
                 ui.slider("Heatmap Scale", 0.1, 10., &mut self.heatmap_scale);
 
                 let mut selected = self.scene;
                 if let Some(_) = ui.begin_combo("Scene", format!("{}", selected.as_ref())) {
-                for cur in Scene::iter() {
-                    if selected == cur {
-                        // Auto-scroll to selected item
-                        ui.set_item_default_focus();
+                    for cur in Scene::iter() {
+                        if selected == cur {
+                            // Auto-scroll to selected item
+                            ui.set_item_default_focus();
+                        }
+                        // Create a "selectable"
+                        let clicked = ui.selectable_config(cur).selected(selected == cur).build();
+                        // When item is clicked, store it
+                        if clicked {
+                            selected = cur;
+                        }
                     }
-                    // Create a "selectable"
-                    let clicked = ui.selectable_config(cur)
-                        .selected(selected == cur)
-                        .build();
-                    // When item is clicked, store it
-                    if clicked {
-                        selected = cur;
-                    }
-                }
                     self.scene = selected;
-            }
+                }
 
                 // Light control
                 // ui.text_wrapped("Light");

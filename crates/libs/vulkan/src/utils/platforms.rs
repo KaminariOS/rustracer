@@ -1,5 +1,5 @@
-use ash::{Entry, Instance};
 use ash::vk::{self};
+use ash::{Entry, Instance};
 
 #[cfg(target_os = "windows")]
 use ash::extensions::khr::Win32Surface;

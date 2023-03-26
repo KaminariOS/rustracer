@@ -1,8 +1,7 @@
 [package]
-name = "gltf"
-version.workspace = true
-edition.workspace = true
-authors.workspace = true
+name = "asset_loader"
+version = "0.1.0"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -12,3 +11,8 @@ thiserror.workspace = true
 gltf.workspace = true
 glam.workspace = true
 resource_manager = {path = "../resource_manager"}
+vulkan = {path = "../vulkan", optional = true}
+
+[features]
+default = []
+ash = ["dep:vulkan"]

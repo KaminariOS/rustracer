@@ -7,7 +7,6 @@ use crate::{physical_device::PhysicalDevice, surface::Surface, Version};
 
 use crate::utils::platforms::required_extension_names;
 
-
 #[cfg(debug_assertions)]
 const ENABLE_VALIDATION_LAYERS: bool = true;
 #[cfg(not(debug_assertions))]
@@ -22,11 +21,7 @@ pub struct Instance {
 }
 
 impl Instance {
-    pub(crate) fn new(
-        entry: &Entry,
-        api_version: Version,
-        app_name: &str,
-    ) -> Result<Self> {
+    pub(crate) fn new(entry: &Entry, api_version: Version, app_name: &str) -> Result<Self> {
         // Vulkan instance
         let app_name = CString::new(app_name)?;
 
@@ -36,7 +31,6 @@ impl Instance {
 
         let mut extension_names = required_extension_names();
         extension_names.push(DebugUtils::name().as_ptr());
-
 
         let enabled_layer_names = VALIDATION
             .iter()
@@ -51,7 +45,7 @@ impl Instance {
             .enabled_extension_names(&extension_names);
 
         let instance_create_info = if ENABLE_VALIDATION_LAYERS {
-          instance_create_info.enabled_layer_names(&enabled_layer_names)
+            instance_create_info.enabled_layer_names(&enabled_layer_names)
         } else {
             instance_create_info
         };

@@ -1,7 +1,7 @@
-use std::mem::size_of;
-use app::vulkan::{AccelerationStructure, Buffer, Context};
-use app::vulkan::ash::vk;
 use crate::{GeometryInfo, Model};
+use app::vulkan::ash::vk;
+use app::vulkan::{AccelerationStructure, Buffer, Context};
+use std::mem::size_of;
 
 use app::anyhow::Result;
 use app::types::Mat4;
@@ -15,7 +15,7 @@ pub struct BottomAS {
 }
 
 pub struct TopAS {
-   pub inner: AccelerationStructure,
+    pub inner: AccelerationStructure,
     pub _instance_buffer: Buffer,
 }
 
@@ -53,11 +53,9 @@ pub fn create_bottom_as(context: &mut Context, model: &Model) -> Result<BottomAS
         let primitive_count = (mesh.index_count / 3) as u32;
         // mesh.material
         geometry_infos.push(GeometryInfo {
-            transform: Mat4::from_iterator( node.transform.iter().flatten().map(|x| *x)),
+            transform: Mat4::from_iterator(node.transform.iter().flatten().map(|x| *x)),
             base_color: mesh.material.base_color,
-            base_color_texture: mesh
-                .material
-                .base_color_texture,
+            base_color_texture: mesh.material.base_color_texture,
             normal_texture: mesh.material.normal_texture,
             metallic_roughness_texture: mesh.material.metallic_roughness_texture,
             metallic_factor: mesh.material.metallic_factor,
@@ -164,4 +162,27 @@ pub fn create_top_as(context: &mut Context, bottom_as: &BottomAS) -> Result<TopA
         inner,
         _instance_buffer: instance_buffer,
     })
+}
+
+fn primitive_to_vk_geometry(context: &mut Context, model: &Model) {
+    let vertex_buffer_addr = model.vertex_buffer.get_device_address();
+    let index_buffer_addr = model.index_buffer.get_device_address();
+
+    let transform_buffer_addr = model.transform_buffer.get_device_address();
+
+    let as_geo_triangles_data = vk::AccelerationStructureGeometryTrianglesDataKHR::builder()
+        .vertex_format(vk::Format::R32G32B32_SFLOAT)
+        .vertex_data(vk::DeviceOrHostAddressConstKHR {
+            device_address: vertex_buffer_addr,
+        })
+        .vertex_stride(size_of::<Vertex>() as _)
+        .max_vertex(model.gltf.vertices.len() as _)
+        .index_type(vk::IndexType::UINT32)
+        .index_data(vk::DeviceOrHostAddressConstKHR {
+            device_address: index_buffer_addr,
+        })
+        .transform_data(vk::DeviceOrHostAddressConstKHR {
+            device_address: transform_buffer_addr,
+        })
+        .build();
 }

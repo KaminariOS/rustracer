@@ -13,7 +13,7 @@ use crate::{
     physical_device::PhysicalDevice,
     queue::{Queue, QueueFamily},
     surface::Surface,
-    CommandBuffer, CommandPool, RayTracingContext, Version, VERSION_1_0,
+    CommandBuffer, CommandPool, RayTracingContext, Version, VERSION_1_0, VERSION_1_2,
 };
 
 pub struct Context {
@@ -41,13 +41,11 @@ pub struct ContextBuilder<'a> {
 }
 
 impl<'a> ContextBuilder<'a> {
-    pub fn new(
-        window_handle: &'a winit::window::Window,
-    ) -> Self {
+    pub fn new(window_handle: &'a winit::window::Window) -> Self {
         Self {
             window_handle,
 
-            vulkan_version: VERSION_1_0,
+            vulkan_version: VERSION_1_2,
             app_name: "",
             required_extensions: &[],
             required_device_features: Default::default(),

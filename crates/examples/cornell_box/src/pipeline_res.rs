@@ -1,9 +1,14 @@
-use app::vulkan::{Context, DescriptorSetLayout, PipelineLayout, RayTracingPipeline, RayTracingPipelineCreateInfo, RayTracingShaderCreateInfo, RayTracingShaderGroup};
 use crate::model::Model;
+use crate::{
+    ACC_BIND, AS_BIND, GEO_BIND, INDEX_BIND, STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND, VERTEX_BIND,
+};
 use app::anyhow::Result;
 use app::load_spv;
 use app::vulkan::ash::vk;
-use crate::{ACC_BIND, AS_BIND, GEO_BIND, INDEX_BIND, STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND, VERTEX_BIND};
+use app::vulkan::{
+    Context, DescriptorSetLayout, PipelineLayout, RayTracingPipeline, RayTracingPipelineCreateInfo,
+    RayTracingShaderCreateInfo, RayTracingShaderGroup,
+};
 
 pub struct PipelineRes {
     pub(crate) pipeline: RayTracingPipeline,
@@ -25,7 +30,11 @@ pub fn create_pipeline(context: &Context, model: &Model) -> Result<PipelineRes> 
             .binding(UNIFORM_BIND)
             .descriptor_type(vk::DescriptorType::UNIFORM_BUFFER)
             .descriptor_count(1)
-            .stage_flags(vk::ShaderStageFlags::RAYGEN_KHR | vk::ShaderStageFlags::CLOSEST_HIT_KHR | vk::ShaderStageFlags::MISS_KHR)
+            .stage_flags(
+                vk::ShaderStageFlags::RAYGEN_KHR
+                    | vk::ShaderStageFlags::CLOSEST_HIT_KHR
+                    | vk::ShaderStageFlags::MISS_KHR,
+            )
             .build(),
         // Vertex buffer
         vk::DescriptorSetLayoutBinding::builder()
@@ -54,7 +63,7 @@ pub fn create_pipeline(context: &Context, model: &Model) -> Result<PipelineRes> 
             .descriptor_type(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
             .descriptor_count(model.textures.len() as _)
             .stage_flags(vk::ShaderStageFlags::CLOSEST_HIT_KHR)
-            .build()
+            .build(),
     ];
 
     let dynamic_layout_bindings = [
@@ -64,13 +73,12 @@ pub fn create_pipeline(context: &Context, model: &Model) -> Result<PipelineRes> 
             .descriptor_count(1)
             .stage_flags(vk::ShaderStageFlags::RAYGEN_KHR)
             .build(),
-
         vk::DescriptorSetLayoutBinding::builder()
             .binding(ACC_BIND)
             .descriptor_type(vk::DescriptorType::STORAGE_IMAGE)
             .descriptor_count(1)
             .stage_flags(vk::ShaderStageFlags::RAYGEN_KHR)
-            .build()
+            .build(),
     ];
 
     let static_dsl = context.create_descriptor_set_layout(&static_layout_bindings)?;
@@ -78,7 +86,6 @@ pub fn create_pipeline(context: &Context, model: &Model) -> Result<PipelineRes> 
     let dsls = [&static_dsl, &dynamic_dsl];
 
     let pipeline_layout = context.create_pipeline_layout(&dsls)?;
-
 
     // Shaders
     let ray_gen = load_spv("RayTracing.rgen.spv");

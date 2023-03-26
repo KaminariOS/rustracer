@@ -1,34 +1,34 @@
-use std::{fs, path::Path};
 use std::path::PathBuf;
+use std::{fs, path::Path};
 
-const SPV_SEARCH_PATHS: [&str; 1] = [
-    "./spv"
-];
+const SPV_SEARCH_PATHS: [&str; 1] = ["./spv"];
 
-const MODEL_SEARCH_PATHS: [&str; 2] = [
+const MODEL_SEARCH_PATHS: [&str; 3] = [
     "./assets/models",
-    "/home/kosumi/Rusty/glTF-Sample-Models/2.0"
+    "/home/kosumi/Rusty/glTF-Sample-Models/2.0",
+    "../../../assets/models",
 ];
 
 pub fn load_spv<P: AsRef<Path>>(path: P) -> Vec<u8> {
     if let Ok(bytes) = fs::read(&path) {
         bytes
-        } else {
+    } else {
         let mut res = None;
 
         for pre in SPV_SEARCH_PATHS {
             let search = Path::new(pre).join(&path);
             if let Ok(bytes) = fs::read(&search) {
                 res = Some(bytes);
-                break
+                break;
             }
         }
-        res.expect(&*format!("Couldn't find spv file {}, current path: {}",
-                             path.as_ref().display(),
-                              Path::new(".").canonicalize().unwrap().display()))
+        res.expect(&*format!(
+            "Couldn't find spv file {}, current path: {}",
+            path.as_ref().display(),
+            Path::new(".").canonicalize().unwrap().display()
+        ))
     }
 }
-
 
 pub fn load_model<P: AsRef<Path>>(path: P) -> PathBuf {
     if path.as_ref().exists() {
@@ -42,12 +42,14 @@ pub fn load_model<P: AsRef<Path>>(path: P) -> PathBuf {
             let search = Path::new(pre).join(&path);
             if search.exists() {
                 res = Some(search);
-                break
+                break;
             }
         }
-        res.expect(&*format!("Couldn't find model file {}, current path: {}",
-                             path.as_ref().display(),
-                             Path::new(".").canonicalize().unwrap().display()))
+        res.expect(&*format!(
+            "Couldn't find model file {}, current path: {}",
+            path.as_ref().display(),
+            Path::new(".").canonicalize().unwrap().display()
+        ))
     }
 }
 

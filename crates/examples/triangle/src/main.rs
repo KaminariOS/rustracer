@@ -43,8 +43,8 @@ impl App for Triangle {
 
     fn update(
         &mut self,
-        _: &BaseApp<Self>,
-         _: &mut <Self as App>::Gui,
+        _: &mut BaseApp<Self>,
+        _: &mut <Self as App>::Gui,
         _: usize,
         _: Duration,
     ) -> Result<()> {

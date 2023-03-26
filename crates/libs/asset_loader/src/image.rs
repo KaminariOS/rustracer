@@ -1,11 +1,24 @@
 use crate::error::*;
-use gltf::image::Format;
+use crate::Name;
+use gltf::image::{Format, Source};
 
 #[derive(Debug, Clone)]
 pub struct Image {
     pub pixels: Vec<u8>,
     pub width: u32,
     pub height: u32,
+    pub source: Name,
+    pub index: usize,
+}
+
+impl Image {
+    pub fn update_info(&mut self, info: gltf::Image) {
+        self.index = info.index();
+        self.source = match info.source() {
+            Source::View { .. } => None,
+            Source::Uri { uri, .. } => Some(uri.to_string()),
+        };
+    }
 }
 
 impl TryFrom<&gltf::image::Data> for Image {
@@ -21,6 +34,8 @@ impl TryFrom<&gltf::image::Data> for Image {
             pixels,
             width,
             height,
+            source: None,
+            index: 0,
         })
     }
 }

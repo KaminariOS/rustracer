@@ -88,4 +88,3 @@ impl GuiContext {
         Ok(())
     }
 }
-

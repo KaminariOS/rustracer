@@ -50,8 +50,10 @@ impl Camera {
 
         // Update direction
         let new_direction = if controls.look_around {
-            let side_rot = Quat::from_axis_angle(&side, -controls.cursor_delta[1] * ANGLE_PER_POINT);
-            let y_rot = Quat::from_axis_angle(&Vec3::y_axis(), -controls.cursor_delta[0] * ANGLE_PER_POINT);
+            let side_rot =
+                Quat::from_axis_angle(&side, -controls.cursor_delta[1] * ANGLE_PER_POINT);
+            let y_rot =
+                Quat::from_axis_angle(&Vec3::y_axis(), -controls.cursor_delta[0] * ANGLE_PER_POINT);
             let rot = side_rot * y_rot;
 
             (rot * self.direction).normalize()
@@ -102,15 +104,17 @@ impl Camera {
     }
 
     pub fn projection_matrix(&self) -> Mat4 {
-        OPENGL_TO_VULKAN_RT * Mat4::new_perspective(self.aspect_ratio, self.fov.to_radians(), self.z_near, self.z_far)
-
+        OPENGL_TO_VULKAN_RT
+            * Mat4::new_perspective(
+                self.aspect_ratio,
+                self.fov.to_radians(),
+                self.z_near,
+                self.z_far,
+            )
     }
 }
 const OPENGL_TO_VULKAN_RT: Mat4 = Mat4::new(
-    1.0, 0.0, 0.0, 0.0,
-    0.0, -1.0, 0.0, 0.0,
-    0.0, 0.0, 0.5, 0.5,
-    0.0, 0.0, 0.0, 1.0,
+    1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 0.0, 0.0, 0.0, 1.0,
 );
 
 #[derive(Debug, Clone, Copy)]

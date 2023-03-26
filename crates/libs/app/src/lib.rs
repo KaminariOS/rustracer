@@ -4,26 +4,27 @@ pub use vulkan;
 
 pub mod camera;
 pub mod types;
+pub use resource_manager::load_spv;
 pub use types::a3toa4;
-pub use resource_manager::{load_spv};
 
 use anyhow::Result;
 use ash::vk::{self};
 use camera::{Camera, Controls};
 use gpu_allocator::MemoryLocation;
 use gui::{
-    GuiContext,
     imgui::{DrawData, Ui},
     imgui_rs_vulkan_renderer::Renderer,
+    GuiContext,
 };
-use pretty_env_logger;
 use log;
+use pretty_env_logger;
 
+use crate::types::Vec3;
+use nalgebra::Point3;
 use std::{
     marker::PhantomData,
     time::{Duration, Instant},
 };
-use nalgebra::Point3;
 use vulkan::*;
 use winit::{
     dpi::PhysicalSize,
@@ -31,7 +32,6 @@ use winit::{
     event_loop::{ControlFlow, EventLoop},
     window::{Window, WindowBuilder},
 };
-use crate::types::Vec3;
 
 const IN_FLIGHT_FRAMES: u32 = 2;
 
@@ -91,12 +91,10 @@ pub trait App: Sized {
     }
 
     fn on_recreate_swapchain(&mut self, base: &BaseApp<Self>) -> Result<()>;
-    fn state_change(&mut self, _base: &mut BaseApp<Self>, _gui_state: &mut Self::Gui){
-
-    }
+    fn state_change(&mut self, _base: &mut BaseApp<Self>, _gui_state: &mut Self::Gui) {}
 }
 
-pub trait Gui: Sized + Clone  {
+pub trait Gui: Sized + Clone {
     fn new() -> Result<Self>;
 
     fn build(&mut self, ui: &Ui);
@@ -196,9 +194,7 @@ pub fn run<A: App + 'static>(
                 base_app.camera = base_app.camera.update(&controls, frame_stats.frame_time);
 
                 is_swapchain_dirty = base_app
-                    .draw(&window, app,
-                           &mut gui_context, &mut ui,
-                          &mut frame_stats)
+                    .draw(&window, app, &mut gui_context, &mut ui, &mut frame_stats)
                     .expect("Failed to tick");
             }
             // Keyboard
@@ -347,9 +343,6 @@ impl<B: App> BaseApp<B> {
         })
     }
 
-
-
-
     fn recreate_swapchain(&mut self, width: u32, height: u32) -> Result<()> {
         log::debug!("Recreating the swapchain");
 
@@ -407,10 +400,9 @@ impl<B: App> BaseApp<B> {
         frame_stats.set_gpu_time_time(gpu_time);
         frame_stats.tick();
 
-        let next_image_result = self.swapchain.acquire_next_image(
-            u64::MAX,
-            self.in_flight_frames.image_available_semaphore(),
-        );
+        let next_image_result = self
+            .swapchain
+            .acquire_next_image(u64::MAX, self.in_flight_frames.image_available_semaphore());
         let image_index = match next_image_result {
             Ok(AcquiredImage { index, .. }) => index as usize,
             Err(err) => match err.downcast_ref::<vk::Result>() {
@@ -432,9 +424,7 @@ impl<B: App> BaseApp<B> {
         gui_context.platform.prepare_render(&ui, window);
         let draw_data = gui_context.imgui.render();
 
-        base_app.update(self,
-                         gui,
-                        image_index, frame_stats.frame_time)?;
+        base_app.update(self, gui, image_index, frame_stats.frame_time)?;
 
         let command_buffer = &self.command_buffers[image_index];
 
@@ -477,9 +467,7 @@ impl<B: App> BaseApp<B> {
         Ok(false)
     }
 
-    fn build_perf_ui(&self,
-                      ui: &Ui,
-                     frame_stats: &mut FrameStats) {
+    fn build_perf_ui(&self, ui: &Ui, frame_stats: &mut FrameStats) {
         let width = self.swapchain.extent.width as f32;
         let height = self.swapchain.extent.height as f32;
 
@@ -542,7 +530,6 @@ impl<B: App> BaseApp<B> {
         gui_renderer: &mut Renderer,
         draw_data: &DrawData,
     ) -> Result<()> {
-
         let swapchain_image = &self.swapchain.images[image_index];
         let swapchain_image_view = &self.swapchain.views[image_index];
 
@@ -658,7 +645,7 @@ impl<B: App> BaseApp<B> {
             vk::AttachmentLoadOp::DONT_CARE,
             None,
         );
-        let [w, h ] = draw_data.display_size;
+        let [w, h] = draw_data.display_size;
         if w > f32::EPSILON && h > f32::EPSILON {
             gui_renderer.cmd_draw(buffer.inner, draw_data)?;
         }

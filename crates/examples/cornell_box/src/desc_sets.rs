@@ -1,11 +1,15 @@
-use app::vulkan::ash::vk;
-use app::vulkan::{Buffer, Context, DescriptorPool, DescriptorSet, WriteDescriptorSet, WriteDescriptorSetKind};
-use app::anyhow::Result;
-use app::ImageAndView;
-use crate::{ACC_BIND, AS_BIND, GEO_BIND, INDEX_BIND, STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND, VERTEX_BIND};
 use crate::acceleration_structure::{BottomAS, TopAS};
 use crate::model::Model;
 use crate::pipeline_res::PipelineRes;
+use crate::{
+    ACC_BIND, AS_BIND, GEO_BIND, INDEX_BIND, STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND, VERTEX_BIND,
+};
+use app::anyhow::Result;
+use app::vulkan::ash::vk;
+use app::vulkan::{
+    Buffer, Context, DescriptorPool, DescriptorSet, WriteDescriptorSet, WriteDescriptorSetKind,
+};
+use app::ImageAndView;
 
 pub struct DescriptorRes {
     _pool: DescriptorPool,
@@ -95,16 +99,14 @@ pub fn create_descriptor_sets(
     for [_texture_index, image_index, sampler_index] in model.textures.iter() {
         let view = &model.views[*image_index];
         let sampler = &model.samplers[*sampler_index];
-        writes.push(
-            WriteDescriptorSet {
-                binding: TEXTURE_BIND,
-                kind: WriteDescriptorSetKind::CombinedImageSampler {
-                    view,
-                    sampler,
-                    layout: vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
-                },
-            }
-        );
+        writes.push(WriteDescriptorSet {
+            binding: TEXTURE_BIND,
+            kind: WriteDescriptorSetKind::CombinedImageSampler {
+                view,
+                sampler,
+                layout: vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+            },
+        });
     }
     static_set.update_texture_array(&writes);
 
@@ -123,7 +125,7 @@ pub fn create_descriptor_sets(
                     layout: vk::ImageLayout::GENERAL,
                     view: &acc_images[0].view,
                 },
-            }
+            },
         ]);
     });
 

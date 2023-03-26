@@ -3,8 +3,8 @@ use std::sync::Arc;
 use anyhow::Result;
 use ash::vk;
 
-use crate::{device::Device, AccelerationStructure, Buffer, Context, ImageView, Sampler};
 use crate::WriteDescriptorSetKind::CombinedImageSampler;
+use crate::{device::Device, AccelerationStructure, Buffer, Context, ImageView, Sampler};
 
 pub struct DescriptorSetLayout {
     device: Arc<Device>,
@@ -206,34 +206,29 @@ impl DescriptorSet {
         }
         let mut img_infos = vec![];
         assert!(writes.iter().all(|w| w.binding == writes[0].binding));
-        writes.iter()
-            .for_each(|write| {
-                match write.kind {
-                    CombinedImageSampler{
-                        view,
-                        sampler,
-                        layout,
-                    } => {
-                        let img_info = vk::DescriptorImageInfo::builder()
-                            .image_view(view.inner)
-                            .sampler(sampler.inner)
-                            .image_layout(layout).build();
-                        img_infos.push(img_info);
-                    }
-                    _ => panic!("Only for sampling")
-                }
-            } );
+        writes.iter().for_each(|write| match write.kind {
+            CombinedImageSampler {
+                view,
+                sampler,
+                layout,
+            } => {
+                let img_info = vk::DescriptorImageInfo::builder()
+                    .image_view(view.inner)
+                    .sampler(sampler.inner)
+                    .image_layout(layout)
+                    .build();
+                img_infos.push(img_info);
+            }
+            _ => panic!("Only for sampling"),
+        });
 
-
-        let descriptor_writes = [
-            vk::WriteDescriptorSet::builder()
-                .descriptor_type(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
-                .dst_binding(writes[0].binding)
-                .dst_set(self.inner)
-                .image_info(img_infos.as_slice())
-                .dst_array_element(0)
-                .build()
-        ];
+        let descriptor_writes = [vk::WriteDescriptorSet::builder()
+            .descriptor_type(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
+            .dst_binding(writes[0].binding)
+            .dst_set(self.inner)
+            .image_info(img_infos.as_slice())
+            .dst_array_element(0)
+            .build()];
         unsafe {
             self.device
                 .inner

@@ -1,10 +1,10 @@
-use std::mem::size_of_val;
-use app::vulkan::{Buffer, Context, Image, ImageBarrier, ImageView, Sampler};
-use app::vulkan::ash::vk;
-use app::vulkan::utils::create_gpu_only_buffer_from_data;
-use app::anyhow::Result;
-use app::vulkan::gpu_allocator::MemoryLocation;
 use crate::gui_state::Scene;
+use app::anyhow::Result;
+use app::vulkan::ash::vk;
+use app::vulkan::gpu_allocator::MemoryLocation;
+use app::vulkan::utils::create_gpu_only_buffer_from_data;
+use app::vulkan::{Buffer, Context, Image, ImageBarrier, ImageView, Sampler};
+use std::mem::size_of_val;
 
 pub struct Model {
     pub(crate) gltf: gltf::Model,
@@ -17,9 +17,7 @@ pub struct Model {
     pub(crate) textures: Vec<[usize; 3]>,
 }
 
-
 pub fn create_model(context: &Context, scene: Scene) -> Result<Model> {
-
     // let  model_path: &str = "DamagedHelmet/glTF-Binary/DamagedHelmet.glb";
     // let model_path: &str = "Sponza/glTF/Sponza.gltf";
     // let model_path: &str = "ABeautifulGame/glTF/ABeautifulGame.gltf";
@@ -27,7 +25,6 @@ pub fn create_model(context: &Context, scene: Scene) -> Result<Model> {
     let model = gltf::load_file(scene.path())?;
     let vertices = model.vertices.as_slice();
     let indices = model.indices.as_slice();
-
 
     let vertex_buffer = create_gpu_only_buffer_from_data(
         context,

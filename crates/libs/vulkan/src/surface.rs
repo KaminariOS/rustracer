@@ -1,6 +1,6 @@
+use crate::utils::platforms;
 use anyhow::Result;
 use ash::{extensions::khr::Surface as AshSurface, vk, Entry};
-use crate::utils::platforms;
 
 use crate::instance::Instance;
 

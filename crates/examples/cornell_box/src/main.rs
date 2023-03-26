@@ -1,33 +1,32 @@
 use app::anyhow::Result;
+use app::camera::Camera;
+use app::types::*;
 use app::vulkan::ash::vk::{self};
 use app::vulkan::gpu_allocator::MemoryLocation;
+use app::App;
 use app::{vulkan::*, BaseApp};
-use app::{App};
-use std::mem::{size_of,};
+use std::mem::size_of;
 use std::time::Duration;
-use app::types::*;
-use app::camera::Camera;
 
-mod ubo;
-mod gui_state;
 mod acceleration_structure;
+mod desc_sets;
+mod gui_state;
 mod model;
 mod pipeline_res;
-mod desc_sets;
+mod ubo;
 
+use crate::gui_state::Scene;
 use acceleration_structure::*;
-use model::*;
-use gui_state::Gui;
-use ubo::UniformBufferObject;
-use pipeline_res::*;
 use desc_sets::*;
 use gltf::TextureInfo;
-use crate::gui_state::Scene;
+use gui_state::Gui;
+use model::*;
+use pipeline_res::*;
+use ubo::UniformBufferObject;
 
 const WIDTH: u32 = 1920;
 const HEIGHT: u32 = 1080;
 const APP_NAME: &str = "Ray traced cornell box";
-
 
 const AS_BIND: u32 = 0;
 const STORAGE_BIND: u32 = 1;
@@ -123,7 +122,9 @@ impl App for CornellBox {
 
         let proj = base.camera.projection_matrix();
         let inverted_proj = proj.try_inverse().expect("Should be invertible");
-        let number_of_samples = if gui.max_number_of_samples <= self.total_number_of_samples {0} else {
+        let number_of_samples = if gui.max_number_of_samples <= self.total_number_of_samples {
+            0
+        } else {
             (gui.max_number_of_samples - self.total_number_of_samples).min(gui.number_of_samples)
         };
         // println!("nums {} total: {}", number_of_samples, self.total_number_of_samples);
@@ -149,7 +150,6 @@ impl App for CornellBox {
         };
 
         self.ubo_buffer.copy_data_to_buffer(&[ubo])?;
-
 
         Ok(())
     }
@@ -177,7 +177,6 @@ impl App for CornellBox {
             base.swapchain.extent.width,
             base.swapchain.extent.height,
         );
-
 
         Ok(())
     }
@@ -236,12 +235,9 @@ impl App for CornellBox {
             }
             self.gui_state = Some(*gui_state);
             self.total_number_of_samples = 0;
-
         }
     }
 }
-
-
 
 #[derive(Debug, Clone, Copy)]
 #[repr(C)]
@@ -259,5 +255,3 @@ pub struct GeometryInfo {
     vertex_offset: u32,
     index_offset: u32,
 }
-
-

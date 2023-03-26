@@ -8,12 +8,12 @@ pub use image::*;
 pub use material::*;
 pub use texture::*;
 
-use std::{collections::HashMap, path::Path};
 use std::rc::Rc;
+use std::{collections::HashMap, path::Path};
 
 use glam::{vec4, Vec2, Vec4};
-use gltf::{Primitive, Semantic};
 use gltf::camera::Projection;
+use gltf::{Primitive, Semantic};
 
 type Name = Option<Rc<String>>;
 
@@ -31,7 +31,7 @@ pub struct Model {
 pub struct Node {
     pub transform: [[f32; 4]; 4],
     pub mesh: Mesh,
-    pub name: Name
+    pub name: Name,
 }
 
 #[derive(Debug, Clone)]
@@ -41,6 +41,7 @@ pub struct Mesh {
     pub index_offset: u32,
     pub index_count: u32,
     pub material: Material,
+
     pub name: Name,
 }
 
@@ -150,7 +151,7 @@ pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Model> {
                     index_offset,
                     index_count,
                     material,
-                    name: get_name(mesh.name())
+                    name: get_name(mesh.name()),
                 });
             }
         }
@@ -165,7 +166,11 @@ pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Model> {
             let mesh_index = *mesh_index_redirect.get(&og_index).unwrap();
             let mesh = meshes[mesh_index].clone();
 
-            nodes.push(Node { transform, mesh, name: get_name(node.name()) })
+            nodes.push(Node {
+                transform,
+                mesh,
+                name: get_name(node.name()),
+            })
         }
     }
 
@@ -177,12 +182,11 @@ pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Model> {
             let cam = Cam {
                 fov: p.yfov(),
                 znear: p.znear(),
-                zfar: p.zfar().unwrap_or(1000.)
+                zfar: p.zfar().unwrap_or(1000.),
             };
             cams.push(cam)
         }
-    }
-    );
+    });
 
     let images = gltf_images
         .iter()

@@ -1,4 +1,4 @@
-use crate::{get_name, Name};
+use crate::{to_owned_string, Name};
 
 #[derive(Debug, Clone)]
 pub struct Texture {
@@ -14,6 +14,19 @@ pub struct Sampler {
     pub min_filter: MinFilter,
     pub wrap_s: WrapMode,
     pub wrap_t: WrapMode,
+    pub(crate) index: usize,
+}
+
+impl Default for Sampler {
+    fn default() -> Self {
+        Sampler {
+            mag_filter: MagFilter::Linear,
+            min_filter: MinFilter::LinearMipmapLinear,
+            wrap_s: WrapMode::Repeat,
+            wrap_t: WrapMode::Repeat,
+            index: 0,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -48,7 +61,7 @@ impl<'a> From<gltf::Texture<'a>> for Texture {
             image_index: texture.source().index(),
             texture_index: texture.index(),
             sampler_index: texture.sampler().index().map_or(0, |i| i + 1),
-            name: get_name(texture.name()),
+            name: texture.name().map(to_owned_string),
         }
     }
 }
@@ -66,6 +79,7 @@ impl<'a> From<gltf::texture::Sampler<'a>> for Sampler {
                 .into(),
             wrap_s: sampler.wrap_s().into(),
             wrap_t: sampler.wrap_t().into(),
+            index: sampler.index().map_or(0, |i| i + 1),
         }
     }
 }

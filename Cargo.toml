@@ -15,10 +15,23 @@ nalgebra = "*"
 ash = {version = "0.37.2", features = ["linked", "debug"]}
 memoffset = "0.8.0"
 tobj = "3.2.4"
-gltf = {version = "1.1.0", features = ["KHR_materials_ior", "names", "extras"]}
-egui = "0.21.0"
-egui-winit = "0.21.1"
-egui-winit-ash-integration = "0.3.0"
+gltf = {version = "1.1.0", features = [
+    "names",
+    "extras",
+    "KHR_materials_ior",
+    "KHR_materials_pbrSpecularGlossiness",
+    "KHR_materials_transmission",
+    "KHR_materials_variants",
+    "KHR_materials_volume",
+    "KHR_materials_specular",
+    "image_jpeg_rayon",
+    "KHR_texture_transform",
+    "KHR_materials_unlit",
+    "KHR_lights_punctual",
+]}
+#egui = "0.21.0"
+#egui-winit = "0.21.1"
+#egui-winit-ash-integration = "0.3.0"
 log = "0.4.17"
 anyhow = "*"
 pretty_env_logger = "0.4.0"
@@ -30,7 +43,7 @@ imgui-rs-vulkan-renderer = { version = "1.6", features = ["gpu-allocator", "dyna
 
 thiserror = "1.0"
 
-glam = { version = "0.22", features = ["serde"] }
+glam = { version = "0.23.0", features = ["serde"] }
 
 glsl-to-spirv = "0.1.7"
 

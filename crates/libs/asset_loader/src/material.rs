@@ -49,6 +49,7 @@ impl TextureInfo {
     }
 }
 
+#[derive(Clone)]
 pub struct Material {
     pub(crate) name: Name,
     pub(crate) index: usize,
@@ -71,6 +72,57 @@ pub struct Material {
 
     pub occlusion_texture: TextureInfo,
     pub ior: f32,
+}
+
+#[repr(C)]
+pub struct MaterialRaw {
+    pub alpha_mode: u32,
+    pub double_sided: u32,
+
+    pub base_color_texture: TextureInfo,
+    // 4 int
+    pub base_color: [f32; 4],
+    // 4 int
+    pub metallic_factor: f32,
+    pub roughness: f32,
+    pub metallic_roughness_texture: TextureInfo,
+    // 4 int
+
+    pub normal_texture: TextureInfo,
+
+    pub emissive_texture: TextureInfo,
+    // 4 int
+    pub emissive_factor: [f32; 4],
+    // 4 int
+
+    pub occlusion_texture: TextureInfo,
+    pub ior: f32,
+    pub _padding: u32
+    // 4 int
+}
+
+impl From<&Material> for MaterialRaw {
+    fn from(value: &Material) -> Self {
+        Self {
+            alpha_mode: match value.alpha_mode {
+                AlphaMode::Opaque => 1,
+                AlphaMode::Mask => 2,
+                AlphaMode::Blend => 3
+            },
+            double_sided: value.double_sided.into(),
+            base_color_texture: value.base_color_texture,
+            base_color: value.base_color,
+            metallic_factor: value.metallic_factor,
+            roughness: value.roughness,
+            metallic_roughness_texture: value.metallic_roughness_texture,
+            normal_texture: value.normal_texture,
+            emissive_texture: value.emissive_texture,
+            emissive_factor: value.emissive_factor,
+            occlusion_texture: value.occlusion_texture,
+            ior: value.ior,
+            _padding: 0
+        }
+    }
 }
 
 impl<'a> From<gltf::Material<'a>> for Material {

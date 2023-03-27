@@ -1,7 +1,7 @@
 use crate::error::*;
 use crate::geometry::{GeoBuilder, Mesh};
 use crate::image::Image;
-use crate::material::Material;
+use crate::material::{Material, MaterialRaw};
 use crate::texture::{Sampler, Texture};
 use crate::{to_owned_string, MaterialID, MeshID, Name, NodeID, SamplerID, SceneID};
 use glam::{Mat4};
@@ -34,6 +34,10 @@ pub struct Doc {
 impl Doc {
     pub fn get_current_scene(&self) -> &Scene {
         &self.scenes[&self.current_scene]
+    }
+
+    pub fn get_materials_raw(&self) -> Vec<MaterialRaw> {
+        self.materials.iter().map(MaterialRaw::from).collect()
     }
 
     fn new(doc: &Document, buffers: Vec<buffer::Data>, gltf_images: Vec<image::Data>) -> Self {

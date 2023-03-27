@@ -4,11 +4,12 @@ use std::mem::{size_of, size_of_val};
 use vulkan::{AccelerationStructure, Buffer, Context, Image, ImageBarrier, ImageView, Sampler};
 use vulkan::ash::vk;
 use vulkan::utils::create_gpu_only_buffer_from_data;
-use crate::geometry::{GeoBuilder, Mesh, Primitive, Vertex};
+use crate::geometry::{GeoBuilder, Mesh, PrimInfo, Primitive, Vertex};
 use anyhow::Result;
 use vulkan::ash::vk::Packed24_8;
 use vulkan::gpu_allocator::MemoryLocation;
 use crate::{geometry, MaterialID};
+use crate::material::MaterialRaw;
 
 // One primitive per BLAS
 
@@ -54,7 +55,8 @@ struct VkGlobal {
     pub(crate) views: Vec<ImageView>,
     pub(crate) samplers: Vec<Sampler>,
     pub(crate) textures: Vec<[usize; 3]>,
-    pub vk_meshes: Vec<Vec<VkMesh>>,
+    pub prim_info: Vec<PrimInfo>,
+    materials: Vec<MaterialRaw>
 }
 
 fn primitive_to_vk_geometry(context: &Context, buffers: &Buffers, geo_builder: &GeoBuilder, geo_id: u32) -> BlasInput {
@@ -118,20 +120,23 @@ fn primitive_to_vk_geometry(context: &Context, buffers: &Buffers, geo_builder: &
     }
 }
 
-pub fn create_model(context: &Context, doc: &Doc) -> VkGlobal {
+pub fn create_model(context: &Context, doc: &Doc) -> (VkGlobal, Vec<AccelerationStructure>, AccelerationStructure) {
     let buffers = Buffers::new(&doc.geo_builder).unwrap();
-    let mut blasInputs: Vec<_> = doc.meshes.iter()
+    let mut blas_inputs: Vec<_> = doc.meshes.iter()
         .map(|m| m.primitives.iter())
         .flatten()
         .map(|p| primitive_to_vk_geometry(context, &buffers, &doc.geo_builder, p.geometry_id))
         .collect();
-    blasInputs.sort_by_key(|b| b.geo_id);
+    blas_inputs.sort_by_key(|b| b.geo_id);
 
-    let blases: Vec<_> = blasInputs.into_iter().map(|b| context.create_bottom_level_acceleration_structure(
+    let blases: Vec<_> = blas_inputs.into_iter().map(|b| context.create_bottom_level_acceleration_structure(
         &b.geometries,
         &b.build_range_infos,
         &b.max_primitives,
     ).unwrap()).collect();
+    let tlas = create_top_as(context, doc, &blases);
+
+
 
     let mut images = vec![];
     let mut views = vec![];
@@ -244,13 +249,16 @@ pub fn create_model(context: &Context, doc: &Doc) -> VkGlobal {
         textures.push([0; 3]);
     }
 
-    VkGlobal {
+    (VkGlobal {
         _images: images,
         views,
         samplers,
         textures,
-        vk_meshes: meshes,
-    }
+        prim_info: doc.geo_builder.flatten(),
+        materials: doc.get_materials_raw()
+    },
+        blases,
+        tlas)
 }
 
 
@@ -275,10 +283,7 @@ fn map_gltf_sampler<'a>(sampler: &gltf::Sampler) -> vk::SamplerCreateInfoBuilder
 }
 
 
-fn create_bottom_as(context: &mut Context, vk_mesh: &VkMesh) {
-}
-
-fn create_top_as(context: &mut Context, doc: &Doc, blases: &Vec<AccelerationStructure>) {
+fn create_top_as(context: &Context, doc: &Doc, blases: &Vec<AccelerationStructure>) -> AccelerationStructure {
     // Todo recursive
     // let tlases: Vec<_> = doc.get_current_scene().root_nodes.iter().map(|root| doc.nodes.get
     //     {
@@ -298,7 +303,7 @@ fn create_top_as(context: &mut Context, doc: &Doc, blases: &Vec<AccelerationStru
              let geo_id = primitive.geometry_id;
              vk::AccelerationStructureInstanceKHR {
                  transform: transform_matrix,
-                 instance_custom_index_and_mask: Packed24_8::new(0, 0xFF),
+                 instance_custom_index_and_mask: Packed24_8::new(geo_id, 0xFF),
                  instance_shader_binding_table_record_offset_and_flags: Packed24_8::new(
                      0,
                      vk::GeometryInstanceFlagsKHR::TRIANGLE_FACING_CULL_DISABLE.as_raw() as _,
@@ -338,8 +343,9 @@ fn create_top_as(context: &mut Context, doc: &Doc, blases: &Vec<AccelerationStru
         .transform_offset(0)
         .build();
 
-    let inner =
-        context.create_top_level_acceleration_structure(&[as_struct_geo], &[as_ranges], &[1])?;
+
+        context.create_top_level_acceleration_structure(&[as_struct_geo], &[as_ranges], &[1]).unwrap()
+
 }
 
 struct BlasInput {

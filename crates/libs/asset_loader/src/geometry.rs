@@ -20,11 +20,34 @@ pub struct GeoBuilder {
     pub len: Vec<[usize; 2]>
 }
 
+#[repr(C)]
+pub struct PrimInfo {
+    v_offset: u32,
+    i_offset: u32,
+    material_id: u32,
+    _padding: u32,
+}
+
+impl PrimInfo {
+    fn new(&[v_off, i_off, mat]: &[u32; 3]) -> Self {
+        Self {
+            v_offset: v_off,
+            i_offset: i_off,
+            material_id: mat,
+            _padding: 0
+        }
+    }
+}
+
 impl GeoBuilder {
     fn next_geo_id(&mut self) -> u32 {
         let cur = self.geo_counter;
         self.geo_counter += 1;
         cur
+    }
+
+    pub fn flatten(&self) -> Vec<PrimInfo> {
+        self.offsets.iter().map(PrimInfo::new).collect()
     }
 }
 

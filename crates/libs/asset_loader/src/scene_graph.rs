@@ -1,10 +1,10 @@
 use crate::error::*;
-use crate::geometry::Mesh;
+use crate::geometry::{GeoBuilder, Mesh};
 use crate::image::Image;
 use crate::material::Material;
 use crate::texture::{Sampler, Texture};
 use crate::{to_owned_string, MaterialID, MeshID, Name, NodeID, SamplerID, SceneID};
-use glam::{vec4, Mat4, Vec2, Vec4, Vec4Swizzles};
+use glam::{Mat4};
 use gltf::buffer;
 use gltf::image;
 use gltf::material::{AlphaMode, NormalTexture, OcclusionTexture};
@@ -19,18 +19,23 @@ pub struct Doc {
     // Only one scene is in use
     current_scene: SceneID,
     scenes: HashMap<SceneID, Scene>,
-    nodes: HashMap<NodeID, Node>,
+    pub nodes: HashMap<NodeID, Node>,
     pub meshes: Vec<Mesh>,
     materials: Vec<Material>,
-    textures: Vec<Texture>,
+    pub(crate) textures: Vec<Texture>,
     animations: Vec<Animation>,
     default_material_id: MaterialID,
     default_sampler_id: SamplerID,
-    images: Vec<Image>,
+    pub(crate) images: Vec<Image>,
     samplers: Vec<Sampler>,
+    pub geo_builder: GeoBuilder
 }
 
 impl Doc {
+    pub fn get_current_scene(&self) -> &Scene {
+        &self.scenes[&self.current_scene]
+    }
+
     fn new(doc: &Document, buffers: Vec<buffer::Data>, gltf_images: Vec<image::Data>) -> Self {
         let current_scene = doc
             .default_scene()
@@ -38,8 +43,13 @@ impl Doc {
             .index();
         let scenes = HashMap::with_capacity(doc.scenes().len());
         let nodes = HashMap::with_capacity(doc.nodes().len());
-        let meshes = doc.meshes().map(|m| Mesh::new(m, &buffers)).collect();
 
+        let mut geo_builder = GeoBuilder {
+            buffers,
+            ..Default::default()
+        };
+        let meshes = doc.meshes().map(|m| Mesh::new(m, &mut geo_builder)).collect();
+        geo_builder.buffers = Vec::with_capacity(0);
         let animations = vec![];
         let images = gltf_images
             .iter()
@@ -57,6 +67,8 @@ impl Doc {
         let textures = doc.textures().map(Texture::from).collect::<Vec<_>>();
         let materials: Vec<_> = doc.materials().map(Material::from).collect();
 
+
+
         Self {
             current_scene,
             scenes,
@@ -69,6 +81,7 @@ impl Doc {
             images,
             animations,
             samplers,
+            geo_builder
         }
     }
 
@@ -237,17 +250,24 @@ impl Doc {
     }
 }
 
-struct Scene {
+pub struct Scene {
     name: Name,
-    root_nodes: Vec<NodeID>,
+    pub root_nodes: Vec<NodeID>,
 }
 
-struct Node {
+
+pub struct Node {
     name: Name,
     children: Vec<NodeID>,
-    mesh: Option<MeshID>,
+    pub mesh: Option<MeshID>,
     local_transform: Mat4,
     parent_transform_cache: Mat4,
+}
+
+impl Node {
+    pub fn is_leaf(&self) -> bool {
+        self.children.is_empty()
+    }
 }
 
 struct Animation {
@@ -256,7 +276,7 @@ struct Animation {
 }
 
 impl Node {
-    fn get_world_transform(&self) -> Mat4 {
+    pub fn get_world_transform(&self) -> Mat4 {
         self.parent_transform_cache * self.local_transform
     }
 }
@@ -349,9 +369,9 @@ fn test() {
         println!("mesh {}; primitives: {}", i, mesh.primitives.len());
         for primitive in mesh.primitives.iter() {
             println!(
-                "   primitive: {}; vertices: {}",
+                "   primitive: {}; geo_id: {}",
                 primitive.material,
-                primitive.vertices.len()
+                primitive.geometry_id
             );
         }
     }

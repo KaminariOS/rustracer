@@ -12,6 +12,7 @@ gltf.workspace = true
 glam.workspace = true
 resource_manager = {path = "../resource_manager"}
 vulkan = {path = "../vulkan", optional = true}
+anyhow.workspace = true
 
 [features]
 default = []

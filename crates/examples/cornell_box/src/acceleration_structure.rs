@@ -108,6 +108,7 @@ pub fn create_bottom_as(context: &mut Context, model: &Model) -> Result<BottomAS
 }
 
 pub fn create_top_as(context: &mut Context, bottom_as: &BottomAS) -> Result<TopAS> {
+
     #[rustfmt::skip]
         let transform_matrix = vk::TransformMatrixKHR { matrix: [
         1.0, 0.0, 0.0, 0.0,
@@ -164,25 +165,3 @@ pub fn create_top_as(context: &mut Context, bottom_as: &BottomAS) -> Result<TopA
     })
 }
 
-fn primitive_to_vk_geometry(context: &mut Context, model: &Model) {
-    let vertex_buffer_addr = model.vertex_buffer.get_device_address();
-    let index_buffer_addr = model.index_buffer.get_device_address();
-
-    let transform_buffer_addr = model.transform_buffer.get_device_address();
-
-    let as_geo_triangles_data = vk::AccelerationStructureGeometryTrianglesDataKHR::builder()
-        .vertex_format(vk::Format::R32G32B32_SFLOAT)
-        .vertex_data(vk::DeviceOrHostAddressConstKHR {
-            device_address: vertex_buffer_addr,
-        })
-        .vertex_stride(size_of::<Vertex>() as _)
-        .max_vertex(model.gltf.vertices.len() as _)
-        .index_type(vk::IndexType::UINT32)
-        .index_data(vk::DeviceOrHostAddressConstKHR {
-            device_address: index_buffer_addr,
-        })
-        .transform_data(vk::DeviceOrHostAddressConstKHR {
-            device_address: transform_buffer_addr,
-        })
-        .build();
-}

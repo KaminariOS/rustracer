@@ -8,76 +8,107 @@ pub struct Mesh {
     pub(crate) primitives: Vec<Primitive>,
 }
 
+#[derive(Default)]
+pub struct GeoBuilder {
+    pub(crate) buffers: Vec<buffer::Data>,
+    pub(crate) vertices: Vec<Vertex>,
+    pub(crate) indices: Vec<Index>,
+    pub(crate) geo_counter: u32,
+    // Vertex offset, indices offset, material id
+    pub(crate) offsets: Vec<[u32; 3]>,
+    // Vertex len, indices len
+    pub len: Vec<[usize; 2]>
+}
+
+impl GeoBuilder {
+    fn next_geo_id(&mut self) -> u32 {
+        let cur = self.geo_counter;
+        self.geo_counter += 1;
+        cur
+    }
+}
+
 impl Mesh {
-    pub(crate) fn new(mesh: gltf::Mesh, buffers: &Vec<buffer::Data>) -> Self {
+    pub(crate) fn new(mesh: gltf::Mesh, builder: &mut GeoBuilder) -> Self {
         let index = mesh.index();
         let mut primitives = vec![];
         for primitive in mesh.primitives().filter(is_primitive_supported) {
-            primitives.push(Primitive::from(primitive, &buffers));
+            primitives.push(Primitive::from(primitive, builder));
         }
         Mesh { primitives, index }
     }
 }
 
 pub struct Primitive {
-    pub(crate) vertices: Vec<Vertex>,
-    indices: Vec<Index>,
     pub(crate) material: MaterialID,
+    pub geometry_id: u32,
 }
+
 const DEFAULT_MATERIAL_INDEX: usize = 0;
 impl Primitive {
-    fn from(primitive: gltf::Primitive, buffers: &Vec<buffer::Data>) -> Self {
+    fn from(primitive: gltf::Primitive, builder: &mut GeoBuilder) -> Self {
+        let geo_id = builder.next_geo_id();
+
         let material = primitive.material();
-        let material_index = material.index().unwrap_or(DEFAULT_MATERIAL_INDEX);
+        let material_index = material.index().unwrap_or(DEFAULT_MATERIAL_INDEX) as u32;
 
-        let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
-        let pos_reader = reader.read_positions().unwrap();
+        let (vertices, indices): (Vec<Vertex>, Vec<Index>) = {
+            let reader = primitive.reader(|buffer| Some(&builder.buffers[buffer.index()]));
+            let pos_reader = reader.read_positions().unwrap();
 
-        let vertex_data: Vec<_> = pos_reader.map(|p| vec4(p[0], p[1], p[2], 0.)).collect();
+            let vertex_data: Vec<_> = pos_reader.map(|p| vec4(p[0], p[1], p[2], 0.)).collect();
 
-        let indices: Vec<Index> = if let Some(index_reader) = reader.read_indices() {
-            let index_reader = index_reader.into_u32();
-            index_reader.collect()
-        } else {
-            // Create index
-            (0..vertex_data.len() as Index).collect()
+            let indices: Vec<Index> = if let Some(index_reader) = reader.read_indices() {
+                let index_reader = index_reader.into_u32();
+                index_reader.collect()
+            } else {
+                // Create index
+                (0..vertex_data.len() as Index).collect()
+            };
+
+            let normals = if let Some(rn) = reader.read_normals() {
+                rn.map(|n| vec4(n[0], n[1], n[2], 0.0)).collect()
+            } else {
+                log::warn!("Creating normals");
+                create_geo_normal(&vertex_data, &indices)
+            };
+
+            let colors = reader
+                .read_colors(0)
+                .map(|reader| reader.into_rgba_f32().map(Vec4::from).collect::<Vec<_>>());
+
+            let uvs = reader
+                .read_tex_coords(0)
+                .map(|reader| reader.into_f32().map(Vec2::from).collect::<Vec<_>>());
+
+            let vertices = vertex_data
+                .into_iter()
+                .enumerate()
+                .map(|(index, position)| {
+                    let normal = normals[index];
+                    let color = colors.as_ref().map_or(Vec4::ONE, |colors| colors[index]);
+                    let uvs = uvs.as_ref().map_or(Vec2::ZERO, |uvs| uvs[index]);
+                    Vertex {
+                        position,
+                        normal,
+                        color,
+                        uvs,
+                        material_index
+                    }
+                })
+                .collect();
+            (vertices, indices)
         };
-
-        let normals = if let Some(rn) = reader.read_normals() {
-            rn.map(|n| vec4(n[0], n[1], n[2], 0.0)).collect()
-        } else {
-            log::warn!("Creating normals");
-            create_geo_normal(&vertex_data, &indices)
-        };
-
-        let colors = reader
-            .read_colors(0)
-            .map(|reader| reader.into_rgba_f32().map(Vec4::from).collect::<Vec<_>>());
-
-        let uvs = reader
-            .read_tex_coords(0)
-            .map(|reader| reader.into_f32().map(Vec2::from).collect::<Vec<_>>());
-
-        let vertices = vertex_data
-            .into_iter()
-            .enumerate()
-            .map(|(index, position)| {
-                let normal = normals[index];
-                let color = colors.as_ref().map_or(Vec4::ONE, |colors| colors[index]);
-                let uvs = uvs.as_ref().map_or(Vec2::ZERO, |uvs| uvs[index]);
-                Vertex {
-                    position,
-                    normal,
-                    color,
-                    uvs,
-                }
-            })
-            .collect();
+        let v_offset = builder.vertices.len();
+        let i_offset = builder.indices.len();
+        builder.len.push([vertices.len(), indices.len()]);
+        builder.vertices.extend(vertices);
+        builder.indices.extend(indices);
+        builder.offsets.push([v_offset as _, i_offset as _, material_index as _]);
 
         Primitive {
-            vertices,
-            indices,
-            material: material_index,
+            material: material_index as usize,
+            geometry_id: geo_id,
         }
     }
 }
@@ -89,6 +120,7 @@ pub struct Vertex {
     pub normal: Vec4,
     pub color: Vec4,
     pub uvs: Vec2,
+    pub material_index: u32,
 }
 
 fn create_geo_normal(position: &[Vec4], indices: &[u32]) -> Vec<Vec4> {

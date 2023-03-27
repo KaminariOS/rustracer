@@ -81,6 +81,7 @@ dependencies = [
 name = "asset_loader"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "glam",
  "gltf 1.1.0",
  "log",

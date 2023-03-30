@@ -7,9 +7,9 @@ use crate::{to_owned_string, MaterialID, MeshID, Name, NodeID, SamplerID, SceneI
 use glam::Mat4;
 use gltf::buffer;
 use gltf::image;
-use gltf::material::{AlphaMode, NormalTexture, OcclusionTexture};
-use gltf::mesh::Mode;
-use gltf::{texture, Document, Semantic};
+
+
+use gltf::{Document};
 use std::collections::HashMap;
 use std::iter::once;
 use std::path::Path;

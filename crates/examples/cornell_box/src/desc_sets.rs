@@ -1,4 +1,3 @@
-use crate::model::Model;
 use crate::pipeline_res::PipelineRes;
 use crate::{
     ACC_BIND, AS_BIND, GEO_BIND, INDEX_BIND, MAT_BIND, STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND,

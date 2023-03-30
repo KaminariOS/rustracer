@@ -248,11 +248,11 @@ pub fn process_mesh(meshes: &[Mesh], buffers: &[Data]) -> Vec<crate::Mesh> {
 pub fn process_node(nodes: &[gltf::Node], node_index: usize, parent_matrix: Mat4) {
     let node = &nodes[node_index];
     let local_transform = node.transform().matrix();
-    let world_transform = parent_matrix * Mat4::from_cols_array_2d(&local_transform);
+    let _world_transform = parent_matrix * Mat4::from_cols_array_2d(&local_transform);
 
-    if let Some(mesh) = node.mesh() {
-    } else if let Some(camera) = node.camera() {
-    } else if let Some(light) = node.light() {
+    if let Some(_mesh) = node.mesh() {
+    } else if let Some(_camera) = node.camera() {
+    } else if let Some(_light) = node.light() {
     }
     // let mut vertices = vec![];
     // let mut indices = vec![];

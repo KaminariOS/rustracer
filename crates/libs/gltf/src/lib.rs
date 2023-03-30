@@ -90,7 +90,7 @@ pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Model> {
 
                 let material = primitive.material();
 
-                let normal_texture = material.normal_texture().map(|t| t.tex_coord());
+                let _normal_texture = material.normal_texture().map(|t| t.tex_coord());
                 let normals =
                 // if let Some(coord) = normal_texture {
                 //      reader

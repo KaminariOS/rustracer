@@ -13,7 +13,7 @@ use crate::{
     physical_device::PhysicalDevice,
     queue::{Queue, QueueFamily},
     surface::Surface,
-    CommandBuffer, CommandPool, RayTracingContext, Version, VERSION_1_0, VERSION_1_2,
+    CommandBuffer, CommandPool, RayTracingContext, Version, VERSION_1_2,
 };
 
 pub struct Context {

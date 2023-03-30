@@ -1,19 +1,19 @@
-use crate::geometry::{GeoBuilder, Mesh, PrimInfo, Primitive, Vertex};
+use crate::geometry::{GeoBuilder, Vertex};
 use crate::globals::Buffers;
-use crate::material::MaterialRaw;
+
 use crate::scene_graph::Doc;
-use crate::{geometry, MaterialID};
+
 use anyhow::Result;
-use std::collections::HashMap;
-use std::mem::{size_of, size_of_val};
+
+use std::mem::{size_of};
 use vulkan::ash::vk;
 use vulkan::ash::vk::Packed24_8;
-use vulkan::gpu_allocator::MemoryLocation;
+
 use vulkan::utils::create_gpu_only_buffer_from_data;
-use vulkan::{AccelerationStructure, Buffer, Context, Image, ImageBarrier, ImageView, Sampler};
+use vulkan::{AccelerationStructure, Buffer, Context};
 
 fn primitive_to_vk_geometry(
-    context: &Context,
+    _context: &Context,
     buffers: &Buffers,
     geo_builder: &GeoBuilder,
     geo_id: u32,
@@ -21,7 +21,7 @@ fn primitive_to_vk_geometry(
     let vertex_buffer_addr = buffers.vertex_buffer.get_device_address();
     let index_buffer_addr = buffers.index_buffer.get_device_address();
     let [v_len, i_len] = geo_builder.len[geo_id as usize];
-    let [v_offset, i_offset, mat] = geo_builder.offsets[geo_id as usize];
+    let [v_offset, i_offset, _mat] = geo_builder.offsets[geo_id as usize];
     assert_eq!(i_len % 3, 0);
     let primitive_count = (i_len / 3) as u32;
     let as_geo_triangles_data = vk::AccelerationStructureGeometryTrianglesDataKHR::builder()
@@ -111,7 +111,7 @@ fn create_top_as(
     //     }
     // ).collect();
     let mut ins = vec![];
-    for (id, node) in doc.nodes.iter().filter(|(_, node)| node.mesh.is_some()) {
+    for (_id, node) in doc.nodes.iter().filter(|(_, node)| node.mesh.is_some()) {
         let transform = node.get_world_transform().transpose().to_cols_array();
         let mut matrix = [0.; 12];
         // Row major.

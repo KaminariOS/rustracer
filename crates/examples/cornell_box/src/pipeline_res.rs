@@ -1,6 +1,7 @@
 use crate::model::Model;
 use crate::{
-    ACC_BIND, AS_BIND, GEO_BIND, INDEX_BIND, STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND, VERTEX_BIND,
+    ACC_BIND, AS_BIND, GEO_BIND, INDEX_BIND, MAT_BIND, STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND,
+    VERTEX_BIND,
 };
 use app::anyhow::Result;
 use app::load_spv;
@@ -9,6 +10,7 @@ use app::vulkan::{
     Context, DescriptorSetLayout, PipelineLayout, RayTracingPipeline, RayTracingPipelineCreateInfo,
     RayTracingShaderCreateInfo, RayTracingShaderGroup,
 };
+use asset_loader::globals::VkGlobal;
 
 pub struct PipelineRes {
     pub(crate) pipeline: RayTracingPipeline,
@@ -17,7 +19,7 @@ pub struct PipelineRes {
     pub(crate) dynamic_dsl: DescriptorSetLayout,
 }
 
-pub fn create_pipeline(context: &Context, model: &Model) -> Result<PipelineRes> {
+pub fn create_pipeline(context: &Context, model: &VkGlobal) -> Result<PipelineRes> {
     // descriptor and pipeline layouts
     let static_layout_bindings = [
         vk::DescriptorSetLayoutBinding::builder()
@@ -62,6 +64,12 @@ pub fn create_pipeline(context: &Context, model: &Model) -> Result<PipelineRes> 
             .binding(TEXTURE_BIND)
             .descriptor_type(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
             .descriptor_count(model.textures.len() as _)
+            .stage_flags(vk::ShaderStageFlags::CLOSEST_HIT_KHR)
+            .build(),
+        vk::DescriptorSetLayoutBinding::builder()
+            .binding(MAT_BIND)
+            .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
+            .descriptor_count(1)
             .stage_flags(vk::ShaderStageFlags::CLOSEST_HIT_KHR)
             .build(),
     ];

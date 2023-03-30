@@ -1,8 +1,8 @@
-use crate::acceleration_structure::{BottomAS, TopAS};
 use crate::model::Model;
 use crate::pipeline_res::PipelineRes;
 use crate::{
-    ACC_BIND, AS_BIND, GEO_BIND, INDEX_BIND, STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND, VERTEX_BIND,
+    ACC_BIND, AS_BIND, GEO_BIND, INDEX_BIND, MAT_BIND, STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND,
+    VERTEX_BIND,
 };
 use app::anyhow::Result;
 use app::vulkan::ash::vk;
@@ -10,6 +10,8 @@ use app::vulkan::{
     Buffer, Context, DescriptorPool, DescriptorSet, WriteDescriptorSet, WriteDescriptorSetKind,
 };
 use app::ImageAndView;
+use asset_loader::acceleration_structures::TopAS;
+use asset_loader::globals::{Buffers, VkGlobal};
 
 pub struct DescriptorRes {
     _pool: DescriptorPool,
@@ -20,12 +22,12 @@ pub struct DescriptorRes {
 pub fn create_descriptor_sets(
     context: &Context,
     pipeline_res: &PipelineRes,
-    model: &Model,
-    bottom_as: &BottomAS,
+    model: &VkGlobal,
     top_as: &TopAS,
     storage_imgs: &[ImageAndView],
     acc_images: &[ImageAndView],
     ubo_buffer: &Buffer,
+    buffers: &Buffers,
 ) -> Result<DescriptorRes> {
     let set_count = storage_imgs.len() as u32;
     let acc_count = acc_images.len() as u32;
@@ -50,7 +52,7 @@ pub fn create_descriptor_sets(
             .build(),
         vk::DescriptorPoolSize::builder()
             .ty(vk::DescriptorType::STORAGE_BUFFER)
-            .descriptor_count(3)
+            .descriptor_count(4)
             .build(),
         vk::DescriptorPoolSize::builder()
             .ty(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
@@ -63,7 +65,12 @@ pub fn create_descriptor_sets(
 
     let static_set = pool.allocate_set(&pipeline_res.static_dsl)?;
     let dynamic_sets = pool.allocate_sets(&pipeline_res.dynamic_dsl, set_count)?;
-
+    static_set.update(&[
+        WriteDescriptorSet {
+            binding: UNIFORM_BIND,
+            kind: WriteDescriptorSetKind::UniformBuffer { buffer: ubo_buffer },
+        },
+    ]);
     static_set.update(&[
         WriteDescriptorSet {
             binding: AS_BIND,
@@ -72,25 +79,30 @@ pub fn create_descriptor_sets(
             },
         },
         WriteDescriptorSet {
-            binding: UNIFORM_BIND,
-            kind: WriteDescriptorSetKind::UniformBuffer { buffer: ubo_buffer },
-        },
-        WriteDescriptorSet {
             binding: VERTEX_BIND,
             kind: WriteDescriptorSetKind::StorageBuffer {
-                buffer: &model.vertex_buffer,
+                buffer: &buffers.vertex_buffer,
             },
         },
         WriteDescriptorSet {
             binding: INDEX_BIND,
             kind: WriteDescriptorSetKind::StorageBuffer {
-                buffer: &model.index_buffer,
+                buffer: &buffers.index_buffer,
             },
         },
+
         WriteDescriptorSet {
             binding: GEO_BIND,
             kind: WriteDescriptorSetKind::StorageBuffer {
-                buffer: &bottom_as.geometry_info_buffer,
+                buffer: &buffers.geo_buffer,
+            },
+        },
+
+
+        WriteDescriptorSet {
+            binding: MAT_BIND,
+            kind: WriteDescriptorSetKind::StorageBuffer {
+                buffer: &buffers.material_buffer,
             },
         },
     ]);

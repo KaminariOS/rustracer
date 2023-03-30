@@ -143,7 +143,6 @@ impl DescriptorSet {
                     let buffer_info = vk::DescriptorBufferInfo::builder()
                         .buffer(buffer.inner)
                         .range(vk::WHOLE_SIZE);
-
                     buffer_infos.push(buffer_info);
 
                     vk::WriteDescriptorSet::builder()

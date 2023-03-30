@@ -2,11 +2,9 @@ use crate::{get_name, Name, Node, Vertex};
 use glam::{vec4, Mat4, Vec2, Vec4, Vec4Swizzles};
 use gltf::buffer::Data;
 use gltf::material::{AlphaMode, NormalTexture, OcclusionTexture};
-use gltf::mesh::{Mode, Reader};
+use gltf::mesh::{Mode};
 use gltf::{texture, Document, Mesh, Primitive, Semantic};
-use log::log;
-use std::collections::{HashMap, HashSet};
-use std::primitive;
+use std::collections::{HashMap};
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]

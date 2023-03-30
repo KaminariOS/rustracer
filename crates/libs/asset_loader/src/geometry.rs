@@ -17,10 +17,11 @@ pub struct GeoBuilder {
     // Vertex offset, indices offset, material id
     pub(crate) offsets: Vec<[u32; 3]>,
     // Vertex len, indices len
-    pub len: Vec<[usize; 2]>
+    pub len: Vec<[usize; 2]>,
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct PrimInfo {
     v_offset: u32,
     i_offset: u32,
@@ -34,7 +35,7 @@ impl PrimInfo {
             v_offset: v_off,
             i_offset: i_off,
             material_id: mat,
-            _padding: 0
+            _padding: 0,
         }
     }
 }
@@ -116,7 +117,7 @@ impl Primitive {
                         normal,
                         color,
                         uvs,
-                        material_index
+                        material_index,
                     }
                 })
                 .collect();
@@ -127,7 +128,9 @@ impl Primitive {
         builder.len.push([vertices.len(), indices.len()]);
         builder.vertices.extend(vertices);
         builder.indices.extend(indices);
-        builder.offsets.push([v_offset as _, i_offset as _, material_index as _]);
+        builder
+            .offsets
+            .push([v_offset as _, i_offset as _, material_index as _]);
 
         Primitive {
             material: material_index as usize,

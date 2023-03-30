@@ -11,3 +11,4 @@ anyhow.workspace = true
 ash.workspace = true
 gpu-allocator.workspace = true
 winit.workspace = true
+vk-sync = "0.1.6"

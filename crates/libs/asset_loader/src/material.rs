@@ -75,6 +75,7 @@ pub struct Material {
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct MaterialRaw {
     pub alpha_mode: u32,
     pub double_sided: u32,
@@ -87,18 +88,15 @@ pub struct MaterialRaw {
     pub roughness: f32,
     pub metallic_roughness_texture: TextureInfo,
     // 4 int
-
     pub normal_texture: TextureInfo,
 
     pub emissive_texture: TextureInfo,
     // 4 int
     pub emissive_factor: [f32; 4],
     // 4 int
-
     pub occlusion_texture: TextureInfo,
     pub ior: f32,
-    pub _padding: u32
-    // 4 int
+    pub _padding: u32, // 4 int
 }
 
 impl From<&Material> for MaterialRaw {
@@ -107,7 +105,7 @@ impl From<&Material> for MaterialRaw {
             alpha_mode: match value.alpha_mode {
                 AlphaMode::Opaque => 1,
                 AlphaMode::Mask => 2,
-                AlphaMode::Blend => 3
+                AlphaMode::Blend => 3,
             },
             double_sided: value.double_sided.into(),
             base_color_texture: value.base_color_texture,
@@ -120,7 +118,7 @@ impl From<&Material> for MaterialRaw {
             emissive_factor: value.emissive_factor,
             occlusion_texture: value.occlusion_texture,
             ior: value.ior,
-            _padding: 0
+            _padding: 0,
         }
     }
 }

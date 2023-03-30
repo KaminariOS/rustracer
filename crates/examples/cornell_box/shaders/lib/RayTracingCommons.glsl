@@ -8,6 +8,12 @@ struct RayPayload
 	uint RandomSeed;
 };
 
+struct PrimInfo {
+    uint v_offset;
+    uint i_offset;
+    uint material_id;
+    uint _padding;
+};
 
 vec3 offset_ray(const vec3 p, const vec3 n) {
     const float origin = 1. / 32.;
@@ -22,3 +28,14 @@ vec3 offset_ray(const vec3 p, const vec3 n) {
     abs(p.z) < origin? p.z + float_scale * n.z: p_i.z
     );
 }
+
+
+const uint AS_BIND = 0;
+const uint STORAGE_BIND = 1;
+const uint UNIFORM_BIND = 2;
+const uint VERTEX_BIND = 3;
+const uint INDEX_BIND = 4;
+const uint GEO_BIND = 5;
+const uint TEXTURE_BIND = 6;
+const uint ACC_BIND = 8;
+const uint MAT_BIND = 9;

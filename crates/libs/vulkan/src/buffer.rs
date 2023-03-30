@@ -22,6 +22,10 @@ pub struct Buffer {
 }
 
 impl Buffer {
+    pub fn as_raw(&self) -> u64 {
+        use vk::Handle;
+        self.inner.as_raw()
+    }
     pub(crate) fn new(
         device: Arc<Device>,
         allocator: Arc<Mutex<Allocator>>,

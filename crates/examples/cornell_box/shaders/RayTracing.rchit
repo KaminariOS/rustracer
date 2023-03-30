@@ -13,12 +13,14 @@ struct Vertex {
 	vec3 normal;
 	vec3 color;
 	vec2 uvs;
+	uint material_index;
 };
 
-layout(binding = 3, set = 0) readonly buffer Vertices { Vertex v[]; } vertices;
-layout(binding = 4, set = 0) readonly buffer Indices { uint i[]; } indices;
-layout(binding = 5, set = 0) readonly buffer GeometryInfos { GeometryInfo g[]; } geometryInfos;
-layout(binding = 6) uniform sampler2D[] textures;
+layout(binding = VERTEX_BIND, set = 0) readonly buffer Vertices { Vertex v[]; } vertices;
+layout(binding = INDEX_BIND, set = 0) readonly buffer Indices { uint i[]; } indices;
+layout(binding = GEO_BIND, set = 0) readonly buffer PrimInfos { PrimInfo p[]; } primInfos;
+layout(binding = MAT_BIND, set = 0) readonly buffer Materials { MaterialRaw m[]; } materials;
+layout(binding = TEXTURE_BIND) uniform sampler2D[] textures;
 
 //#include "Scatter.glsl"
 //#include "Vertex.glsl"
@@ -38,11 +40,12 @@ vec3 Mix(vec3 a, vec3 b, vec3 c, vec3 barycentrics)
 
 void main()
 {
-	GeometryInfo geometryInfo = geometryInfos.g[gl_GeometryIndexEXT];
+	PrimInfo primInfo = primInfos.p[gl_InstanceCustomIndexEXT];
+	MaterialRaw mat = materials.m[primInfo.material_id];
 
 	// Fetch vertices
-	uint vertexOffset = geometryInfo.vertexOffset;
-	uint indexOffset = geometryInfo.indexOffset + (3 * gl_PrimitiveID);
+	uint vertexOffset = primInfo.v_offset;
+	uint indexOffset = primInfo.i_offset + (3 * gl_PrimitiveID);
 
 	uint i0 = vertexOffset + indices.i[indexOffset];
 	uint i1 = vertexOffset + indices.i[indexOffset + 1];
@@ -58,27 +61,27 @@ void main()
 //	if (geometryInfo.normal_texture.index > -1) {
 //		normal = texture(textures[geometryInfo.normal_texture.index], normal.xy).xyz;
 //	}
-//	normal = normalize(vec3(normal * gl_WorldToObjectEXT));
-	normal = normalize(geometryInfo.transform * vec4(normal, 0.0)).xyz;
+	normal = normalize(vec3(normal * gl_WorldToObjectEXT));
+//	normal = normalize(geometryInfo.transform * vec4(normal, 0.0)).xyz;
 	const vec2 uvs = Mix(v0.uvs, v1.uvs, v2.uvs, barycentricCoords);
 
 	// Interpolate Color
 	vec3 vertexColor = Mix(v0.color, v1.color, v2.color, barycentricCoords);
-	vec3 baseColor = geometryInfo.baseColor.xyz;
+	vec3 baseColor = mat.baseColor.xyz;
 	vec3 color = vertexColor * baseColor;
 
-	if (geometryInfo.baseColorTexture.index > -1) {
-		color = color * texture(textures[geometryInfo.baseColorTexture.index], uvs).rgb;
+	if (mat.baseColorTexture.index > -1) {
+		color = color * texture(textures[mat.baseColorTexture.index], uvs).rgb;
 	}
 
 	const vec3 pos = Mix(v0.pos, v1.pos, v2.pos, barycentricCoords);
-	vec3 origin = vec3(geometryInfo.transform * vec4(pos, 1.0)) ;
+	vec3 origin = vec3(gl_ObjectToWorldEXT * vec4(pos, 1.0)) ;
 //	origin = offset_ray(origin, normal);
 
-	vec3 emittance = geometryInfo.emissive_factor.rgb;
-	float metallic = geometryInfo.metallicFactor;
-	float roughness = geometryInfo.roughnessFactor;
-	float ior = geometryInfo.ior;
+	vec3 emittance = mat.emissive_factor.rgb;
+	float metallic = mat.metallicFactor;
+	float roughness = mat.roughnessFactor;
+	float ior = mat.ior;
 
 	Ray.hitPoint = origin;
 	Ray.t = gl_HitTEXT;

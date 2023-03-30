@@ -8,7 +8,6 @@ use app::{vulkan::*, BaseApp};
 use std::mem::size_of;
 use std::time::Duration;
 
-mod acceleration_structure;
 mod desc_sets;
 mod gui_state;
 mod model;
@@ -16,7 +15,9 @@ mod pipeline_res;
 mod ubo;
 
 use crate::gui_state::Scene;
-use acceleration_structure::*;
+use asset_loader::acceleration_structures::{create_as, TopAS};
+use asset_loader::globals::{create_global, Buffers, VkGlobal};
+use asset_loader::Doc;
 use desc_sets::*;
 use gltf::TextureInfo;
 use gui_state::Gui;
@@ -36,6 +37,7 @@ const INDEX_BIND: u32 = 4;
 const GEO_BIND: u32 = 5;
 const TEXTURE_BIND: u32 = 6;
 const ACC_BIND: u32 = 8;
+const MAT_BIND: u32 = 9;
 const ENABLE_RAYTRACING: bool = true;
 
 fn main() -> Result<()> {
@@ -44,8 +46,8 @@ fn main() -> Result<()> {
 
 struct CornellBox {
     ubo_buffer: Buffer,
-    _model: Model,
-    _bottom_as: BottomAS,
+    _model: Doc,
+    _bottom_as: Vec<AccelerationStructure>,
     _top_as: TopAS,
     pipeline_res: PipelineRes,
     sbt: ShaderBindingTable,
@@ -53,6 +55,9 @@ struct CornellBox {
     total_number_of_samples: u32,
     gui_state: Option<Gui>,
     old_camera: Option<Camera>,
+
+    buffers: Buffers,
+    globals: VkGlobal
 }
 impl CornellBox {
     fn new_with_scene(base: &mut BaseApp<Self>, scene: Scene) -> Result<Self> {
@@ -64,25 +69,30 @@ impl CornellBox {
             size_of::<UniformBufferObject>() as _,
         )?;
 
-        let model = create_model(context, scene)?;
+        // let model = create_model(context, scene)?;
 
-        let bottom_as = create_bottom_as(context, &model)?;
+        let doc = asset_loader::load_file(scene.path())?;
 
-        let top_as = create_top_as(context, &bottom_as)?;
+        let globals = create_global(context, &doc)?;
+        let buffers = Buffers::new(context, &doc.geo_builder, &globals)?;
+        let (blas, tlas) = create_as(context, &doc, &buffers)?;
+        // let bottom_as = create_bottom_as(context, &model)?;
 
-        let pipeline_res = create_pipeline(context, &model)?;
+        // let top_as = create_top_as(context, &bottom_as)?;
+
+        let pipeline_res = create_pipeline(context, &globals)?;
 
         let sbt = context.create_shader_binding_table(&pipeline_res.pipeline)?;
 
         let descriptor_res = create_descriptor_sets(
             context,
             &pipeline_res,
-            &model,
-            &bottom_as,
-            &top_as,
+            &globals,
+            &tlas,
             base.storage_images.as_slice(),
             base.acc_images.as_slice(),
             &ubo_buffer,
+            &buffers,
         )?;
 
         base.camera.position = Point::new(0., 0.0, 16.0);
@@ -90,15 +100,17 @@ impl CornellBox {
 
         Ok(Self {
             ubo_buffer,
-            _model: model,
-            _bottom_as: bottom_as,
-            _top_as: top_as,
+            _model: doc,
+            _bottom_as: blas,
+            _top_as: tlas,
             pipeline_res,
             sbt,
             descriptor_res,
             total_number_of_samples: 0,
             old_camera: None,
             gui_state: None,
+            buffers,
+            globals
         })
     }
 }

@@ -18,10 +18,6 @@ pub struct Model {
 }
 
 pub fn create_model(context: &Context, scene: Scene) -> Result<Model> {
-    // let  model_path: &str = "DamagedHelmet/glTF-Binary/DamagedHelmet.glb";
-    // let model_path: &str = "Sponza/glTF/Sponza.gltf";
-    // let model_path: &str = "ABeautifulGame/glTF/ABeautifulGame.gltf";
-
     let model = gltf::load_file(scene.path())?;
     let vertices = model.vertices.as_slice();
     let indices = model.indices.as_slice();

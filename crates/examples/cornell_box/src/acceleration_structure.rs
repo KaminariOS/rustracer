@@ -108,7 +108,6 @@ pub fn create_bottom_as(context: &mut Context, model: &Model) -> Result<BottomAS
 }
 
 pub fn create_top_as(context: &mut Context, bottom_as: &BottomAS) -> Result<TopAS> {
-
     #[rustfmt::skip]
         let transform_matrix = vk::TransformMatrixKHR { matrix: [
         1.0, 0.0, 0.0, 0.0,
@@ -164,4 +163,3 @@ pub fn create_top_as(context: &mut Context, bottom_as: &BottomAS) -> Result<TopA
         _instance_buffer: instance_buffer,
     })
 }
-

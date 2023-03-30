@@ -8,6 +8,12 @@ mod material;
 mod scene_graph;
 mod texture;
 
+#[cfg(feature = "ash")]
+pub mod globals;
+
+pub use crate::scene_graph::load_file;
+pub use crate::scene_graph::Doc;
+
 type Name = Option<String>;
 type Index = u32;
 

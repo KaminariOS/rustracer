@@ -9,10 +9,10 @@
 #include "lib/RayTracingCommons.glsl"
 #include "lib/UniformBufferObject.glsl"
 
-layout(binding = 0, set = 0) uniform accelerationStructureEXT Scene;
-layout(binding = 8, set = 1, rgba32f) uniform image2D AccumulationImage;
-layout(binding = 1, set = 1, rgba8) uniform image2D OutputImage;
-layout(binding = 2, set = 0) readonly uniform UniformBufferObjectStruct { UniformBufferObject Camera; };
+layout(binding = AS_BIND, set = 0) uniform accelerationStructureEXT Scene;
+layout(binding = ACC_BIND, set = 1, rgba32f) uniform image2D AccumulationImage;
+layout(binding = STORAGE_BIND, set = 1, rgba8) uniform image2D OutputImage;
+layout(binding = UNIFORM_BIND, set = 0) readonly uniform UniformBufferObjectStruct { UniformBufferObject Camera; };
 
 layout(location = 0) rayPayloadEXT RayPayload Ray;
 

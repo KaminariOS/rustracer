@@ -4,7 +4,7 @@
 #include "lib/RayTracingCommons.glsl"
 #include "lib/UniformBufferObject.glsl"
 
-layout(binding = 2) readonly uniform UniformBufferObjectStruct { UniformBufferObject Camera; };
+layout(binding = UNIFORM_BIND) readonly uniform UniformBufferObjectStruct { UniformBufferObject Camera; };
 
 layout(location = 0) rayPayloadInEXT RayPayload Ray;
 

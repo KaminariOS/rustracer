@@ -4,7 +4,7 @@ use crate::image::Image;
 use crate::material::{Material, MaterialRaw};
 use crate::texture::{Sampler, Texture};
 use crate::{to_owned_string, MaterialID, MeshID, Name, NodeID, SamplerID, SceneID};
-use glam::{Mat4};
+use glam::Mat4;
 use gltf::buffer;
 use gltf::image;
 use gltf::material::{AlphaMode, NormalTexture, OcclusionTexture};
@@ -27,8 +27,8 @@ pub struct Doc {
     default_material_id: MaterialID,
     default_sampler_id: SamplerID,
     pub(crate) images: Vec<Image>,
-    samplers: Vec<Sampler>,
-    pub geo_builder: GeoBuilder
+    pub(crate) samplers: Vec<Sampler>,
+    pub geo_builder: GeoBuilder,
 }
 
 impl Doc {
@@ -52,7 +52,10 @@ impl Doc {
             buffers,
             ..Default::default()
         };
-        let meshes = doc.meshes().map(|m| Mesh::new(m, &mut geo_builder)).collect();
+        let meshes = doc
+            .meshes()
+            .map(|m| Mesh::new(m, &mut geo_builder))
+            .collect();
         geo_builder.buffers = Vec::with_capacity(0);
         let animations = vec![];
         let images = gltf_images
@@ -71,8 +74,6 @@ impl Doc {
         let textures = doc.textures().map(Texture::from).collect::<Vec<_>>();
         let materials: Vec<_> = doc.materials().map(Material::from).collect();
 
-
-
         Self {
             current_scene,
             scenes,
@@ -85,7 +86,7 @@ impl Doc {
             images,
             animations,
             samplers,
-            geo_builder
+            geo_builder,
         }
     }
 
@@ -259,7 +260,6 @@ pub struct Scene {
     pub root_nodes: Vec<NodeID>,
 }
 
-
 pub struct Node {
     name: Name,
     children: Vec<NodeID>,
@@ -281,7 +281,8 @@ struct Animation {
 
 impl Node {
     pub fn get_world_transform(&self) -> Mat4 {
-        self.parent_transform_cache * self.local_transform
+        self.parent_transform_cache *
+            self.local_transform
     }
 }
 
@@ -374,8 +375,7 @@ fn test() {
         for primitive in mesh.primitives.iter() {
             println!(
                 "   primitive: {}; geo_id: {}",
-                primitive.material,
-                primitive.geometry_id
+                primitive.material, primitive.geometry_id
             );
         }
     }

@@ -38,10 +38,10 @@ const MAT_BIND: u32 = 9;
 const ENABLE_RAYTRACING: bool = true;
 
 fn main() -> Result<()> {
-    app::run::<CornellBox>(APP_NAME, WIDTH, HEIGHT, ENABLE_RAYTRACING)
+    app::run::<GltfViewer>(APP_NAME, WIDTH, HEIGHT, ENABLE_RAYTRACING)
 }
 
-struct CornellBox {
+struct GltfViewer {
     ubo_buffer: Buffer,
     _model: Doc,
     _bottom_as: Vec<AccelerationStructure>,
@@ -56,7 +56,7 @@ struct CornellBox {
     buffers: Buffers,
     globals: VkGlobal
 }
-impl CornellBox {
+impl GltfViewer {
     fn new_with_scene(base: &mut BaseApp<Self>, scene: Scene) -> Result<Self> {
         let context = &mut base.context;
 
@@ -111,7 +111,7 @@ impl CornellBox {
         })
     }
 }
-impl App for CornellBox {
+impl App for GltfViewer {
     type Gui = Gui;
 
     fn new(base: &mut BaseApp<Self>) -> Result<Self> {

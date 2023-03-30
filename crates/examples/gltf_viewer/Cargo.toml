@@ -1,5 +1,5 @@
 [package]
-name = "cornell-box"
+name = "gltf-renderer"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true

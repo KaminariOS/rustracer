@@ -92,7 +92,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "glam",
- "gltf 1.1.0",
+ "gltf",
  "log",
  "resource_manager",
  "thiserror",
@@ -613,17 +613,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8e4afd9ad95555081e109fe1d21f2a30c691b5f0919c67dfa690a2e1eb6bd51c"
 dependencies = [
  "serde",
-]
-
-[[package]]
-name = "gltf"
-version = "0.1.0"
-dependencies = [
- "glam",
- "gltf 1.1.0",
- "log",
- "resource_manager",
- "thiserror",
 ]
 
 [[package]]
@@ -1428,15 +1417,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rt_reflections"
-version = "0.1.0"
-dependencies = [
- "app",
- "gltf 0.1.0",
- "gui",
-]
-
-[[package]]
 name = "rustc-demangle"
 version = "0.1.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1719,13 +1699,6 @@ dependencies = [
  "indexmap",
  "nom8",
  "toml_datetime",
-]
-
-[[package]]
-name = "triangle"
-version = "0.1.0"
-dependencies = [
- "app",
 ]
 
 [[package]]

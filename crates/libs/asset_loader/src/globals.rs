@@ -51,7 +51,7 @@ impl Buffers {
             &globals.materials,
         )?;
 
-        println!("v_b: {:#02x}, i_b: {:#02x}, g_b: {:#02x}, m_b: {:#02x}", vertex_buffer.as_raw(), index_buffer.as_raw(), geo_buffer.as_raw(), material_buffer.as_raw());
+        // println!("v_b: {:#02x}, i_b: {:#02x}, g_b: {:#02x}, m_b: {:#02x}", vertex_buffer.as_raw(), index_buffer.as_raw(), geo_buffer.as_raw(), material_buffer.as_raw());
         let src_stage = vk::PipelineStageFlags2::TRANSFER;
         let ray_tracing_dst = vk::PipelineStageFlags2::RAY_TRACING_SHADER_KHR;
         let as_build = vk::PipelineStageFlags2::RAY_TRACING_SHADER_KHR;

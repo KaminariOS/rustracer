@@ -1,7 +1,18 @@
 use crate::{Index, MaterialID, MeshID};
-use glam::{vec4, Vec2, Vec4, Vec4Swizzles};
+use glam::{vec4, Vec2, Vec4, Vec4Swizzles, Vec3, Vec3Swizzles, Mat4};
 use gltf::mesh::Mode;
 use gltf::{buffer, Semantic};
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct Vertex {
+    pub position: Vec4,
+    pub normal: Vec4,
+    pub tangent: [f32; 4],
+    pub color: Vec4,
+    pub uv: Vec2,
+    pub material_index: u32,
+}
 
 pub struct Mesh {
     index: MeshID,
@@ -27,6 +38,7 @@ pub struct PrimInfo {
     i_offset: u32,
     material_id: u32,
     _padding: u32,
+    // transform: Mat4
 }
 
 impl PrimInfo {
@@ -36,6 +48,7 @@ impl PrimInfo {
             i_offset: i_off,
             material_id: mat,
             _padding: 0,
+            // transform: Default::default(),
         }
     }
 }
@@ -80,43 +93,64 @@ impl Primitive {
             let reader = primitive.reader(|buffer| Some(&builder.buffers[buffer.index()]));
             let pos_reader = reader.read_positions().unwrap();
 
-            let vertex_data: Vec<_> = pos_reader.map(|p| vec4(p[0], p[1], p[2], 0.)).collect();
+            let positions: Vec<_> = pos_reader.map(|p| vec4(p[0], p[1], p[2], 0.)).collect();
 
             let indices: Vec<Index> = if let Some(index_reader) = reader.read_indices() {
                 let index_reader = index_reader.into_u32();
                 index_reader.collect()
             } else {
                 // Create index
-                (0..vertex_data.len() as Index).collect()
+                (0..positions.len() as Index).collect()
             };
 
             let normals = if let Some(rn) = reader.read_normals() {
                 rn.map(|n| vec4(n[0], n[1], n[2], 0.0)).collect()
             } else {
                 log::warn!("Creating normals");
-                create_geo_normal(&vertex_data, &indices)
+                create_geo_normal(&positions, &indices)
             };
+
+            let uvs = reader
+                .read_tex_coords(0)
+                .map(|reader| reader.into_f32().map(Vec2::from).collect::<Vec<_>>())
+                .unwrap_or(vec![Vec2::ZERO; positions.len()])
+                ;
+
+            let (mut tangents, tangents_found) =
+                if let Some(iter) = reader.read_tangents() {
+                    (iter.collect::<Vec<_>>(), true)
+                } else {
+                    (vec![[1.0, 0.0, 0.0, 0.0]; positions.len()], false)
+                };
+            if !tangents_found {
+                mikktspace::generate_tangents(&mut TangentCalcContext {
+                    indices: indices.as_slice(),
+                    positions: positions.as_slice(),
+                    normals: normals.as_slice(),
+                    uvs: uvs.as_slice(),
+                    tangents: tangents.as_mut_slice(),}
+                );
+            }
 
             let colors = reader
                 .read_colors(0)
                 .map(|reader| reader.into_rgba_f32().map(Vec4::from).collect::<Vec<_>>());
 
-            let uvs = reader
-                .read_tex_coords(0)
-                .map(|reader| reader.into_f32().map(Vec2::from).collect::<Vec<_>>());
 
-            let vertices = vertex_data
+
+            let vertices = positions
                 .into_iter()
                 .enumerate()
                 .map(|(index, position)| {
                     let normal = normals[index];
                     let color = colors.as_ref().map_or(Vec4::ONE, |colors| colors[index]);
-                    let uvs = uvs.as_ref().map_or(Vec2::ZERO, |uvs| uvs[index]);
+                    let uv =  uvs[index];
                     Vertex {
                         position,
                         normal,
+                        tangent: tangents[index],
                         color,
-                        uvs,
+                        uv,
                         material_index,
                     }
                 })
@@ -139,15 +173,7 @@ impl Primitive {
     }
 }
 
-#[repr(C)]
-#[derive(Debug, Clone, Copy)]
-pub struct Vertex {
-    pub position: Vec4,
-    pub normal: Vec4,
-    pub color: Vec4,
-    pub uvs: Vec2,
-    pub material_index: u32,
-}
+
 
 fn create_geo_normal(position: &[Vec4], indices: &[u32]) -> Vec<Vec4> {
     let mut normals = vec![Vec4::default(); indices.len()];
@@ -169,4 +195,38 @@ fn create_geo_normal(position: &[Vec4], indices: &[u32]) -> Vec<Vec4> {
 
 fn is_primitive_supported(primitive: &gltf::Primitive) -> bool {
     primitive.get(&Semantic::Positions).is_some() && primitive.mode() == Mode::Triangles
+}
+
+struct TangentCalcContext<'a> {
+    indices: &'a [u32],
+    positions: &'a [Vec4],
+    normals: &'a [Vec4],
+    uvs: &'a [Vec2],
+    tangents: &'a mut [[f32; 4]],
+}
+
+impl<'a> mikktspace::Geometry for TangentCalcContext<'a> {
+    fn num_faces(&self) -> usize {
+        self.indices.len() / 3
+    }
+
+    fn num_vertices_of_face(&self, _face: usize) -> usize {
+        3
+    }
+
+    fn position(&self, face: usize, vert: usize) -> [f32; 3] {
+        self.positions[self.indices[face * 3 + vert] as usize].xyz().to_array()
+    }
+
+    fn normal(&self, face: usize, vert: usize) -> [f32; 3] {
+        self.normals[self.indices[face * 3 + vert] as usize].xyz().to_array()
+    }
+
+    fn tex_coord(&self, face: usize, vert: usize) -> [f32; 2] {
+        self.uvs[self.indices[face * 3 + vert] as usize].to_array()
+    }
+
+    fn set_tangent_encoded(&mut self, tangent: [f32; 4], face: usize, vert: usize) {
+        self.tangents[self.indices[face * 3 + vert] as usize] = tangent;
+    }
 }

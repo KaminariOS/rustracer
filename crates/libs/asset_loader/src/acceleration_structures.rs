@@ -112,9 +112,10 @@ fn create_top_as(
     // ).collect();
     let mut ins = vec![];
     for (_id, node) in doc.nodes.iter().filter(|(_, node)| node.mesh.is_some()) {
+
+        // Row major.
         let transform = node.get_world_transform().transpose().to_cols_array();
         let mut matrix = [0.; 12];
-        // Row major.
         matrix.copy_from_slice(&transform[..12]);
         let mesh = &doc.meshes[node.mesh.unwrap()];
         let transform_matrix = vk::TransformMatrixKHR { matrix };

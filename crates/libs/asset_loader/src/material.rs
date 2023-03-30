@@ -96,7 +96,9 @@ pub struct MaterialRaw {
     // 4 int
     pub occlusion_texture: TextureInfo,
     pub ior: f32,
-    pub _padding: u32, // 4 int
+    pub _padding: u32,
+    // 4 int
+
 }
 
 impl From<&Material> for MaterialRaw {
@@ -128,8 +130,9 @@ impl<'a> From<gltf::Material<'a>> for Material {
         let pbr = material.pbr_metallic_roughness();
         let em = material.emissive_factor();
         let mut metallic_roughness_texture = TextureInfo::new(pbr.metallic_roughness_texture());
-        if metallic_roughness_texture.is_none() {
-            metallic_roughness_texture = TextureInfo::new(
+        let mut base_color_texture = TextureInfo::new(pbr.base_color_texture());
+        if base_color_texture.is_none() {
+            base_color_texture = TextureInfo::new(
                 material
                     .pbr_specular_glossiness()
                     .and_then(|sg| sg.diffuse_texture()),
@@ -142,7 +145,7 @@ impl<'a> From<gltf::Material<'a>> for Material {
             double_sided: material.double_sided(),
 
             base_color: pbr.base_color_factor(),
-            base_color_texture: TextureInfo::new(pbr.base_color_texture()),
+            base_color_texture,
 
             metallic_factor: pbr.metallic_factor(),
             roughness: pbr.roughness_factor(),

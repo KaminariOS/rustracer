@@ -11,6 +11,7 @@
 struct Vertex {
 	vec3 pos;
 	vec3 normal;
+	vec4 tangent;
 	vec3 color;
 	vec2 uvs;
 	uint material_index;
@@ -38,6 +39,15 @@ vec3 Mix(vec3 a, vec3 b, vec3 c, vec3 barycentrics)
     return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
 }
 
+vec4 Mix(vec4 a, vec4 b, vec4 c, vec3 barycentrics)
+{
+	return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
+}
+
+vec3 normal_transform(vec3 normal) {
+	return normalize(vec3(normal * gl_WorldToObjectEXT));
+}
+
 void main()
 {
 	PrimInfo primInfo = primInfos.p[gl_InstanceCustomIndexEXT];
@@ -57,13 +67,24 @@ void main()
 
 	// Compute the ray hit point properties.
 	const vec3 barycentricCoords = vec3(1.0 - HitAttributes.x - HitAttributes.y, HitAttributes.x, HitAttributes.y);
-	vec3 normal = normalize(Mix(v0.normal, v1.normal, v2.normal, barycentricCoords));
-//	if (geometryInfo.normal_texture.index > -1) {
-//		normal = texture(textures[geometryInfo.normal_texture.index], normal.xy).xyz;
-//	}
-	normal = normalize(vec3(normal * gl_WorldToObjectEXT));
-//	normal = normalize(geometryInfo.transform * vec4(normal, 0.0)).xyz;
 	const vec2 uvs = Mix(v0.uvs, v1.uvs, v2.uvs, barycentricCoords);
+
+	vec3 normal = Mix(v0.normal, v1.normal, v2.normal, barycentricCoords);
+	normal = normal_transform(normal);
+//	if (mat.normal_texture.index > -1) {
+//		vec3 normal_t = normalize(texture(textures[mat.normal_texture.index], uvs).xyz * 2. - 1.);
+//
+//		vec3 t = Mix(v0.tangent, v1.tangent, v2.tangent, barycentricCoords).xyz;
+//
+//		vec3 b = normal_transform(cross(normal, t));
+//		t = normal_transform(t);
+//		normal = normal_transform(normal);
+//
+//		mat3 tbn = mat3(t, b, normal);
+//		normal = normalize(tbn * normal_t);
+//	} else {
+//		normal = normal_transform(normal);
+//	}
 
 	// Interpolate Color
 	vec3 vertexColor = Mix(v0.color, v1.color, v2.color, barycentricCoords);

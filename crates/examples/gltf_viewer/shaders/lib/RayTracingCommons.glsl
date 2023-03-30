@@ -15,6 +15,7 @@ struct PrimInfo {
     uint _padding;
 };
 
+
 vec3 offset_ray(const vec3 p, const vec3 n) {
     const float origin = 1. / 32.;
     const float float_scale = 1. / 65536.;

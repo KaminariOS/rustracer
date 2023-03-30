@@ -115,7 +115,7 @@ impl App for GltfViewer {
     type Gui = Gui;
 
     fn new(base: &mut BaseApp<Self>) -> Result<Self> {
-        Self::new_with_scene(base, Scene::LucyInCornell)
+        Self::new_with_scene(base, Scene::Type59)
     }
 
     fn update(

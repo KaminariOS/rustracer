@@ -303,7 +303,6 @@ version = "0.1.0"
 dependencies = [
  "app",
  "asset_loader",
- "gltf 0.1.0",
  "gui",
  "rand",
  "strum",

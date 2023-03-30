@@ -18,7 +18,6 @@ use asset_loader::acceleration_structures::{create_as, TopAS};
 use asset_loader::globals::{create_global, Buffers, VkGlobal};
 use asset_loader::Doc;
 use desc_sets::*;
-use gltf::TextureInfo;
 use gui_state::Gui;
 use pipeline_res::*;
 use ubo::UniformBufferObject;
@@ -247,21 +246,4 @@ impl App for CornellBox {
             self.total_number_of_samples = 0;
         }
     }
-}
-
-#[derive(Debug, Clone, Copy)]
-#[repr(C)]
-pub struct GeometryInfo {
-    transform: Mat4,
-    base_color: [f32; 4],
-    emissive_factor: [f32; 4],
-    base_color_texture: TextureInfo,
-    normal_texture: TextureInfo,
-    metallic_roughness_texture: TextureInfo,
-    metallic_factor: f32,
-    roughness: f32,
-    ior: f32,
-    _padding: f32,
-    vertex_offset: u32,
-    index_offset: u32,
 }

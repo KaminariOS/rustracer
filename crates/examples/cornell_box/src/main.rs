@@ -10,7 +10,6 @@ use std::time::Duration;
 
 mod desc_sets;
 mod gui_state;
-mod model;
 mod pipeline_res;
 mod ubo;
 
@@ -21,7 +20,6 @@ use asset_loader::Doc;
 use desc_sets::*;
 use gltf::TextureInfo;
 use gui_state::Gui;
-use model::*;
 use pipeline_res::*;
 use ubo::UniformBufferObject;
 

@@ -59,7 +59,7 @@ impl app::Gui for Gui {
             heatmap: false,
             heatmap_scale: 1.0,
             max_number_of_samples: 5000,
-            sky: false,
+            sky: !false,
             scene: Scene::LucyInCornell,
             scale: 1.,
         })

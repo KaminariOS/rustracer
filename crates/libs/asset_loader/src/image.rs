@@ -11,9 +11,21 @@ pub struct Image {
     pub index: usize,
 }
 
+impl Default for Image {
+    fn default() -> Self {
+        Self {
+            pixels: vec![1; 4],
+            width: 1,
+            height: 1,
+            source: None,
+            index: 0,
+        }
+    }
+}
+
 impl Image {
     pub fn update_info(&mut self, info: gltf::Image) {
-        self.index = info.index();
+        self.index = info.index() + 1;
         self.source = match info.source() {
             Source::View { .. } => None,
             Source::Uri { uri, .. } => Some(uri.to_string()),

@@ -5,7 +5,7 @@
 //#include "Material.glsl"
 #include "lib/Random.glsl"
 #include "lib/RayTracingCommons.glsl"
-#include "lib/GeometryInfo.glsl"
+#include "lib/Material.glsl"
 #include "lib/PBR.glsl"
 
 struct Vertex {
@@ -97,7 +97,7 @@ void main()
 
 	const vec3 pos = Mix(v0.pos, v1.pos, v2.pos, barycentricCoords);
 	vec3 origin = vec3(gl_ObjectToWorldEXT * vec4(pos, 1.0)) ;
-//	origin = offset_ray(origin, normal);
+	origin = offset_ray(origin, normal);
 
 	vec3 emittance = mat.emissive_factor.rgb;
 	float metallic = mat.metallicFactor;

@@ -3,9 +3,20 @@ use crate::{to_owned_string, Name};
 #[derive(Debug, Clone)]
 pub struct Texture {
     pub image_index: usize,
-    pub texture_index: usize,
+    pub index: usize,
     pub sampler_index: usize,
     pub name: Name,
+}
+
+impl Default for Texture {
+    fn default() -> Self {
+        Self {
+            image_index: 0,
+            index: 0,
+            sampler_index: 0,
+            name: None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -58,8 +69,8 @@ impl<'a> From<gltf::Texture<'a>> for Texture {
         //          texture.sampler().index().map_or(0, |i| i + 1)
         // );
         Self {
-            image_index: texture.source().index(),
-            texture_index: texture.index(),
+            image_index: texture.source().index() + 1,
+            index: texture.index() + 1,
             sampler_index: texture.sampler().index().map_or(0, |i| i + 1),
             name: texture.name().map(to_owned_string),
         }

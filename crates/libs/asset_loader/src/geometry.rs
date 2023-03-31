@@ -15,7 +15,7 @@ pub struct Vertex {
 }
 
 pub struct Mesh {
-    index: MeshID,
+    pub(crate) index: MeshID,
     pub(crate) primitives: Vec<Primitive>,
 }
 

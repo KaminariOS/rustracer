@@ -22,7 +22,7 @@ impl Default for TextureInfo {
 impl TextureInfo {
     fn new(info: Option<texture::Info>) -> Self {
         info.map(|t| Self {
-            texture_index: t.texture().index() as _,
+            texture_index: (1 + t.texture().index()) as _,
             tex_coord: t.tex_coord() as _,
         })
         .unwrap_or_default()
@@ -30,7 +30,7 @@ impl TextureInfo {
 
     fn new_normal(info: Option<NormalTexture>) -> Self {
         info.map(|t| Self {
-            texture_index: t.texture().index() as _,
+            texture_index: (1 + t.texture().index()) as _,
             tex_coord: t.tex_coord() as _,
         })
         .unwrap_or_default()
@@ -38,7 +38,7 @@ impl TextureInfo {
 
     fn new_occ(info: Option<OcclusionTexture>) -> Self {
         info.map(|t| Self {
-            texture_index: t.texture().index() as _,
+            texture_index: (1 + t.texture().index()) as _,
             tex_coord: t.tex_coord() as _,
         })
         .unwrap_or_default()
@@ -72,6 +72,12 @@ pub struct Material {
 
     pub occlusion_texture: TextureInfo,
     pub ior: f32,
+}
+
+impl Default for Material {
+    fn default() -> Self {
+        todo!()
+    }
 }
 
 #[repr(C)]

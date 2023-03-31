@@ -7,12 +7,37 @@ use crate::{to_owned_string, MaterialID, MeshID, Name, NodeID, SamplerID, SceneI
 use glam::Mat4;
 use gltf::buffer;
 use gltf::image;
-
-
 use gltf::{Document};
 use std::collections::HashMap;
-use std::iter::once;
+use std::iter::{once, Once};
 use std::path::Path;
+use gltf::khr_lights_punctual::{Kind};
+
+macro_rules! check_indices {
+    ($ident:ident) => {
+        assert!($ident.iter().enumerate().all(|(i, m)| i == m.index));
+    };
+}
+
+struct Light {
+    index: usize,
+    color: [f32; 3],
+    name: Name,
+    kind: Kind,
+    range: f32,
+}
+
+impl<'a> From<gltf::khr_lights_punctual::Light<'a>> for Light {
+    fn from(light: gltf::khr_lights_punctual::Light) -> Self {
+        Self {
+            index: light.index(),
+            color: light.color(),
+            name: light.name().map(to_owned_string),
+            kind: light.kind(),
+            range: light.range().unwrap_or(f32::MAX),
+        }
+    }
+}
 
 #[derive(Default)]
 pub struct Doc {
@@ -24,6 +49,7 @@ pub struct Doc {
     materials: Vec<Material>,
     pub(crate) textures: Vec<Texture>,
     animations: Vec<Animation>,
+    lights: Vec<Light>,
     default_material_id: MaterialID,
     default_sampler_id: SamplerID,
     pub(crate) images: Vec<Image>,
@@ -47,18 +73,24 @@ impl Doc {
             .index();
         let scenes = HashMap::with_capacity(doc.scenes().len());
         let nodes = HashMap::with_capacity(doc.nodes().len());
+        let lights: Vec<_> = doc.lights().into_iter().flat_map(|ls| ls.map(Light::from)).collect();
+        check_indices!(lights);
 
         let mut geo_builder = GeoBuilder {
             buffers,
             ..Default::default()
         };
-        let meshes = doc
+        let meshes: Vec<_> = doc
             .meshes()
             .map(|m| Mesh::new(m, &mut geo_builder))
             .collect();
+        check_indices!(meshes);
+
         geo_builder.buffers = Vec::with_capacity(0);
         let animations = vec![];
-        let images = gltf_images
+        let images: Vec<_> = once(Image::default())
+            .chain(
+            gltf_images
             .iter()
             .map(Image::try_from)
             .map(Result::unwrap)
@@ -67,12 +99,20 @@ impl Doc {
                 img.update_info(info);
                 img
             })
+        )
             .collect::<_>();
+        check_indices!(images);
+
         let samplers: Vec<_> = once(Sampler::default())
             .chain(doc.samplers().map(Sampler::from))
             .collect();
-        let textures = doc.textures().map(Texture::from).collect::<Vec<_>>();
+        check_indices!(samplers);
+
+        let textures = once(Texture::default()).chain(doc.textures().map(Texture::from)).collect::<Vec<_>>();
+        check_indices!(textures);
+
         let materials: Vec<_> = doc.materials().map(Material::from).collect();
+        check_indices!(materials);
 
         Self {
             current_scene,
@@ -87,6 +127,7 @@ impl Doc {
             animations,
             samplers,
             geo_builder,
+            lights,
         }
     }
 
@@ -243,9 +284,9 @@ fn test() {
     for (i, texture) in doc.textures.iter().enumerate() {
         println!(
             "tex {} tex_index:{} img_index: {} {:?}",
-            i, texture.texture_index, texture.image_index, texture.name
+            i, texture.index, texture.image_index, texture.name
         );
-        assert_eq!(i, texture.texture_index);
+        assert_eq!(i, texture.index);
     }
 
     println!();

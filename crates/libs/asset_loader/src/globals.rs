@@ -161,33 +161,6 @@ pub fn create_global(context: &Context, doc: &Doc) -> Result<VkGlobal> {
         Ok(())
     })?;
 
-    // Dummy textures
-    if images.is_empty() {
-        let image = context.create_image(
-            vk::ImageUsageFlags::SAMPLED,
-            MemoryLocation::GpuOnly,
-            vk::Format::R8G8B8A8_SRGB,
-            1,
-            1,
-        )?;
-
-        context.execute_one_time_commands(|cmd| {
-            cmd.pipeline_image_barriers(&[ImageBarrier {
-                image: &image,
-                old_layout: vk::ImageLayout::UNDEFINED,
-                new_layout: vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
-                src_access_mask: vk::AccessFlags2::NONE,
-                dst_access_mask: vk::AccessFlags2::SHADER_READ,
-                src_stage_mask: vk::PipelineStageFlags2::NONE,
-                dst_stage_mask: vk::PipelineStageFlags2::RAY_TRACING_SHADER_KHR,
-            }]);
-        })?;
-
-        let view = image.create_image_view()?;
-
-        images.push(image);
-        views.push(view);
-    }
 
     let mut samplers = doc
         .samplers
@@ -198,23 +171,13 @@ pub fn create_global(context: &Context, doc: &Doc) -> Result<VkGlobal> {
         })
         .collect::<Result<Vec<_>>>()?;
 
-    // Dummy sampler
-    if samplers.is_empty() {
-        let sampler_info = vk::SamplerCreateInfo::builder();
-        let sampler = context.create_sampler(&sampler_info)?;
-        samplers.push(sampler);
-    }
 
     let mut textures = doc
         .textures
         .iter()
-        .map(|t| [t.texture_index, t.image_index, t.sampler_index])
+        .map(|t| [t.index, t.image_index, t.sampler_index])
         .collect::<Vec<_>>();
-
     // Dummy texture
-    if textures.is_empty() {
-        textures.push([0; 3]);
-    }
 
     Ok(VkGlobal {
         _images: images,

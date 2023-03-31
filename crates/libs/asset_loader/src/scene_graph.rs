@@ -11,7 +11,9 @@ use gltf::{Document};
 use std::collections::HashMap;
 use std::iter::{once, Once};
 use std::path::Path;
+use std::time::Instant;
 use gltf::khr_lights_punctual::{Kind};
+use log::{info};
 
 macro_rules! check_indices {
     ($ident:ident) => {
@@ -80,6 +82,7 @@ impl Doc {
             buffers,
             ..Default::default()
         };
+
         let meshes: Vec<_> = doc
             .meshes()
             .map(|m| Mesh::new(m, &mut geo_builder))
@@ -256,11 +259,17 @@ fn check_extensions(doc: &Document) {
 }
 
 pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Doc> {
+    let mut now = Instant::now();
+    info!("Start loading glTF");
     let (document, buffers, gltf_images) =
         gltf::import(resource_manager::load_model(path)).map_err(|e| Error::Load(e.to_string()))?;
+
+    info!("Finish loading glTF, time:{}s", now.elapsed().as_secs());
     check_extensions(&document);
     let mut doc = Doc::new(&document, buffers, gltf_images);
+    now = Instant::now();
     doc.load_scene(&document);
+    info!("Finish processing mesh, time:{}s", now.elapsed().as_secs());
 
     Ok(doc)
 }

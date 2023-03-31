@@ -44,7 +44,7 @@ devShell = pkgs.mkShell rec {
   buildInputs = with pkgs; [
 #    alsaLib
 #    binaryen
-#    fontconfig
+    fontconfig
 #    freetype
 #    libxkbcommon
      pkg-config
@@ -53,9 +53,11 @@ devShell = pkgs.mkShell rec {
 
     vulkan-loader
     vulkan-tools
-
-#    xorg.libXi
-#    xorg.libXrandr
+    
+    xorg.libX11 
+    xorg.libXcursor
+    xorg.libXi
+    xorg.libXrandr
     shaderc
     renderdoc
 #    gcc-unwrapped.lib

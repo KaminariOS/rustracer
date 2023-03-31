@@ -74,12 +74,6 @@ pub struct Material {
     pub ior: f32,
 }
 
-impl Default for Material {
-    fn default() -> Self {
-        todo!()
-    }
-}
-
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct MaterialRaw {
@@ -104,7 +98,6 @@ pub struct MaterialRaw {
     pub ior: f32,
     pub _padding: u32,
     // 4 int
-
 }
 
 impl From<&Material> for MaterialRaw {

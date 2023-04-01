@@ -12,9 +12,9 @@ use std::collections::HashMap;
 use std::iter::{once};
 use std::path::Path;
 use std::time::Instant;
-use gltf::khr_lights_punctual::{Kind};
+
 use log::{info};
-use crate::light::Light;
+use crate::light::{Light, LightRaw};
 
 macro_rules! check_indices {
     ($ident:ident) => {
@@ -48,6 +48,36 @@ impl Doc {
     pub fn get_materials_raw(&self) -> Vec<MaterialRaw> {
         self.materials.iter().map(MaterialRaw::from).collect()
     }
+
+    pub fn get_lights_raw(&self) -> Vec<LightRaw> {
+        let mut lights = Vec::new();
+        let mut f = |node: &Node| {
+            if let Some(light) = node.light.and_then(|l| self.lights.get(l)) {
+                let light = light.to_raw(node.get_world_transform());
+                lights.push(light);
+            }
+        };
+        self.traverse_root_nodes(&mut f);
+        lights
+    }
+
+    pub fn traverse_root_nodes<F: FnMut(&Node)>(&self, f:&mut F) {
+        self.get_current_scene().root_nodes.iter()
+            .map(|node| self.nodes.get(node).unwrap())
+            .for_each(|node| self.iter_gltf_node_tree(node, f));
+    }
+
+    // From Kajiya
+    fn iter_gltf_node_tree<F: FnMut(&Node)>(
+        &self,
+        node: &Node,
+        f: &mut F,
+    ) {
+        f(node);
+        node.children.iter()
+            .filter_map(|child| self.nodes.get(child))
+            .for_each(|child| self.iter_gltf_node_tree(child, f))
+        }
 
     fn new(doc: &Document, buffers: Vec<buffer::Data>, gltf_images: Vec<image::Data>) -> Self {
         let current_scene = doc
@@ -210,20 +240,7 @@ impl Node {
     }
 }
 
-// From Kajiya
-fn iter_gltf_node_tree<F: FnMut(&gltf::scene::Node, Mat4)>(
-    node: &gltf::scene::Node,
-    xform: Mat4,
-    f: &mut F,
-) {
-    let node_xform = Mat4::from_cols_array_2d(&node.transform().matrix());
-    let xform = xform * node_xform;
 
-    f(node, xform);
-    for child in node.children() {
-        iter_gltf_node_tree(&child, xform, f);
-    }
-}
 
 pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Doc> {
     let mut now = Instant::now();

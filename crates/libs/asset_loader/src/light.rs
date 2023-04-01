@@ -48,7 +48,7 @@ impl From<&Kind> for LightType {
         match value {
             Kind::Directional => Self::DIRECTIONAL,
             Kind::Point => Self::POINT,
-            Kind::Spot { inner_cone_angle, outer_cone_angle } => {
+            Kind::Spot { inner_cone_angle: _, outer_cone_angle: _ } => {
                 error!("Unimplemented; treat spot light as point light");
                 Self::POINT
             }

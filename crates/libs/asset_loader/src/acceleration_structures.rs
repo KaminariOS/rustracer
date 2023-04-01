@@ -1,7 +1,7 @@
 use crate::geometry::{GeoBuilder, Vertex};
 use crate::globals::Buffers;
 
-use crate::scene_graph::Doc;
+use crate::scene_graph::{Doc, Node};
 
 use anyhow::Result;
 
@@ -111,8 +111,7 @@ fn create_top_as(
     //     }
     // ).collect();
     let mut ins = vec![];
-    for (_id, node) in doc.nodes.iter().filter(|(_, node)| node.mesh.is_some()) {
-
+    let mut f = |node: &Node| {
         // Row major.
         let transform = node.get_world_transform().transpose().to_cols_array();
         let mut matrix = [0.; 12];
@@ -134,7 +133,8 @@ fn create_top_as(
             }
         });
         ins.extend(instances);
-    }
+    };
+    doc.traverse_root_nodes(&mut f);
     let instance_buffer = create_gpu_only_buffer_from_data(
         context,
         vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS

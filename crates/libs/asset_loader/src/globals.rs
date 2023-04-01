@@ -8,6 +8,7 @@ use vulkan::ash::vk;
 use vulkan::gpu_allocator::MemoryLocation;
 use vulkan::utils::create_gpu_only_buffer_from_data;
 use vulkan::{Buffer, BufferBarrier, Context, Image, ImageBarrier, ImageView, Sampler};
+use crate::light::LightRaw;
 
 
 pub struct Buffers {
@@ -103,6 +104,7 @@ pub struct VkGlobal {
 
     pub prim_info: Vec<PrimInfo>,
     materials: Vec<MaterialRaw>,
+    lights: Vec<LightRaw>
 }
 pub fn create_global(context: &Context, doc: &Doc) -> Result<VkGlobal> {
     let mut images = vec![];
@@ -186,6 +188,7 @@ pub fn create_global(context: &Context, doc: &Doc) -> Result<VkGlobal> {
         textures,
         prim_info: doc.geo_builder.flatten(),
         materials: doc.get_materials_raw(),
+        lights: doc.get_lights_raw(),
     })
 }
 

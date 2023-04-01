@@ -7,14 +7,7 @@ use gpu_allocator::{
     AllocatorDebugSettings,
 };
 
-use crate::{
-    device::{Device, DeviceFeatures},
-    instance::Instance,
-    physical_device::PhysicalDevice,
-    queue::{Queue, QueueFamily},
-    surface::Surface,
-    CommandBuffer, CommandPool, RayTracingContext, Version, VERSION_1_2,
-};
+use crate::{device::{Device, DeviceFeatures}, instance::Instance, physical_device::PhysicalDevice, queue::{Queue, QueueFamily}, surface::Surface, CommandBuffer, CommandPool, RayTracingContext, Version, VERSION_1_2, Buffer, BufferBarrier};
 
 pub struct Context {
     pub allocator: Arc<Mutex<Allocator>>,
@@ -262,5 +255,22 @@ impl Context {
         self.command_pool.free_command_buffer(&command_buffer)?;
 
         Ok(executor_result)
+    }
+
+
+    pub fn buffer_transfer_barrier(&self, buffer: &Buffer)  {
+        let src_stage = vk::PipelineStageFlags2::TRANSFER;
+        let ray_tracing_dst = vk::PipelineStageFlags2::ALL_COMMANDS;
+        self.execute_one_time_commands(|cmd| cmd.pipeline_buffer_barriers(
+            &[
+                BufferBarrier {
+                    buffer: &buffer,
+                    src_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
+                    dst_access_mask: vk::AccessFlags2::MEMORY_READ,
+                    src_stage_mask: src_stage,
+                    dst_stage_mask: ray_tracing_dst
+                }
+            ]
+        )).unwrap();
     }
 }

@@ -72,21 +72,21 @@ void main()
 	const vec2 uvs = Mix(v0.uvs, v1.uvs, v2.uvs, barycentricCoords);
 
 	vec3 normal = Mix(v0.normal, v1.normal, v2.normal, barycentricCoords);
-	normal = normal_transform(normal);
-//	if (mat.normal_texture.index > -1) {
-//		vec3 normal_t = normalize(texture(textures[mat.normal_texture.index], uvs).xyz * 2. - 1.);
-//
-//		vec3 t = Mix(v0.tangent, v1.tangent, v2.tangent, barycentricCoords).xyz;
-//
-//		vec3 b = normal_transform(cross(normal, t));
-//		t = normal_transform(t);
-//		normal = normal_transform(normal);
-//
-//		mat3 tbn = mat3(t, b, normal);
-//		normal = normalize(tbn * normal_t);
-//	} else {
-//		normal = normal_transform(normal);
-//	}
+//	normal = normal_transform(normal);
+	if (mat.normal_texture.index > -1) {
+		vec3 normal_t = normalize(texture(textures[mat.normal_texture.index], uvs).xyz * 2. - 1.);
+
+		vec3 t = Mix(v0.tangent, v1.tangent, v2.tangent, barycentricCoords).xyz;
+
+		vec3 b = normal_transform(cross(normal, t));
+		t = normal_transform(t);
+		normal = normal_transform(normal);
+
+		mat3 tbn = mat3(t, b, normal);
+		normal = normalize(tbn * normal_t);
+	} else {
+		normal = normal_transform(normal);
+	}
 
 	// Interpolate Color
 	vec3 vertexColor = Mix(v0.color, v1.color, v2.color, barycentricCoords);
@@ -102,6 +102,9 @@ void main()
 	origin = offset_ray(origin, normal);
 
 	vec3 emittance = mat.emissive_factor.rgb;
+	if (mat.emissive_texture.index > -1) {
+		emittance *= texture(textures[mat.emissive_texture.index], uvs).rgb;
+	}
 	float metallic = mat.metallicFactor;
 	float roughness = mat.roughnessFactor;
 	float ior = mat.ior;
@@ -111,6 +114,10 @@ void main()
 	uint seed = Ray.RandomSeed;
 
 
+	if (length(emittance) > 0.) {
+		Ray.hitValue = emittance * 1.0;
+		Ray.needScatter = false;
+	} else
 	if (ior > 1.) {
 		const float dot = dot(gl_WorldRayDirectionEXT, normal);
 		const bool frontFace = dot < 0.;
@@ -135,17 +142,15 @@ void main()
 		Ray.needScatter = isScattered;
 		Ray.scatterDirection = scatter;
 		Ray.hitValue = isScattered? color: vec3(0.);
-	} else if (metallic > 0.) {
+	}
+	else if (metallic > 0.) {
 		const vec3 reflected = reflect(gl_WorldRayDirectionEXT, normal);
 		const bool isScattered = dot(reflected, normal) > 0;
 		Ray.needScatter = isScattered;
 		Ray.hitValue = isScattered? color: vec3(0.);
 		Ray.scatterDirection = reflected + 0.08 * RandomInUnitSphere(seed);
 	}
-	else {
-		Ray.hitValue = color * emittance * 5.0;
-		Ray.needScatter = false;
-	}
+
 
 	Ray.RandomSeed = seed;
 }

@@ -35,6 +35,8 @@ const GEO_BIND: u32 = 5;
 const TEXTURE_BIND: u32 = 6;
 const ACC_BIND: u32 = 8;
 const MAT_BIND: u32 = 9;
+const DLIGHT_BIND: u32 = 10;
+const PLIGHT_BIND: u32 = 11;
 const ENABLE_RAYTRACING: bool = true;
 
 fn main() -> Result<()> {
@@ -65,6 +67,7 @@ impl GltfViewer {
             MemoryLocation::CpuToGpu,
             size_of::<UniformBufferObject>() as _,
         )?;
+        context.buffer_transfer_barrier(&ubo_buffer);
 
         // let model = create_model(context, scene)?;
 
@@ -236,6 +239,7 @@ impl App for GltfViewer {
 
         if let Some(old_state) = self.gui_state.filter(|x| x != gui_state) {
             if old_state.scene != gui_state.scene {
+                base.wait_for_gpu().unwrap();
                 *self = Self::new_with_scene(base, gui_state.scene).unwrap();
             }
             self.gui_state = Some(*gui_state);

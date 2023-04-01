@@ -1,8 +1,5 @@
 use crate::pipeline_res::PipelineRes;
-use crate::{
-    ACC_BIND, AS_BIND, GEO_BIND, INDEX_BIND, MAT_BIND, STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND,
-    VERTEX_BIND,
-};
+use crate::{ACC_BIND, AS_BIND, GEO_BIND, INDEX_BIND, MAT_BIND, STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND, VERTEX_BIND, DLIGHT_BIND, PLIGHT_BIND};
 use app::anyhow::Result;
 use app::vulkan::ash::vk;
 use app::vulkan::{
@@ -51,7 +48,7 @@ pub fn create_descriptor_sets(
             .build(),
         vk::DescriptorPoolSize::builder()
             .ty(vk::DescriptorType::STORAGE_BUFFER)
-            .descriptor_count(4)
+            .descriptor_count(6)
             .build(),
         vk::DescriptorPoolSize::builder()
             .ty(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
@@ -72,12 +69,6 @@ pub fn create_descriptor_sets(
     ]);
     static_set.update(&[
         WriteDescriptorSet {
-            binding: AS_BIND,
-            kind: WriteDescriptorSetKind::AccelerationStructure {
-                acceleration_structure: &top_as.inner,
-            },
-        },
-        WriteDescriptorSet {
             binding: VERTEX_BIND,
             kind: WriteDescriptorSetKind::StorageBuffer {
                 buffer: &buffers.vertex_buffer,
@@ -89,19 +80,36 @@ pub fn create_descriptor_sets(
                 buffer: &buffers.index_buffer,
             },
         },
-
+    ]);
+    static_set.update(&[
+        WriteDescriptorSet {
+            binding: AS_BIND,
+            kind: WriteDescriptorSetKind::AccelerationStructure {
+                acceleration_structure: &top_as.inner,
+            },
+        },
         WriteDescriptorSet {
             binding: GEO_BIND,
             kind: WriteDescriptorSetKind::StorageBuffer {
                 buffer: &buffers.geo_buffer,
             },
         },
-
-
         WriteDescriptorSet {
             binding: MAT_BIND,
             kind: WriteDescriptorSetKind::StorageBuffer {
                 buffer: &buffers.material_buffer,
+            },
+        },
+        WriteDescriptorSet {
+            binding: DLIGHT_BIND,
+            kind: WriteDescriptorSetKind::StorageBuffer {
+                buffer: &buffers.dlights_buffer,
+            },
+        },
+        WriteDescriptorSet {
+            binding: PLIGHT_BIND,
+            kind: WriteDescriptorSetKind::StorageBuffer {
+                buffer: &buffers.plights_buffer,
             },
         },
     ]);

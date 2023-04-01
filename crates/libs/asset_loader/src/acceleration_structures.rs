@@ -109,23 +109,24 @@ fn create_top_as(
         let transform = node.get_world_transform().transpose().to_cols_array();
         let mut matrix = [0.; 12];
         matrix.copy_from_slice(&transform[..12]);
-        let mesh = &doc.meshes[node.mesh.unwrap()];
-        let transform_matrix = vk::TransformMatrixKHR { matrix };
-        let instances = mesh.primitives.iter().map(|p| {
-            let geo_id = p.geometry_id;
-            vk::AccelerationStructureInstanceKHR {
-                transform: transform_matrix,
-                instance_custom_index_and_mask: Packed24_8::new(geo_id, 0xFF),
-                instance_shader_binding_table_record_offset_and_flags: Packed24_8::new(
-                    0,
-                    vk::GeometryInstanceFlagsKHR::TRIANGLE_FACING_CULL_DISABLE.as_raw() as _,
-                ),
-                acceleration_structure_reference: vk::AccelerationStructureReferenceKHR {
-                    device_handle: blases[geo_id as usize].address,
-                },
-            }
-        });
-        ins.extend(instances);
+        if let Some(mesh) = node.mesh.map(|m| &doc.meshes[m]) {
+            let transform_matrix = vk::TransformMatrixKHR { matrix };
+            let instances = mesh.primitives.iter().map(|p| {
+                let geo_id = p.geometry_id;
+                vk::AccelerationStructureInstanceKHR {
+                    transform: transform_matrix,
+                    instance_custom_index_and_mask: Packed24_8::new(geo_id, 0xFF),
+                    instance_shader_binding_table_record_offset_and_flags: Packed24_8::new(
+                        0,
+                        vk::GeometryInstanceFlagsKHR::TRIANGLE_FACING_CULL_DISABLE.as_raw() as _,
+                    ),
+                    acceleration_structure_reference: vk::AccelerationStructureReferenceKHR {
+                        device_handle: blases[geo_id as usize].address,
+                    },
+                }
+            });
+            ins.extend(instances);
+        }
     };
     doc.traverse_root_nodes(&mut f);
     let instance_buffer = create_gpu_only_buffer_from_data(

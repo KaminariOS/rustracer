@@ -28,6 +28,8 @@ pub enum Scene {
     Sponza,
     Type59,
     DamagedHelmet,
+    EmissiveTest,
+    Punctual
 }
 
 impl Scene {
@@ -39,6 +41,8 @@ impl Scene {
             Self::DamagedHelmet => "DamagedHelmet/glTF/DamagedHelmet.gltf",
             Self::ABeautifulGame => "ABeautifulGame/glTF/ABeautifulGame.gltf",
             Self::Sponza => "Sponza/glTF/Sponza.gltf",
+            Self::EmissiveTest => "EmissiveStrengthTest/glTF/EmissiveStrengthTest.gltf",
+            Self::Punctual => "LightsPunctualLamp/glTF/LightsPunctualLamp.gltf",
         }
     }
 }

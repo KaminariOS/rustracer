@@ -17,6 +17,18 @@ struct PrimInfo {
     uint _padding;
 };
 
+const uint DIRECT_LIGHT = 0;
+const uint POINT_LIGHT = 1;
+const uint SPOT_LIGHT = 2;
+
+struct Light {
+    vec4 color;
+    vec4 transform;
+    uint kind;
+    float range;
+    vec2 _padding;
+};
+
 
 // Jenkins's "one at a time" hash function
 uint jenkinsHash(uint x) {
@@ -77,3 +89,5 @@ const uint GEO_BIND = 5;
 const uint TEXTURE_BIND = 6;
 const uint ACC_BIND = 8;
 const uint MAT_BIND = 9;
+const uint DLIGHT_BIND = 10;
+const uint PLIGHT_BIND = 11;

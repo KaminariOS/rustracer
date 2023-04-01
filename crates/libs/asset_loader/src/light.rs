@@ -1,29 +1,30 @@
 use glam::{Mat4, Vec4};
 use gltf::khr_lights_punctual::Kind;
-use log::error;
+use log::{error, info};
 use crate::{a3toa4, Name, to_owned_string};
 
 pub struct Light {
     pub index: usize,
     color: [f32; 3],
     name: Name,
-    kind: Kind,
+    kind: LightType,
     range: f32,
 }
 
 impl Light {
     pub fn to_raw(&self, transform: Mat4) -> LightRaw {
-        let kind = LightType::from(&self.kind);
+        let kind = self.kind;
         LightRaw {
             color: a3toa4(&self.color, 0.),
             transform: kind.get_transform(transform),
             kind:  kind as _,
-            _padding: [0; 3],
+            range: self.range,
+            _padding: [0; 2],
         }
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 enum LightType {
     DIRECTIONAL = 0,
     POINT = 1,
@@ -43,8 +44,8 @@ impl LightType {
     }
 }
 
-impl From<&Kind> for LightType {
-    fn from(value: &Kind) -> Self {
+impl From<Kind> for LightType {
+    fn from(value: Kind) -> Self {
         match value {
             Kind::Directional => Self::DIRECTIONAL,
             Kind::Point => Self::POINT,
@@ -59,11 +60,31 @@ impl From<&Kind> for LightType {
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct LightRaw {
     color: [f32; 4],
     transform: Vec4,
     kind: u32,
-    _padding: [u32; 3]
+    range: f32,
+    _padding: [u32; 2]
+}
+
+impl LightRaw {
+    pub fn is_dir(&self) -> bool {
+        self.kind == LightType::DIRECTIONAL as u32
+    }
+}
+
+impl Default for LightRaw {
+    fn default() -> Self {
+        Self {
+            color: [0.; 4],
+            transform: Default::default(),
+            kind: LightType::POINT as _,
+            range: 0.0,
+            _padding: [0; 2],
+        }
+    }
 }
 
 impl<'a> From<gltf::khr_lights_punctual::Light<'a>> for Light {
@@ -72,8 +93,14 @@ impl<'a> From<gltf::khr_lights_punctual::Light<'a>> for Light {
             index: light.index(),
             color: light.color(),
             name: light.name().map(to_owned_string),
-            kind: light.kind(),
+            kind: light.kind().into(),
             range: light.range().unwrap_or(f32::MAX),
         }
     }
+}
+
+pub fn report_lights(lights: &[Light]) {
+    let dirs = lights.iter().filter(|l| l.kind == LightType::DIRECTIONAL).count();
+    let points = lights.iter().filter(|l| l.kind == LightType::POINT).count();
+    info!("Directional lights: {}; point lights: {}", dirs, points);
 }

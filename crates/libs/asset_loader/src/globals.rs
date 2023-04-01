@@ -16,6 +16,8 @@ pub struct Buffers {
     pub index_buffer: Buffer,
     pub geo_buffer: Buffer,
     pub material_buffer: Buffer,
+    pub dlights_buffer: Buffer,
+    pub plights_buffer: Buffer,
 }
 
 impl Buffers {
@@ -52,46 +54,72 @@ impl Buffers {
             &globals.materials,
         )?;
 
+        let dlights_buffer = create_gpu_only_buffer_from_data(
+            context,
+            vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
+                | vk::BufferUsageFlags::STORAGE_BUFFER,
+            &globals.d_lights,
+        )?;
+
+        let plights_buffer = create_gpu_only_buffer_from_data(
+            context,
+            vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
+                | vk::BufferUsageFlags::STORAGE_BUFFER,
+            &globals.d_lights,
+        )?;
+
         // println!("v_b: {:#02x}, i_b: {:#02x}, g_b: {:#02x}, m_b: {:#02x}", vertex_buffer.as_raw(), index_buffer.as_raw(), geo_buffer.as_raw(), material_buffer.as_raw());
-        let src_stage = vk::PipelineStageFlags2::TRANSFER;
-        let ray_tracing_dst = vk::PipelineStageFlags2::RAY_TRACING_SHADER_KHR;
-        let as_build = vk::PipelineStageFlags2::RAY_TRACING_SHADER_KHR;
-        context.execute_one_time_commands(|cmd| cmd.pipeline_buffer_barriers(
-            &[
-                BufferBarrier {
-                    buffer: &vertex_buffer, src_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
-                    dst_access_mask: vk::AccessFlags2::MEMORY_READ,
-                    src_stage_mask: src_stage,
-                    dst_stage_mask: as_build
-                },
-                BufferBarrier {
-                    buffer: &index_buffer,
-                    src_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
-                    dst_access_mask: vk::AccessFlags2::MEMORY_READ,
-                    src_stage_mask: src_stage,
-                    dst_stage_mask: as_build
-                },
-                BufferBarrier {
-                    buffer: &geo_buffer,
-                    src_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
-                    dst_access_mask: vk::AccessFlags2::MEMORY_READ,
-                    src_stage_mask: src_stage,
-                    dst_stage_mask: ray_tracing_dst
-                },
-                BufferBarrier {
-                    buffer: &material_buffer,
-                    src_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
-                    dst_access_mask: vk::AccessFlags2::MEMORY_READ,
-                    src_stage_mask: src_stage,
-                    dst_stage_mask: ray_tracing_dst
-                }
-            ]
-        ))?;
+        // let src_stage = vk::PipelineStageFlags2::TRANSFER | vk::PipelineStageFlags2::ALL_COMMANDS;
+        // let ray_tracing_dst = vk::PipelineStageFlags2::ALL_COMMANDS;
+        // let as_build = vk::PipelineStageFlags2::ALL_COMMANDS;
+        // let src_access = vk::AccessFlags2::TRANSFER_WRITE;
+        // let des_access= vk::AccessFlags2::MEMORY_READ | vk::AccessFlags2::HOST_WRITE | vk::AccessFlags2::SHADER_STORAGE_READ | vk::AccessFlags2::HOST_READ;
+        // context.execute_one_time_commands(|cmd| cmd.pipeline_buffer_barriers(
+        //     &[
+        //         BufferBarrier {
+        //             buffer: &vertex_buffer,
+        //             src_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
+        //             dst_access_mask: des_access,
+        //             src_stage_mask: src_stage,
+        //             dst_stage_mask: as_build
+        //         },
+        //         BufferBarrier {
+        //             buffer: &index_buffer,
+        //             src_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
+        //             dst_access_mask: des_access,
+        //             src_stage_mask: src_stage,
+        //             dst_stage_mask: as_build
+        //         },
+        //         BufferBarrier {
+        //             buffer: &geo_buffer,
+        //             src_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
+        //             dst_access_mask: des_access,
+        //             src_stage_mask: src_stage,
+        //             dst_stage_mask: ray_tracing_dst
+        //         },
+        //         BufferBarrier {
+        //             buffer: &material_buffer,
+        //             src_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
+        //             dst_access_mask: des_access,
+        //             src_stage_mask: src_stage,
+        //             dst_stage_mask: ray_tracing_dst
+        //         },
+        //     BufferBarrier {
+        //         buffer: &lights_buffer,
+        //         src_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
+        //         dst_access_mask: des_access,
+        //         src_stage_mask: src_stage,
+        //         dst_stage_mask: ray_tracing_dst
+        //     }
+        //     ]
+        // ))?;
         Ok(Self {
             vertex_buffer,
             index_buffer,
             geo_buffer,
             material_buffer,
+            plights_buffer,
+            dlights_buffer,
         })
     }
 }
@@ -104,7 +132,8 @@ pub struct VkGlobal {
 
     pub prim_info: Vec<PrimInfo>,
     materials: Vec<MaterialRaw>,
-    lights: Vec<LightRaw>
+    d_lights: Vec<LightRaw>,
+    p_lights: Vec<LightRaw>,
 }
 pub fn create_global(context: &Context, doc: &Doc) -> Result<VkGlobal> {
     let mut images = vec![];
@@ -180,6 +209,7 @@ pub fn create_global(context: &Context, doc: &Doc) -> Result<VkGlobal> {
         .map(|t| [t.index, t.image_index, t.sampler_index])
         .collect::<Vec<_>>();
     // Dummy texture
+    let [d_lights, p_lights] = doc.get_lights_raw();
 
     Ok(VkGlobal {
         _images: images,
@@ -188,7 +218,8 @@ pub fn create_global(context: &Context, doc: &Doc) -> Result<VkGlobal> {
         textures,
         prim_info: doc.geo_builder.flatten(),
         materials: doc.get_materials_raw(),
-        lights: doc.get_lights_raw(),
+        d_lights,
+        p_lights
     })
 }
 

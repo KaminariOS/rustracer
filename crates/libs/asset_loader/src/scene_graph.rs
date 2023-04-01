@@ -14,7 +14,7 @@ use std::path::Path;
 use std::time::Instant;
 
 use log::{info};
-use crate::light::{Light, LightRaw};
+use crate::light::{Light, LightRaw, report_lights};
 
 macro_rules! check_indices {
     ($ident:ident) => {
@@ -49,16 +49,28 @@ impl Doc {
         self.materials.iter().map(MaterialRaw::from).collect()
     }
 
-    pub fn get_lights_raw(&self) -> Vec<LightRaw> {
-        let mut lights = Vec::new();
+    pub fn get_lights_raw(&self) -> [Vec<LightRaw>; 2] {
+        let mut dlights = Vec::new();
+        let mut plights = Vec::new();
         let mut f = |node: &Node| {
-            if let Some(light) = node.light.and_then(|l| self.lights.get(l)) {
+            if let Some(light) = node.light.map(|l| &self.lights[l]) {
                 let light = light.to_raw(node.get_world_transform());
-                lights.push(light);
+                if light.is_dir() {
+                    dlights.push(light);
+                } else {
+                    plights.push(light);
+                }
             }
         };
         self.traverse_root_nodes(&mut f);
-        lights
+        if plights.is_empty() {
+            plights.push(Default::default());
+        }
+
+        if dlights.is_empty() {
+            dlights.push(Default::default());
+        }
+        [dlights, plights]
     }
 
     pub fn traverse_root_nodes<F: FnMut(&Node)>(&self, f:&mut F) {
@@ -88,6 +100,7 @@ impl Doc {
         let nodes = HashMap::with_capacity(doc.nodes().len());
         let lights: Vec<_> = doc.lights().into_iter().flat_map(|ls| ls.map(Light::from)).collect();
         check_indices!(lights);
+        report_lights(&lights);
 
         let mut geo_builder = GeoBuilder {
             buffers,

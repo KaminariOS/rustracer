@@ -8,8 +8,17 @@ use vulkan::ash::vk;
 use vulkan::gpu_allocator::MemoryLocation;
 use vulkan::utils::create_gpu_only_buffer_from_data;
 use vulkan::{Buffer, BufferBarrier, Context, Image, ImageBarrier, ImageView, Sampler};
+use crate::image::TexGamma;
 use crate::light::LightRaw;
 
+impl Into<vk::Format> for TexGamma {
+    fn into(self) -> vk::Format {
+        match self {
+            TexGamma::Linear => vk::Format::R8G8B8A8_UNORM,
+            TexGamma::Srgb => vk::Format::R8G8B8A8_SRGB,
+        }
+    }
+}
 
 pub struct Buffers {
     pub vertex_buffer: Buffer,
@@ -155,7 +164,7 @@ pub fn create_global(context: &Context, doc: &Doc) -> Result<VkGlobal> {
         let image = context.create_image(
             vk::ImageUsageFlags::TRANSFER_DST | vk::ImageUsageFlags::SAMPLED,
             MemoryLocation::GpuOnly,
-            vk::Format::R8G8B8A8_SRGB,
+            i.gamma.into(),
             width,
             height,
         )?;

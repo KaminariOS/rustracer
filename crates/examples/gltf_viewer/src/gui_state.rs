@@ -21,10 +21,10 @@ pub struct Gui {
 
 #[derive(AsRefStr, EnumIter, PartialEq, Clone, Copy, Debug, Default)]
 pub enum Scene {
-    #[default]
     LucyInCornell,
     Cornell,
     ABeautifulGame,
+    #[default]
     Sponza,
     Type59,
     DamagedHelmet,

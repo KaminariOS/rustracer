@@ -1,7 +1,7 @@
 use crate::error::*;
 use crate::geometry::{GeoBuilder, Mesh};
 use crate::image::Image;
-use crate::material::{Material, MaterialRaw};
+use crate::material::{find_linear_textures, Material, MaterialRaw};
 use crate::texture::{Sampler, Texture};
 use crate::{to_owned_string, MaterialID, MeshID, Name, NodeID, SamplerID, SceneID, check_extensions};
 use glam::Mat4;
@@ -113,8 +113,13 @@ impl Doc {
             .collect();
         check_indices!(meshes);
 
+        let materials: Vec<_> = doc.materials().map(Material::from).collect();
+        check_indices!(materials);
+
         geo_builder.buffers = Vec::with_capacity(0);
         let animations = vec![];
+
+        let linear = find_linear_textures(&materials);
         let images: Vec<_> = once(Image::default())
             .chain(
             gltf_images
@@ -123,7 +128,7 @@ impl Doc {
             .map(Result::unwrap)
             .zip(doc.images())
             .map(|(mut img, info)| {
-                img.update_info(info);
+                img.update_info(info, &linear);
                 img
             })
         )
@@ -138,8 +143,7 @@ impl Doc {
         let textures = once(Texture::default()).chain(doc.textures().map(Texture::from)).collect::<Vec<_>>();
         check_indices!(textures);
 
-        let materials: Vec<_> = doc.materials().map(Material::from).collect();
-        check_indices!(materials);
+
 
         Self {
             current_scene,

@@ -2,6 +2,7 @@ use crate::{Index, MaterialID, MeshID};
 use glam::{vec4, Vec2, Vec4, Vec4Swizzles, Vec3Swizzles};
 use gltf::mesh::Mode;
 use gltf::{buffer, Semantic};
+use log::{info, warn};
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
@@ -106,7 +107,6 @@ impl Primitive {
             let normals = if let Some(rn) = reader.read_normals() {
                 rn.map(|n| vec4(n[0], n[1], n[2], 0.0)).collect()
             } else {
-                log::warn!("Creating normals");
                 create_geo_normal(&positions, &indices)
             };
 
@@ -122,7 +122,8 @@ impl Primitive {
                 } else {
                     (vec![[1.0, 0.0, 0.0, 0.0]; positions.len()], false)
                 };
-            if !tangents_found {
+            if !tangents_found && !uvs.is_empty() {
+                info!("Tangents not found but uv found. Generating");
                 mikktspace::generate_tangents(&mut TangentCalcContext {
                     indices: indices.as_slice(),
                     positions: positions.as_slice(),
@@ -176,6 +177,7 @@ impl Primitive {
 
 
 fn create_geo_normal(position: &[Vec4], indices: &[u32]) -> Vec<Vec4> {
+    warn!("Creating normals");
     let mut normals = vec![Vec4::default(); indices.len()];
     for i in 0..indices.len() {
         let i0 = indices[i + 0] as usize;

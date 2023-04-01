@@ -1,3 +1,4 @@
+use std::collections::{HashMap, HashSet};
 use crate::{to_owned_string, Name, a3toa4};
 use gltf::material::{AlphaMode, NormalTexture, OcclusionTexture};
 use gltf::texture;
@@ -72,6 +73,19 @@ pub struct Material {
 
     pub occlusion_texture: TextureInfo,
     pub ior: f32,
+}
+
+pub fn find_linear_textures(materials: &[Material]) -> HashSet<usize> {
+    let mut set: HashSet<_> = HashSet::new();
+        materials.iter().for_each(|m|{
+        if !m.normal_texture.is_none() {
+            set.insert(m.normal_texture.texture_index as usize);
+        }
+        if !m.metallic_roughness_texture.is_none() {
+            set.insert(m.metallic_roughness_texture.texture_index as usize);
+        }
+    });
+    set
 }
 
 #[repr(C)]

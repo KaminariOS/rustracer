@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use crate::error::*;
 use crate::Name;
 use gltf::image::{Format, Source};
@@ -9,6 +10,14 @@ pub struct Image {
     pub height: u32,
     pub source: Name,
     pub index: usize,
+    pub gamma: TexGamma
+}
+
+
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+pub enum TexGamma {
+    Linear,
+    Srgb,
 }
 
 impl Default for Image {
@@ -19,13 +28,17 @@ impl Default for Image {
             height: 1,
             source: None,
             index: 0,
+            gamma: TexGamma::Srgb,
         }
     }
 }
 
 impl Image {
-    pub fn update_info(&mut self, info: gltf::Image) {
+    pub fn update_info(&mut self, info: gltf::Image, linear: &HashSet<usize>) {
         self.index = info.index() + 1;
+        if linear.contains(&self.index) {
+            self.gamma = TexGamma::Linear;
+        }
         self.source = match info.source() {
             Source::View { .. } => None,
             Source::Uri { uri, .. } => Some(uri.to_string()),
@@ -46,8 +59,7 @@ impl TryFrom<&gltf::image::Data> for Image {
             pixels,
             width,
             height,
-            source: None,
-            index: 0,
+            ..Default::default()
         })
     }
 }

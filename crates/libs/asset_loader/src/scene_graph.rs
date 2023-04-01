@@ -3,7 +3,7 @@ use crate::geometry::{GeoBuilder, Mesh};
 use crate::image::Image;
 use crate::material::{Material, MaterialRaw};
 use crate::texture::{Sampler, Texture};
-use crate::{to_owned_string, MaterialID, MeshID, Name, NodeID, SamplerID, SceneID};
+use crate::{to_owned_string, MaterialID, MeshID, Name, NodeID, SamplerID, SceneID, check_extensions};
 use glam::Mat4;
 use gltf::buffer;
 use gltf::image;
@@ -14,31 +14,12 @@ use std::path::Path;
 use std::time::Instant;
 use gltf::khr_lights_punctual::{Kind};
 use log::{info};
+use crate::light::Light;
 
 macro_rules! check_indices {
     ($ident:ident) => {
         assert!($ident.iter().enumerate().all(|(i, m)| i == m.index));
     };
-}
-
-struct Light {
-    index: usize,
-    color: [f32; 3],
-    name: Name,
-    kind: Kind,
-    range: f32,
-}
-
-impl<'a> From<gltf::khr_lights_punctual::Light<'a>> for Light {
-    fn from(light: gltf::khr_lights_punctual::Light) -> Self {
-        Self {
-            index: light.index(),
-            color: light.color(),
-            name: light.name().map(to_owned_string),
-            kind: light.kind(),
-            range: light.range().unwrap_or(f32::MAX),
-        }
-    }
 }
 
 #[derive(Default)]
@@ -169,6 +150,7 @@ impl Doc {
             mesh,
             local_transform,
             parent_transform_cache,
+            light: node.light().map(|l| l.index())
         };
         self.nodes.insert(index, node_struct);
 
@@ -204,6 +186,7 @@ pub struct Scene {
 pub struct Node {
     name: Name,
     children: Vec<NodeID>,
+    light: Option<usize>,
     pub mesh: Option<MeshID>,
     local_transform: Mat4,
     parent_transform_cache: Mat4,
@@ -240,22 +223,6 @@ fn iter_gltf_node_tree<F: FnMut(&gltf::scene::Node, Mat4)>(
     for child in node.children() {
         iter_gltf_node_tree(&child, xform, f);
     }
-}
-
-fn check_extensions(doc: &Document) {
-    const SUPPORTED: [&str; 1] = [
-        "KHR_materials_ior",
-        // "KHR_materials_pbrSpecularGlossiness",
-        // "KHR_materials_transmission",
-        // "KHR_materials_variants",
-        // "KHR_materials_volume",
-        // "KHR_materials_specular",
-        // "KHR_texture_transform",
-        // "KHR_materials_unlit"
-    ];
-    doc.extensions_used()
-        .filter(|ext| SUPPORTED.iter().all(|s| s != ext))
-        .for_each(|ext| log::error!("Extension {} is used but not supported", ext));
 }
 
 pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Doc> {

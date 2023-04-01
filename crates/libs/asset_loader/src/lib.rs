@@ -7,10 +7,12 @@ mod image;
 mod material;
 mod scene_graph;
 mod texture;
+mod light;
 
 #[cfg(feature = "ash")]
 pub mod globals;
 
+use gltf::Document;
 pub use crate::scene_graph::load_file;
 pub use crate::scene_graph::Doc;
 
@@ -25,4 +27,24 @@ type SamplerID = usize;
 
 fn to_owned_string(r: &str) -> String {
     r.to_string()
+}
+
+fn a3toa4<T: Copy>(a3: &[T], w: T) -> [T; 4] {
+    [a3[0], a3[1], a3[2], w]
+}
+
+fn check_extensions(doc: &Document) {
+    const SUPPORTED: [&str; 1] = [
+        "KHR_materials_ior",
+        // "KHR_materials_pbrSpecularGlossiness",
+        // "KHR_materials_transmission",
+        // "KHR_materials_variants",
+        // "KHR_materials_volume",
+        // "KHR_materials_specular",
+        // "KHR_texture_transform",
+        // "KHR_materials_unlit"
+    ];
+    doc.extensions_used()
+        .filter(|ext| SUPPORTED.iter().all(|s| s != ext))
+        .for_each(|ext| log::error!("Extension {} is used but not supported", ext));
 }

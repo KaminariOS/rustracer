@@ -1,4 +1,4 @@
-use crate::{to_owned_string, Name};
+use crate::{to_owned_string, Name, a3toa4};
 use gltf::material::{AlphaMode, NormalTexture, OcclusionTexture};
 use gltf::texture;
 
@@ -152,7 +152,7 @@ impl<'a> From<gltf::Material<'a>> for Material {
 
             normal_texture: TextureInfo::new_normal(material.normal_texture()),
 
-            emissive_factor: [em[0], em[1], em[2], 0.],
+            emissive_factor: a3toa4(&em, 0.),
             emissive_texture: TextureInfo::new(material.emissive_texture()),
 
             occlusion_texture: TextureInfo::new_occ(material.occlusion_texture()),

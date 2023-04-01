@@ -2,6 +2,7 @@ use app::anyhow::Result;
 use gui::imgui::{Condition, Ui};
 use strum::IntoEnumIterator;
 use strum_macros::{AsRefStr, EnumIter};
+use gui::imgui::Key::M;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Gui {
@@ -11,16 +12,17 @@ pub struct Gui {
     pub number_of_bounces: u32,
     pub ray_tracing: bool,
     pub acc: bool,
-    pub heatmap: bool,
     pub sky: bool,
-    pub heatmap_scale: f32,
+    pub map_scale: f32,
     pub max_number_of_samples: u32,
     pub scale: f32,
     pub scene: Scene,
+    pub mapping: Mapping
 }
 
-#[derive(AsRefStr, EnumIter, PartialEq, Clone, Copy, Debug)]
+#[derive(AsRefStr, EnumIter, PartialEq, Clone, Copy, Debug, Default)]
 pub enum Scene {
+    #[default]
     LucyInCornell,
     Cornell,
     ABeautifulGame,
@@ -42,6 +44,46 @@ impl Scene {
     }
 }
 
+#[derive(Default, Debug, AsRefStr, EnumIter, Copy, Clone, PartialEq)]
+pub enum Mapping {
+    #[default]
+    RENDER = 0,
+    HEAT = 1,
+    INSTANCE = 2,
+    TRIANGLE = 3,
+    DISTANCE = 4
+}
+
+impl Gui {
+    pub fn is_mapping(&self) -> bool{
+        self.mapping != Mapping::RENDER
+    }
+
+    pub fn ray_query(&self) -> bool {
+        self.mapping != Mapping::RENDER && self.mapping != Mapping::HEAT
+    }
+
+    pub fn get_number_of_samples(&self, total_number_of_samples: u32) -> u32 {
+        if self.max_number_of_samples <= total_number_of_samples {
+            0
+        } else {
+            (self.max_number_of_samples - total_number_of_samples).min(self.number_of_samples)
+        }
+    }
+
+    pub fn acc(&self) -> bool {
+        self.acc && !self.is_mapping()
+    }
+
+    pub fn get_bounce(&self) -> u32 {
+        if self.ray_query() {
+            1
+        } else {
+            self.number_of_bounces
+        }
+    }
+}
+
 impl app::Gui for Gui {
     fn new() -> Result<Self> {
         Ok(Gui {
@@ -56,12 +98,12 @@ impl app::Gui for Gui {
             number_of_bounces: 5,
             ray_tracing: true,
             acc: true,
-            heatmap: false,
-            heatmap_scale: 1.0,
+            map_scale: 1.0,
             max_number_of_samples: 5000,
             sky: !false,
-            scene: Scene::LucyInCornell,
+            scene: Default::default(),
             scale: 1.,
+            mapping: Default::default(),
         })
     }
 
@@ -89,7 +131,6 @@ impl app::Gui for Gui {
                 ui.slider("scale", 0.1, 10., &mut self.scale);
                 ui.slider("Apertures", 0., 1., &mut self.aperture);
                 ui.slider("Focus", 0.1, 20., &mut self.focus_distance);
-                ui.slider("Heatmap Scale", 0.1, 10., &mut self.heatmap_scale);
 
                 let mut selected = self.scene;
                 if let Some(_) = ui.begin_combo("Scene", format!("{}", selected.as_ref())) {
@@ -108,6 +149,32 @@ impl app::Gui for Gui {
                     self.scene = selected;
                 }
 
+                ui.separator();
+
+                let mut selected = self.mapping;
+                if let Some(_) = ui.begin_combo("Mapping", format!("{}", selected.as_ref())) {
+                    for cur in Mapping::iter() {
+                        if selected == cur {
+                            // Auto-scroll to selected item
+                            ui.set_item_default_focus();
+                        }
+                        // Create a "selectable"
+                        let clicked = ui.selectable_config(cur).selected(selected == cur).build();
+                        // When item is clicked, store it
+                        if clicked {
+                            selected = cur;
+                        }
+                    }
+                    self.mapping = selected;
+                }
+                match self.mapping {
+                    Mapping::HEAT => ui.slider("Heatmap Scale", 0.1, 10., &mut self.map_scale),
+                    Mapping::DISTANCE => {
+                        ui.slider("dis_map Scale", 10., 1000., &mut self.map_scale)
+                    },
+                    _ => {false}
+                };
+
                 // Light control
                 // ui.text_wrapped("Light");
                 ui.separator();
@@ -122,9 +189,6 @@ impl app::Gui for Gui {
                     self.acc = !self.acc;
                 }
 
-                if ui.radio_button_bool("Heatmap", self.heatmap) {
-                    self.heatmap = !self.heatmap;
-                }
                 if ui.radio_button_bool("sky", self.sky) {
                     self.sky = !self.sky;
                 }

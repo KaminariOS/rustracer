@@ -10,6 +10,7 @@ layout(location = 0) rayPayloadInEXT RayPayload Ray;
 
 void main()
 {
+	Ray.bary = vec2(0.0);
 	if (Camera.HasSky)
 	{
 		// Sky color

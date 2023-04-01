@@ -115,7 +115,7 @@ impl App for GltfViewer {
     type Gui = Gui;
 
     fn new(base: &mut BaseApp<Self>) -> Result<Self> {
-        Self::new_with_scene(base, Scene::Type59)
+        Self::new_with_scene(base, Default::default())
     }
 
     fn update(
@@ -131,13 +131,9 @@ impl App for GltfViewer {
 
         let proj = base.camera.projection_matrix();
         let inverted_proj = proj.try_inverse().expect("Should be invertible");
-        let number_of_samples = if gui.max_number_of_samples <= self.total_number_of_samples {
-            0
-        } else {
-            (gui.max_number_of_samples - self.total_number_of_samples).min(gui.number_of_samples)
-        };
+        let number_of_samples = gui.get_number_of_samples(self.total_number_of_samples);
         // println!("nums {} total: {}", number_of_samples, self.total_number_of_samples);
-        if !gui.acc || gui.heatmap {
+        if !gui.acc() {
             self.total_number_of_samples = 0;
         }
         self.total_number_of_samples += number_of_samples;
@@ -149,13 +145,13 @@ impl App for GltfViewer {
             projection_inverse: inverted_proj,
             aperture: gui.aperture,
             focus_distance: gui.focus_distance,
-            heatmap_scale: gui.heatmap_scale,
+            heatmap_scale: gui.map_scale,
             total_number_of_samples: self.total_number_of_samples,
             number_of_samples,
-            number_of_bounces: gui.number_of_bounces,
+            number_of_bounces: gui.get_bounce(),
             random_seed: 3,
             has_sky: gui.sky.into(),
-            show_heatmap: gui.heatmap.into(),
+            mapping: gui.mapping as _,
         };
 
         self.ubo_buffer.copy_data_to_buffer(&[ubo])?;

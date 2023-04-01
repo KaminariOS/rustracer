@@ -53,6 +53,8 @@ void main()
 	PrimInfo primInfo = primInfos.p[gl_InstanceCustomIndexEXT];
 	MaterialRaw mat = materials.m[primInfo.material_id];
 
+	Ray.instance_id = gl_InstanceID;
+	Ray.bary = HitAttributes;
 	// Fetch vertices
 	uint vertexOffset = primInfo.v_offset;
 	uint indexOffset = primInfo.i_offset + (3 * gl_PrimitiveID);

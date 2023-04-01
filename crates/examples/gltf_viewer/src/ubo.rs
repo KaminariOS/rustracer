@@ -18,5 +18,5 @@ pub struct UniformBufferObject {
     pub(crate) number_of_bounces: u32,
     pub(crate) random_seed: u32,
     pub(crate) has_sky: u32,
-    pub(crate) show_heatmap: u32,
+    pub(crate) mapping: u32,
 }

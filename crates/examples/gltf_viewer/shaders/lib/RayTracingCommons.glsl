@@ -6,6 +6,8 @@ struct RayPayload
 	vec3 scatterDirection;
 	bool needScatter;
 	uint RandomSeed;
+	uint instance_id;
+	vec2 bary;
 };
 
 struct PrimInfo {
@@ -26,8 +28,9 @@ uint jenkinsHash(uint x) {
 	return x;
 }
 
+
 // Maps integers to colors using the hash function (generates pseudo-random colors)
-vec3 hashAndColor(int i) {
+vec3 hashAndColor(uint i) {
 	uint hash = jenkinsHash(i);
 	float r = ((hash >> 0) & 0xFF) / 255.0f;
 	float g = ((hash >> 8) & 0xFF) / 255.0f;
@@ -38,6 +41,10 @@ vec3 hashAndColor(int i) {
 // Converts unsigned integer into float int range <0; 1) by using 23 most significant bits for mantissa
 float uintToFloat(uint x) {
 	return uintBitsToFloat(0x3f800000 | (x >> 9)) - 1.0f;
+}
+
+vec3 bary_to_color(vec2 bary) {
+    return vec3(1 - bary[0] - bary[1], bary);
 }
 
 vec3 offset_ray(const vec3 p, const vec3 n) {
@@ -58,6 +65,8 @@ vec3 offset_ray(const vec3 p, const vec3 n) {
     );
 }
 
+const float tMin = 0.001;
+const float tMax = 10000.0;
 
 const uint AS_BIND = 0;
 const uint STORAGE_BIND = 1;

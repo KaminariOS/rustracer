@@ -103,13 +103,6 @@ fn create_top_as(
     doc: &Doc,
     blases: &Vec<AccelerationStructure>,
 ) -> Result<TopAS> {
-    // Todo recursive
-    // let tlases: Vec<_> = doc.get_current_scene().root_nodes.iter().map(|root| doc.nodes.get
-    //     {
-    //         let transform = node.get_world_transform();
-    //         if let Some()
-    //     }
-    // ).collect();
     let mut ins = vec![];
     let mut f = |node: &Node| {
         // Row major.

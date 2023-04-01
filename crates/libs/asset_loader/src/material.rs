@@ -128,7 +128,7 @@ impl<'a> From<gltf::Material<'a>> for Material {
     fn from(material: gltf::Material) -> Self {
         let pbr = material.pbr_metallic_roughness();
         let em = material.emissive_factor();
-        let mut metallic_roughness_texture = TextureInfo::new(pbr.metallic_roughness_texture());
+        let metallic_roughness_texture = TextureInfo::new(pbr.metallic_roughness_texture());
         let mut base_color_texture = TextureInfo::new(pbr.base_color_texture());
         if base_color_texture.is_none() {
             base_color_texture = TextureInfo::new(

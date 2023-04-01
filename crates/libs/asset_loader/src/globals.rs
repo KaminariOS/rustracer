@@ -162,7 +162,7 @@ pub fn create_global(context: &Context, doc: &Doc) -> Result<VkGlobal> {
     })?;
 
 
-    let mut samplers = doc
+    let samplers = doc
         .samplers
         .iter()
         .map(|s| {
@@ -172,7 +172,7 @@ pub fn create_global(context: &Context, doc: &Doc) -> Result<VkGlobal> {
         .collect::<Result<Vec<_>>>()?;
 
 
-    let mut textures = doc
+    let textures = doc
         .textures
         .iter()
         .map(|t| [t.index, t.image_index, t.sampler_index])

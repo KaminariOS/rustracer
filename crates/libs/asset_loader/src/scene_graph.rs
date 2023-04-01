@@ -9,7 +9,7 @@ use gltf::buffer;
 use gltf::image;
 use gltf::{Document};
 use std::collections::HashMap;
-use std::iter::{once, Once};
+use std::iter::{once};
 use std::path::Path;
 use std::time::Instant;
 use gltf::khr_lights_punctual::{Kind};

@@ -2,7 +2,6 @@ use app::anyhow::Result;
 use gui::imgui::{Condition, Ui};
 use strum::IntoEnumIterator;
 use strum_macros::{AsRefStr, EnumIter};
-use gui::imgui::Key::M;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Gui {

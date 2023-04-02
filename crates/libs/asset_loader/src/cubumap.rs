@@ -59,7 +59,7 @@ impl SkyBox {
 #[test]
 fn test() {
     let s = SkyBox::new("LancellottiChapel").unwrap();
-    let k = SkyBox::new("/home/kosumi/Rusty/rustracer/assets/skyboxs/LancellottiChapel").unwrap();
+    let _k = SkyBox::new("/home/kosumi/Rusty/rustracer/assets/skyboxs/LancellottiChapel").unwrap();
     let images = &s.images;
     assert_eq!(images.len(), 6)
 }

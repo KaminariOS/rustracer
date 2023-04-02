@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashSet};
 use crate::{to_owned_string, Name, a3toa4};
 use gltf::material::{AlphaMode, NormalTexture, OcclusionTexture};
 use gltf::texture;

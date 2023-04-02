@@ -3,7 +3,7 @@ use std::path::Path;
 use crate::error::*;
 use crate::Name;
 use gltf::image::{Format, Source};
-use image::{DynamicImage, GenericImageView};
+use image::{GenericImageView};
 use image::io::Reader as ImageReader;
 
 #[derive(Debug, Clone)]

@@ -9,7 +9,7 @@ use log::info;
 use vulkan::ash::vk;
 use vulkan::gpu_allocator::MemoryLocation;
 use vulkan::utils::create_gpu_only_buffer_from_data;
-use vulkan::{Buffer, BufferBarrier, Context, DescriptorSet, Image, ImageBarrier, ImageView, Sampler, WriteDescriptorSet, WriteDescriptorSetKind};
+use vulkan::{Buffer, Context, DescriptorSet, Image, ImageBarrier, ImageView, Sampler, WriteDescriptorSet, WriteDescriptorSetKind};
 use crate::cubumap::SkyBox;
 use crate::image::TexGamma;
 use crate::light::LightRaw;
@@ -169,7 +169,7 @@ impl SkyboxResource {
         })
     }
 
-    pub fn update_desc(&self, context: &Context, desc: &DescriptorSet, binding: u32) {
+    pub fn update_desc(&self, _context: &Context, desc: &DescriptorSet, binding: u32) {
         let skybox_write = [
             WriteDescriptorSet {
                 binding,

@@ -67,10 +67,6 @@ impl GltfViewer {
             MemoryLocation::CpuToGpu,
             size_of::<UniformBufferObject>() as _,
         )?;
-        context.buffer_transfer_barrier(&ubo_buffer);
-
-        // let model = create_model(context, scene)?;
-
         let doc = asset_loader::load_file(scene.path())?;
 
         let globals = create_global(context, &doc)?;

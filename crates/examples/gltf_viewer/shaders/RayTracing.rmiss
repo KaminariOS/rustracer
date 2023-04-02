@@ -17,7 +17,7 @@ void main()
 		Light li = lights[i];
 			float cos = dot(li.transform.xyz, gl_WorldRayDirectionEXT);
 			if (cos < 0.) {
-				light_acc += -cos * li.color.xyz;
+				light_acc += -cos * li.color.xyz * li.intensity;
 			}
 	}
 	if (Camera.HasSky)

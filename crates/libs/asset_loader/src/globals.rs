@@ -4,6 +4,8 @@ use crate::scene_graph::Doc;
 use crate::texture;
 use anyhow::Result;
 use std::mem::size_of_val;
+use std::time::Instant;
+use log::info;
 use vulkan::ash::vk;
 use vulkan::gpu_allocator::MemoryLocation;
 use vulkan::utils::create_gpu_only_buffer_from_data;
@@ -33,7 +35,7 @@ impl Buffers {
     pub fn new(context: &Context, geo_builder: &GeoBuilder, globals: &VkGlobal) -> Result<Self> {
         let vertices = geo_builder.vertices.as_slice();
         let indices = geo_builder.indices.as_slice();
-
+        let now = Instant::now();
         let vertex_buffer = create_gpu_only_buffer_from_data(
             context,
             vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
@@ -76,7 +78,7 @@ impl Buffers {
                 | vk::BufferUsageFlags::STORAGE_BUFFER,
             &globals.d_lights,
         )?;
-
+        info!("Buffers: {}s", now.elapsed().as_secs());
         // println!("v_b: {:#02x}, i_b: {:#02x}, g_b: {:#02x}, m_b: {:#02x}", vertex_buffer.as_raw(), index_buffer.as_raw(), geo_buffer.as_raw(), material_buffer.as_raw());
         // let src_stage = vk::PipelineStageFlags2::TRANSFER | vk::PipelineStageFlags2::ALL_COMMANDS;
         // let ray_tracing_dst = vk::PipelineStageFlags2::ALL_COMMANDS;

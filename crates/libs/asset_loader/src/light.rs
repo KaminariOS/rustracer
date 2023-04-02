@@ -9,6 +9,7 @@ pub struct Light {
     name: Name,
     kind: LightType,
     range: f32,
+    intensity: f32,
 }
 
 impl Light {
@@ -19,7 +20,8 @@ impl Light {
             transform: kind.get_transform(transform),
             kind:  kind as _,
             range: self.range,
-            _padding: [0; 2],
+            intensity: self.intensity,
+            _padding: 0,
         }
     }
 }
@@ -66,7 +68,8 @@ pub struct LightRaw {
     transform: Vec4,
     kind: u32,
     range: f32,
-    _padding: [u32; 2]
+    intensity: f32,
+    _padding: u32
 }
 
 impl LightRaw {
@@ -82,7 +85,8 @@ impl Default for LightRaw {
             transform: Default::default(),
             kind: LightType::POINT as _,
             range: 0.0,
-            _padding: [0; 2],
+            intensity: 0.,
+            _padding: 0,
         }
     }
 }
@@ -95,6 +99,7 @@ impl<'a> From<gltf::khr_lights_punctual::Light<'a>> for Light {
             name: light.name().map(to_owned_string),
             kind: light.kind().into(),
             range: light.range().unwrap_or(f32::MAX),
+            intensity: light.intensity(),
         }
     }
 }

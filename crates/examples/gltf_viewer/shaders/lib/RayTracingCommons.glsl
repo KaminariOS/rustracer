@@ -26,7 +26,8 @@ struct Light {
     vec4 transform;
     uint kind;
     float range;
-    vec2 _padding;
+    float intensity;
+    float _padding;
 };
 
 

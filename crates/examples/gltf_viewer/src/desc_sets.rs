@@ -61,12 +61,7 @@ pub fn create_descriptor_sets(
 
     let static_set = pool.allocate_set(&pipeline_res.static_dsl)?;
     let dynamic_sets = pool.allocate_sets(&pipeline_res.dynamic_dsl, set_count)?;
-    static_set.update(&[
-        WriteDescriptorSet {
-            binding: UNIFORM_BIND,
-            kind: WriteDescriptorSetKind::UniformBuffer { buffer: ubo_buffer },
-        },
-    ]);
+
     static_set.update(&[
         WriteDescriptorSet {
             binding: VERTEX_BIND,
@@ -87,6 +82,10 @@ pub fn create_descriptor_sets(
             kind: WriteDescriptorSetKind::AccelerationStructure {
                 acceleration_structure: &top_as.inner,
             },
+        },
+        WriteDescriptorSet {
+            binding: UNIFORM_BIND,
+            kind: WriteDescriptorSetKind::UniformBuffer { buffer: ubo_buffer },
         },
         WriteDescriptorSet {
             binding: GEO_BIND,

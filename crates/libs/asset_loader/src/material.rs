@@ -20,6 +20,10 @@ impl Default for TextureInfo {
     }
 }
 
+enum MaterialType {
+    MetallicRoughness,
+}
+
 impl TextureInfo {
     fn new(info: Option<texture::Info>) -> Self {
         info.map(|t| Self {
@@ -73,6 +77,7 @@ pub struct Material {
 
     pub occlusion_texture: TextureInfo,
     pub ior: f32,
+    pub material_type: MaterialType,
 }
 
 pub fn find_linear_textures(materials: &[Material]) -> HashSet<usize> {
@@ -173,6 +178,7 @@ impl<'a> From<gltf::Material<'a>> for Material {
             ior: material.ior().unwrap_or(0.),
             name: material.name().map(to_owned_string),
             index: material.index().unwrap_or(0),
+            material_type: MaterialType::MetallicRoughness,
         }
     }
 }

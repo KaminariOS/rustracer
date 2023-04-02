@@ -150,7 +150,7 @@ pub struct VkGlobal {
 }
 
 pub struct SkyboxResource {
-    skybox: SkyBox,
+    // skybox: SkyBox,
     pub image: Image,
     pub view: ImageView,
     pub sampler: Sampler,
@@ -162,14 +162,14 @@ impl SkyboxResource {
         let (image, view) = create_cubemap_view(context, &skybox)?;
         let sampler = context.create_sampler(&map_gltf_sampler(&skybox.sampler))?;
         Ok(Self {
-            skybox,
+            // skybox,
             image,
             view,
             sampler,
         })
     }
 
-    pub fn update_desc(&self, _context: &Context, desc: &DescriptorSet, binding: u32) {
+    pub fn update_desc(&self, desc: &DescriptorSet, binding: u32) {
         let skybox_write = [
             WriteDescriptorSet {
                 binding,

@@ -130,7 +130,7 @@ pub fn create_descriptor_sets(
         });
     }
     static_set.update_texture_array(&writes);
-    model.skybox.update_desc(context, &static_set, SKYBOX_BIND);
+    model.skybox.update_desc(&static_set, SKYBOX_BIND);
 
     dynamic_sets.iter().enumerate().for_each(|(index, set)| {
         set.update(&[

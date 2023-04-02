@@ -78,7 +78,7 @@ impl Mesh {
 }
 
 pub struct Primitive {
-    pub(crate) material: MaterialID,
+    // pub(crate) material: MaterialID,
     pub geometry_id: u32,
 }
 
@@ -168,7 +168,7 @@ impl Primitive {
             .push([v_offset as _, i_offset as _, material_index as _]);
 
         Primitive {
-            material: material_index as usize,
+            // material: material_index as usize,
             geometry_id: geo_id,
         }
     }

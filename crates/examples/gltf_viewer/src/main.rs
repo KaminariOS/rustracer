@@ -242,7 +242,7 @@ impl App for GltfViewer {
             }
             if old_state.skybox != gui_state.skybox {
                 let skybox = SkyboxResource::new(&base.context, gui_state.skybox.path()).unwrap();
-                skybox.update_desc(&base.context, &self.descriptor_res.static_set, SKYBOX_BIND);
+                skybox.update_desc(&self.descriptor_res.static_set, SKYBOX_BIND);
                 self.globals.skybox = skybox;
             }
             self.gui_state = Some(*gui_state);

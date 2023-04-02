@@ -1,3 +1,4 @@
+use std::default::Default;
 use app::anyhow::Result;
 use app::camera::Camera;
 use app::types::*;
@@ -13,9 +14,9 @@ mod gui_state;
 mod pipeline_res;
 mod ubo;
 
-use crate::gui_state::Scene;
+use crate::gui_state::{Scene, Skybox};
 use asset_loader::acceleration_structures::{create_as, TopAS};
-use asset_loader::globals::{create_global, Buffers, VkGlobal};
+use asset_loader::globals::{create_global, Buffers, VkGlobal, SkyboxResource};
 use asset_loader::Doc;
 use desc_sets::*;
 use gui_state::Gui;
@@ -37,6 +38,7 @@ const ACC_BIND: u32 = 8;
 const MAT_BIND: u32 = 9;
 const DLIGHT_BIND: u32 = 10;
 const PLIGHT_BIND: u32 = 11;
+const SKYBOX_BIND: u32 = 12;
 const ENABLE_RAYTRACING: bool = true;
 
 fn main() -> Result<()> {
@@ -56,7 +58,7 @@ struct GltfViewer {
     old_camera: Option<Camera>,
 
     buffers: Buffers,
-    globals: VkGlobal
+    globals: VkGlobal,
 }
 impl GltfViewer {
     fn new_with_scene(base: &mut BaseApp<Self>, scene: Scene) -> Result<Self> {
@@ -68,8 +70,8 @@ impl GltfViewer {
             size_of::<UniformBufferObject>() as _,
         )?;
         let doc = asset_loader::load_file(scene.path())?;
-
-        let globals = create_global(context, &doc)?;
+        let skybox = SkyboxResource::new(context, Skybox::default().path())?;
+        let globals = create_global(context, &doc, skybox)?;
         let buffers = Buffers::new(context, &doc.geo_builder, &globals)?;
         let (blas, tlas) = create_as(context, &doc, &buffers)?;
         // let bottom_as = create_bottom_as(context, &model)?;
@@ -237,6 +239,11 @@ impl App for GltfViewer {
             if old_state.scene != gui_state.scene {
                 base.wait_for_gpu().unwrap();
                 *self = Self::new_with_scene(base, gui_state.scene).unwrap();
+            }
+            if old_state.skybox != gui_state.skybox {
+                let skybox = SkyboxResource::new(&base.context, gui_state.skybox.path()).unwrap();
+                skybox.update_desc(&base.context, &self.descriptor_res.static_set, SKYBOX_BIND);
+                self.globals.skybox = skybox;
             }
             self.gui_state = Some(*gui_state);
             self.total_number_of_samples = 0;

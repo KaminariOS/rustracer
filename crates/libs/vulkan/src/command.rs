@@ -247,6 +247,10 @@ impl CommandBuffer {
     }
 
     pub fn pipeline_image_barriers(&self, barriers: &[ImageBarrier]) {
+        self.pipeline_image_barriers_layers(barriers, 1);
+    }
+
+    pub fn pipeline_image_barriers_layers(&self, barriers: &[ImageBarrier], layer_count: u32) {
         let barriers = barriers
             .iter()
             .map(|b| {
@@ -263,7 +267,7 @@ impl CommandBuffer {
                         base_mip_level: 0,
                         level_count: 1,
                         base_array_layer: 0,
-                        layer_count: 1,
+                        layer_count,
                     })
                     .build()
             })
@@ -317,12 +321,16 @@ impl CommandBuffer {
     }
 
     pub fn copy_buffer_to_image(&self, src: &Buffer, dst: &Image, layout: vk::ImageLayout) {
+        self.copy_buffer_to_image_layer(src, dst, layout, 1);
+    }
+
+    pub fn copy_buffer_to_image_layer(&self, src: &Buffer, dst: &Image, layout: vk::ImageLayout, layer_count: u32) {
         let region = vk::BufferImageCopy::builder()
             .image_subresource(vk::ImageSubresourceLayers {
                 aspect_mask: vk::ImageAspectFlags::COLOR,
                 mip_level: 0,
                 base_array_layer: 0,
-                layer_count: 1,
+                layer_count,
             })
             .image_extent(dst.extent);
 

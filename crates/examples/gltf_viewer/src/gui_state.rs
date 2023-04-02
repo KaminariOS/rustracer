@@ -16,7 +16,8 @@ pub struct Gui {
     pub max_number_of_samples: u32,
     pub scale: f32,
     pub scene: Scene,
-    pub mapping: Mapping
+    pub mapping: Mapping,
+    pub skybox: Skybox
 }
 
 #[derive(AsRefStr, EnumIter, PartialEq, Clone, Copy, Debug, Default)]
@@ -24,9 +25,9 @@ pub enum Scene {
     LucyInCornell,
     Cornell,
     ABeautifulGame,
-    #[default]
     Sponza,
     Type59,
+    #[default]
     DamagedHelmet,
     EmissiveTest,
     Punctual
@@ -43,6 +44,24 @@ impl Scene {
             Self::Sponza => "Sponza/glTF/Sponza.gltf",
             Self::EmissiveTest => "EmissiveStrengthTest/glTF/EmissiveStrengthTest.gltf",
             Self::Punctual => "LightsPunctualLamp/glTF/LightsPunctualLamp.gltf",
+        }
+    }
+}
+
+#[derive(Default, Debug, AsRefStr, EnumIter, Copy, Clone, PartialEq)]
+pub enum Skybox {
+    #[default]
+    Chapel,
+    Yokohama,
+    SaintPetersBasilica,
+}
+
+impl Skybox {
+    pub fn path(&self) -> &'static str {
+        match self {
+            Self::Chapel => "LancellottiChapel",
+            Self::Yokohama => "Yokohama",
+            Self::SaintPetersBasilica => "SaintPetersBasilica"
         }
     }
 }
@@ -107,6 +126,7 @@ impl app::Gui for Gui {
             scene: Default::default(),
             scale: 1.,
             mapping: Default::default(),
+            skybox: Default::default(),
         })
     }
 
@@ -183,7 +203,23 @@ impl app::Gui for Gui {
                 ui.separator();
                 // ui.input_float3("direction", &mut self.light.direction)
                 //     .build();
-
+                let mut selected = self.skybox;
+                if let Some(_) = ui.begin_combo("Skybox", format!("{}", selected.as_ref())) {
+                    for cur in Skybox::iter() {
+                        if selected == cur {
+                            // Auto-scroll to selected item
+                            ui.set_item_default_focus();
+                        }
+                        // Create a "selectable"
+                        let clicked = ui.selectable_config(cur).selected(selected == cur).build();
+                        // When item is clicked, store it
+                        if clicked {
+                            selected = cur;
+                        }
+                    }
+                    self.skybox = selected;
+                }
+                ui.separator();
                 if ui.radio_button_bool("Ray tracing", self.ray_tracing) {
                     self.ray_tracing = !self.ray_tracing;
                 }

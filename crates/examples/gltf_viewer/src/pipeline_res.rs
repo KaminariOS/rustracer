@@ -1,4 +1,4 @@
-use crate::{ACC_BIND, AS_BIND, GEO_BIND, INDEX_BIND, DLIGHT_BIND, MAT_BIND, STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND, VERTEX_BIND, PLIGHT_BIND};
+use crate::{ACC_BIND, AS_BIND, GEO_BIND, INDEX_BIND, DLIGHT_BIND, MAT_BIND, STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND, VERTEX_BIND, PLIGHT_BIND, SKYBOX_BIND};
 use app::anyhow::Result;
 use app::load_spv;
 use app::vulkan::ash::vk;
@@ -72,13 +72,19 @@ pub fn create_pipeline(context: &Context, model: &VkGlobal) -> Result<PipelineRe
             .binding(DLIGHT_BIND)
             .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
             .descriptor_count(1)
-            .stage_flags(vk::ShaderStageFlags::CLOSEST_HIT_KHR | vk::ShaderStageFlags::MISS_KHR)
+            .stage_flags(vk::ShaderStageFlags::MISS_KHR)
             .build(),
         vk::DescriptorSetLayoutBinding::builder()
             .binding(PLIGHT_BIND)
             .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
             .descriptor_count(1)
-            .stage_flags(vk::ShaderStageFlags::CLOSEST_HIT_KHR | vk::ShaderStageFlags::MISS_KHR)
+            .stage_flags(vk::ShaderStageFlags::CLOSEST_HIT_KHR)
+            .build(),
+        vk::DescriptorSetLayoutBinding::builder()
+            .binding(SKYBOX_BIND)
+            .descriptor_type(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
+            .descriptor_count(1)
+            .stage_flags(vk::ShaderStageFlags::MISS_KHR)
             .build(),
     ];
 

@@ -9,7 +9,8 @@ use log::info;
 use vulkan::ash::vk;
 use vulkan::gpu_allocator::MemoryLocation;
 use vulkan::utils::create_gpu_only_buffer_from_data;
-use vulkan::{Buffer, BufferBarrier, Context, Image, ImageBarrier, ImageView, Sampler};
+use vulkan::{Buffer, BufferBarrier, Context, DescriptorSet, Image, ImageBarrier, ImageView, Sampler, WriteDescriptorSet, WriteDescriptorSetKind};
+use crate::cubumap::SkyBox;
 use crate::image::TexGamma;
 use crate::light::LightRaw;
 
@@ -145,58 +146,147 @@ pub struct VkGlobal {
     materials: Vec<MaterialRaw>,
     d_lights: Vec<LightRaw>,
     p_lights: Vec<LightRaw>,
+    pub skybox: SkyboxResource
 }
-pub fn create_global(context: &Context, doc: &Doc) -> Result<VkGlobal> {
+
+pub struct SkyboxResource {
+    skybox: SkyBox,
+    pub image: Image,
+    pub view: ImageView,
+    pub sampler: Sampler,
+}
+
+impl SkyboxResource {
+    pub fn new(context: &Context, path: &str) -> Result<Self> {
+        let skybox = SkyBox::new(path)?;
+        let (image, view) = create_cubemap_view(context, &skybox)?;
+        let sampler = context.create_sampler(&map_gltf_sampler(&skybox.sampler))?;
+        Ok(Self {
+            skybox,
+            image,
+            view,
+            sampler,
+        })
+    }
+
+    pub fn update_desc(&self, context: &Context, desc: &DescriptorSet, binding: u32) {
+        let skybox_write = [
+            WriteDescriptorSet {
+                binding,
+                kind: WriteDescriptorSetKind::CombinedImageSampler {
+                    view: &self.view,
+                    sampler: &self.sampler,
+                    layout: vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+                },
+            }
+        ];
+        desc.update_texture_array(&skybox_write);
+    }
+}
+
+pub fn create_cubemap_view(context: &Context, skybox: &SkyBox) -> Result<(Image, ImageView)> {
+    let [w, h] = skybox.get_extents();
+    info!("Skybox: [w: {}, h: {}]", w, h);
+    let pixels_ref = skybox.collector.as_slice();
+
+    let staging =
+        context.create_buffer(
+        vk::BufferUsageFlags::TRANSFER_SRC,
+        MemoryLocation::CpuToGpu,
+        size_of_val(pixels_ref) as _)?;
+
+    staging.copy_data_to_buffer(pixels_ref)?;
+
+    let image = context.create_cubemap_image (
+        vk::ImageUsageFlags::TRANSFER_DST | vk::ImageUsageFlags::SAMPLED,
+        MemoryLocation::GpuOnly,
+        skybox.get_gamma().into(),
+        w,
+        h
+    )?;
+
+    const FACES: u32 = 6;
+    context.execute_one_time_commands(|cmd| {
+        cmd.pipeline_image_barriers_layers(&[ImageBarrier {
+            image: &image,
+            old_layout: vk::ImageLayout::UNDEFINED,
+            new_layout: vk::ImageLayout::TRANSFER_DST_OPTIMAL,
+            src_access_mask: vk::AccessFlags2::NONE,
+            dst_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
+            src_stage_mask: vk::PipelineStageFlags2::NONE,
+            dst_stage_mask: vk::PipelineStageFlags2::TRANSFER,
+        }], FACES);
+
+        cmd.copy_buffer_to_image_layer(&staging, &image, vk::ImageLayout::TRANSFER_DST_OPTIMAL, FACES);
+
+        cmd.pipeline_image_barriers_layers(&[ImageBarrier {
+            image: &image,
+            old_layout: vk::ImageLayout::TRANSFER_DST_OPTIMAL,
+            new_layout: vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+            src_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
+            dst_access_mask: vk::AccessFlags2::SHADER_READ,
+            src_stage_mask: vk::PipelineStageFlags2::TRANSFER,
+            dst_stage_mask: vk::PipelineStageFlags2::RAY_TRACING_SHADER_KHR,
+        }], FACES);
+    })?;
+    let view = image.create_cubemap_view()?;
+    Ok((image, view))
+}
+
+fn create_image_view(context: &Context, i: &crate::image::Image) -> Result<(Image, ImageView)> {
+    let width = i.width;
+    let height = i.height;
+    let pixels = i.pixels.as_slice();
+
+    let staging = context.create_buffer(
+        vk::BufferUsageFlags::TRANSFER_SRC,
+        MemoryLocation::CpuToGpu,
+        size_of_val(pixels) as _,
+    )?;
+
+    staging.copy_data_to_buffer(pixels)?;
+
+    let image = context.create_image(
+        vk::ImageUsageFlags::TRANSFER_DST | vk::ImageUsageFlags::SAMPLED,
+        MemoryLocation::GpuOnly,
+        i.gamma.into(),
+        width,
+        height,
+    )?;
+
+    context.execute_one_time_commands(|cmd| {
+        cmd.pipeline_image_barriers(&[ImageBarrier {
+            image: &image,
+            old_layout: vk::ImageLayout::UNDEFINED,
+            new_layout: vk::ImageLayout::TRANSFER_DST_OPTIMAL,
+            src_access_mask: vk::AccessFlags2::NONE,
+            dst_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
+            src_stage_mask: vk::PipelineStageFlags2::NONE,
+            dst_stage_mask: vk::PipelineStageFlags2::TRANSFER,
+        }]);
+
+        cmd.copy_buffer_to_image(&staging, &image, vk::ImageLayout::TRANSFER_DST_OPTIMAL);
+
+        cmd.pipeline_image_barriers(&[ImageBarrier {
+            image: &image,
+            old_layout: vk::ImageLayout::TRANSFER_DST_OPTIMAL,
+            new_layout: vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+            src_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
+            dst_access_mask: vk::AccessFlags2::SHADER_READ,
+            src_stage_mask: vk::PipelineStageFlags2::TRANSFER,
+            dst_stage_mask: vk::PipelineStageFlags2::RAY_TRACING_SHADER_KHR,
+        }]);
+    })?;
+    let view = image.create_image_view()?;
+    Ok((image, view))
+}
+
+pub fn create_global(context: &Context, doc: &Doc, skybox: SkyboxResource) -> Result<VkGlobal> {
     let mut images = vec![];
     let mut views = vec![];
 
     doc.images.iter().try_for_each::<_, Result<_>>(|i| {
-        let width = i.width;
-        let height = i.height;
-        let pixels = i.pixels.as_slice();
-
-        let staging = context.create_buffer(
-            vk::BufferUsageFlags::TRANSFER_SRC,
-            MemoryLocation::CpuToGpu,
-            size_of_val(pixels) as _,
-        )?;
-
-        staging.copy_data_to_buffer(pixels)?;
-
-        let image = context.create_image(
-            vk::ImageUsageFlags::TRANSFER_DST | vk::ImageUsageFlags::SAMPLED,
-            MemoryLocation::GpuOnly,
-            i.gamma.into(),
-            width,
-            height,
-        )?;
-
-        context.execute_one_time_commands(|cmd| {
-            cmd.pipeline_image_barriers(&[ImageBarrier {
-                image: &image,
-                old_layout: vk::ImageLayout::UNDEFINED,
-                new_layout: vk::ImageLayout::TRANSFER_DST_OPTIMAL,
-                src_access_mask: vk::AccessFlags2::NONE,
-                dst_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
-                src_stage_mask: vk::PipelineStageFlags2::NONE,
-                dst_stage_mask: vk::PipelineStageFlags2::TRANSFER,
-            }]);
-
-            cmd.copy_buffer_to_image(&staging, &image, vk::ImageLayout::TRANSFER_DST_OPTIMAL);
-
-            cmd.pipeline_image_barriers(&[ImageBarrier {
-                image: &image,
-                old_layout: vk::ImageLayout::TRANSFER_DST_OPTIMAL,
-                new_layout: vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
-                src_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
-                dst_access_mask: vk::AccessFlags2::SHADER_READ,
-                src_stage_mask: vk::PipelineStageFlags2::TRANSFER,
-                dst_stage_mask: vk::PipelineStageFlags2::RAY_TRACING_SHADER_KHR,
-            }]);
-        })?;
-
-        let view = image.create_image_view()?;
-
+        let (image, view) = create_image_view(context, i)?;
         images.push(image);
         views.push(view);
 
@@ -230,7 +320,8 @@ pub fn create_global(context: &Context, doc: &Doc) -> Result<VkGlobal> {
         prim_info: doc.geo_builder.flatten(),
         materials: doc.get_materials_raw(),
         d_lights,
-        p_lights
+        p_lights,
+        skybox,
     })
 }
 

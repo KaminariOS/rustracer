@@ -8,6 +8,7 @@ mod material;
 mod scene_graph;
 mod texture;
 mod light;
+mod cubumap;
 
 #[cfg(feature = "ash")]
 pub mod globals;

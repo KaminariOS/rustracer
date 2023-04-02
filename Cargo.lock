@@ -102,9 +102,12 @@ dependencies = [
  "anyhow",
  "glam",
  "gltf",
+ "image",
  "log",
  "mikktspace",
  "resource_manager",
+ "strum",
+ "strum_macros",
  "thiserror",
  "vulkan",
 ]
@@ -735,9 +738,9 @@ checksum = "b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39"
 
 [[package]]
 name = "image"
-version = "0.24.5"
+version = "0.24.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69b7ea949b537b0fd0af141fff8c77690f2ce96f4f41f042ccb6c69c6c965945"
+checksum = "527909aa81e20ac3a44803521443a765550f09b5130c2c2fa1ea59c2f8f50a3a"
 dependencies = [
  "bytemuck",
  "byteorder",
@@ -1467,6 +1470,7 @@ checksum = "456c603be3e8d448b072f410900c09faf164fbce2d480456f50eea6e25f9c848"
 name = "resource_manager"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "shellexpand",
 ]
 

@@ -20,7 +20,8 @@ impl Default for TextureInfo {
     }
 }
 
-enum MaterialType {
+#[derive(Clone)]
+pub enum MaterialType {
     MetallicRoughness,
 }
 

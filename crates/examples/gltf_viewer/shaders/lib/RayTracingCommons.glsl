@@ -92,3 +92,4 @@ const uint ACC_BIND = 8;
 const uint MAT_BIND = 9;
 const uint DLIGHT_BIND = 10;
 const uint PLIGHT_BIND = 11;
+const uint SKYBOX_BIND = 12;

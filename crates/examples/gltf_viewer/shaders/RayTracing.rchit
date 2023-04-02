@@ -22,6 +22,7 @@ layout(binding = INDEX_BIND, set = 0) readonly buffer Indices { uint i[]; } indi
 layout(binding = GEO_BIND, set = 0) readonly buffer PrimInfos { PrimInfo p[]; } primInfos;
 layout(binding = MAT_BIND, set = 0) readonly buffer Materials { MaterialRaw m[]; } materials;
 layout(binding = TEXTURE_BIND) uniform sampler2D[] textures;
+layout(binding = PLIGHT_BIND) readonly buffer Lights { Light[] lights; };
 
 //#include "Scatter.glsl"
 //#include "Vertex.glsl"
@@ -88,6 +89,7 @@ void main()
 		normal = normal_transform(normal);
 	}
 
+
 	// Interpolate Color
 	vec3 vertexColor = Mix(v0.color, v1.color, v2.color, barycentricCoords);
 	vec3 baseColor = mat.baseColor.xyz;
@@ -107,6 +109,12 @@ void main()
 	}
 	float metallic = mat.metallicFactor;
 	float roughness = mat.roughnessFactor;
+
+	if (mat.metallic_roughness_texture.index > -1) {
+		vec4 metallic_roughness = texture(textures[mat.metallic_roughness_texture.index], uvs);
+		roughness *= metallic_roughness.g;
+		metallic *= metallic_roughness.b;
+	}
 	float ior = mat.ior;
 
 	Ray.hitPoint = origin;

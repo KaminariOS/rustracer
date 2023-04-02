@@ -7,6 +7,8 @@
 layout(binding = UNIFORM_BIND) readonly uniform UniformBufferObjectStruct { UniformBufferObject Camera; };
 layout(binding = DLIGHT_BIND) readonly buffer Lights { Light[] lights; };
 
+layout(binding = SKYBOX_BIND) uniform samplerCube skybox;
+
 layout(location = 0) rayPayloadInEXT RayPayload Ray;
 
 void main()
@@ -24,7 +26,8 @@ void main()
 	{
 		// Sky color
 		const float t = 0.5 * (normalize(gl_WorldRayDirectionEXT).y + 1);
-		const vec3 skyColor = mix(vec3(1.0), vec3(0.5, 0.7, 1.0), t);
+//		const vec3 skyColor = mix(vec3(1.0), vec3(0.5, 0.7, 1.0), t);
+		const vec3 skyColor = texture(skybox, gl_WorldRayDirectionEXT).xyz;
 		light_acc += skyColor + light_acc;
 	} else
 	{

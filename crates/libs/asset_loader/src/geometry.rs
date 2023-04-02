@@ -1,4 +1,4 @@
-use crate::{Index, MaterialID, MeshID};
+use crate::{Index, MeshID};
 use glam::{vec4, Vec2, Vec4, Vec4Swizzles, Vec3Swizzles};
 use gltf::mesh::Mode;
 use gltf::{buffer, Semantic};

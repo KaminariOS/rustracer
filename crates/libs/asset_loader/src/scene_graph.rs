@@ -3,7 +3,7 @@ use crate::geometry::{GeoBuilder, Mesh};
 use crate::image::Image;
 use crate::material::{find_linear_textures, Material, MaterialRaw};
 use crate::texture::{Sampler, Texture};
-use crate::{to_owned_string, MaterialID, MeshID, Name, NodeID, SamplerID, SceneID, check_extensions};
+use crate::{to_owned_string, MeshID, Name, NodeID, SceneID, check_extensions};
 use glam::Mat4;
 use gltf::buffer;
 use gltf::image;

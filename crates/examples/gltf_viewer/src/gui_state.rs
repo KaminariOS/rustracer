@@ -54,6 +54,8 @@ pub enum Skybox {
     Chapel,
     Yokohama,
     SaintPetersBasilica,
+    LearnOpengl,
+    UtahInteractiveGraphics
 }
 
 impl Skybox {
@@ -61,7 +63,9 @@ impl Skybox {
         match self {
             Self::Chapel => "LancellottiChapel",
             Self::Yokohama => "Yokohama",
-            Self::SaintPetersBasilica => "SaintPetersBasilica"
+            Self::SaintPetersBasilica => "SaintPetersBasilica",
+            Self::LearnOpengl => "LearnOpengl",
+            Self::UtahInteractiveGraphics => "UtahInteractiveGraphics"
         }
     }
 }

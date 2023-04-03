@@ -23,7 +23,22 @@ enum Face {
 
 impl Face {
     fn get_index(name: &str) -> usize {
-        Self::from_str(name.split(".").next().unwrap()).unwrap() as _
+        let name = name.split(".").next().unwrap();
+        let index = Self::from_str(name);
+        let i = if let Ok(index) = index {
+            index
+        } else {
+             match name {
+                 "back" => Self::negz,
+                 "front" => Self::posz,
+                 "top" => Self::posy,
+                 "bottom" => Self::negy,
+                 "left" => Self::negx,
+                 "right" => Self::posx,
+                 _ => {unimplemented!()}
+             }
+        };
+        i as _
     }
 }
 

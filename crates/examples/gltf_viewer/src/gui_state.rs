@@ -144,17 +144,17 @@ impl app::Gui for Gui {
                 let mut number_of_samples = self.number_of_samples as _;
                 ui.input_int("Number of samples", &mut number_of_samples)
                     .build();
-                self.number_of_samples = number_of_samples as _;
+                self.number_of_samples = number_of_samples.abs() as _;
 
                 let mut max_number_of_samples = self.max_number_of_samples as _;
                 ui.input_int("Max Number of samples", &mut max_number_of_samples)
                     .build();
-                self.max_number_of_samples = max_number_of_samples as _;
+                self.max_number_of_samples = max_number_of_samples.abs() as _;
 
                 let mut number_of_bounces = self.number_of_bounces as _;
                 ui.input_int("Max Number of bounces", &mut number_of_bounces)
                     .build();
-                self.number_of_bounces = number_of_bounces as _;
+                self.number_of_bounces = number_of_bounces.abs() as _;
                 ui.slider("scale", 0.1, 10., &mut self.scale);
                 ui.slider("Apertures", 0., 1., &mut self.aperture);
                 ui.slider("Focus", 0.1, 20., &mut self.focus_distance);

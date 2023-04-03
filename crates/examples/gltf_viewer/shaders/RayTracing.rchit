@@ -107,11 +107,14 @@ void main()
 	if (mat.emissive_texture.index > -1) {
 		emittance *= texture(textures[mat.emissive_texture.index], uvs).rgb;
 	}
-	float metallic = mat.metallicFactor;
-	float roughness = mat.roughnessFactor;
 
-	if (mat.metallic_roughness_texture.index > -1) {
-		vec4 metallic_roughness = texture(textures[mat.metallic_roughness_texture.index], uvs);
+	MetallicRoughnessInfo metallicRoughnessInfo = mat.metallicRoughnessInfo;
+	float metallic = metallicRoughnessInfo.metallic_factor;
+	float roughness = metallicRoughnessInfo.roughness_factor;
+	int mr_index = metallicRoughnessInfo.metallic_roughness_texture.index;
+
+	if (mr_index > -1) {
+		vec4 metallic_roughness = texture(textures[mr_index], uvs);
 		roughness *= metallic_roughness.g;
 		metallic *= metallic_roughness.b;
 	}

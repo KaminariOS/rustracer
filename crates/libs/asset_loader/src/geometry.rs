@@ -104,6 +104,8 @@ impl Primitive {
         let (vertices, indices): (Vec<Vertex>, Vec<Index>) = {
             let reader = primitive.reader(|buffer| Some(&builder.buffers[buffer.index()]));
             let pos_reader = reader.read_positions().unwrap();
+            // let joints_reader = reader.read_joints(0).unwrap();
+            // let joints_reader = reader.read_weights(0).unwrap();
 
             let positions: Vec<_> = pos_reader.map(|p| vec4(p[0], p[1], p[2], 0.)).collect();
 

@@ -218,8 +218,30 @@ impl Node {
     }
 }
 
+struct Skin {
+    index: usize,
+    name: Name,
+    joints: Vec<NodeID>,
+    // inverse_bind_matrices: Vec<Mat4>,
+}
+
+impl<'a> From<gltf::Skin<'_>> for Skin {
+    fn from(skin: gltf::Skin<'_>) -> Self {
+        let reader = skin.inverse_bind_matrices();
+        let joints = get_index!(skin.joints()).collect();
+        skin.skeleton();
+        // let reader = skin.reader();
+        Self {
+            index: skin.index(),
+            name: get_name!(skin),
+            joints
+        }
+    }
+}
+
 impl<'a> From<gltf::Node<'_>> for Node {
     fn from(node: gltf::Node) -> Self {
+        node.skin();
         Self {
             index: node.index(),
             name: get_name!(node),

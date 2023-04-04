@@ -1,10 +1,15 @@
 use std::collections::HashSet;
+use std::iter::once;
 use std::path::Path;
+use std::time::Instant;
+use cfg_if::cfg_if;
+use gltf::Document;
 use crate::error::*;
-use crate::Name;
+use crate::{check_indices, Name};
 use gltf::image::{Format, Source};
 use image::{GenericImageView};
 use image::io::Reader as ImageReader;
+use log::info;
 
 #[derive(Debug, Clone)]
 pub struct Image {
@@ -162,4 +167,53 @@ impl<'a> Iterator for PixelIter<'a> {
 
         pixel
     }
+}
+
+pub fn process_images_par(gltf_images: &[gltf::image::Data], doc: &Document, linear: &HashSet<usize>) -> Vec<Image> {
+    use rayon::prelude::*;
+    let image_infos = doc.images().collect::<Vec<_>>();
+    info!("Rayon enabled. Processing {} images", image_infos.len());
+    let images: Vec<_> =
+                rayon::iter::once(Image::default())
+            .chain(
+                gltf_images.par_iter()
+                    .map(Image::try_from)
+                    .map(Result::unwrap)
+                    .zip(image_infos)
+                    .map(|(mut img, info)| {
+                        img.update_info(info, &linear);
+                        img
+                    })
+            ).collect();
+    check_indices!(images);
+    images
+}
+
+pub fn process_images_unified(gltf_images: &[gltf::image::Data], doc: &Document, linear: &HashSet<usize>) -> Vec<Image> {
+    cfg_if! {
+        if #[cfg(feature = "rayon")] {
+            process_images_par(&gltf_images, &doc, &linear)
+        } else {
+            process_images(&gltf_images, &doc, &linear)
+        }
+    }
+}
+
+pub fn process_images(gltf_images: &[gltf::image::Data], doc: &Document, linear: &HashSet<usize>) -> Vec<Image> {
+    let image_infos = doc.images().collect::<Vec<_>>();
+    info!("Rayon disabled. Processing {} images", image_infos.len());
+    let images: Vec<_> =
+        once(Image::default())
+            .chain(
+                gltf_images.iter()
+                    .map(Image::try_from)
+                    .map(Result::unwrap)
+                    .zip(image_infos)
+                    .map(|(mut img, info)| {
+                        img.update_info(info, &linear);
+                        img
+                    })
+            ).collect();
+    check_indices!(images);
+    images
 }

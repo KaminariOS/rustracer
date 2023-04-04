@@ -49,3 +49,10 @@ fn check_extensions(doc: &Document) {
         .filter(|ext| SUPPORTED.iter().all(|s| s != ext))
         .for_each(|ext| log::error!("Extension {} is used but not supported", ext));
 }
+
+#[macro_export]
+macro_rules! check_indices {
+    ($ident:ident) => {
+        assert!($ident.iter().enumerate().all(|(i, m)| i == m.index));
+    };
+}

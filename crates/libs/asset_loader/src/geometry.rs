@@ -1,5 +1,5 @@
 use crate::{Index, MeshID};
-use glam::{vec4, Vec2, Vec4, Vec4Swizzles, Vec3Swizzles};
+use glam::{vec4, Vec2, Vec4, Vec4Swizzles};
 use gltf::mesh::Mode;
 use gltf::{buffer, Semantic};
 use log::{info, warn};

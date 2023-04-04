@@ -42,8 +42,8 @@ pub enum Scene {
     KikuHoshimi,
     SparkLence,
     Apollo,
-    #[default]
     CyberSamurai,
+    #[default]
     Apex,
 }
 
@@ -65,8 +65,8 @@ impl Scene {
 
 #[derive(Default, Debug, AsRefStr, IntoStaticStr, EnumIter, Copy, Clone, PartialEq)]
 pub enum Skybox {
-    #[default]
     LancellottiChapel,
+    #[default]
     Yokohama,
     SaintPetersBasilica,
     LearnOpengl,

@@ -12,6 +12,7 @@ pub struct SkyBox {
     pub collector: Vec<u8>
 }
 #[derive(Debug, PartialEq, EnumString, EnumCount)]
+#[allow(non_camel_case_types)]
 enum Face {
     posx = 0,
     negx,

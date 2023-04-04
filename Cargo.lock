@@ -100,11 +100,13 @@ name = "asset_loader"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "cfg-if",
  "glam",
  "gltf",
  "image",
  "log",
  "mikktspace",
+ "rayon",
  "resource_manager",
  "strum",
  "strum_macros",

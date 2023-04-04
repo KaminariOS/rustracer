@@ -56,6 +56,8 @@ shellexpand = "3.0.0"
 strum = "0.24.1"
 strum_macros = "0.24.3"
 mikktspace = "0.3.0"
+rayon = "1.7"
+cfg-if = "1.0.0"
 
 [workspace.dependencies.image]
 version = "0.24.6"

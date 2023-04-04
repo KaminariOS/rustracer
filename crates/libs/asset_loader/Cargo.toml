@@ -17,7 +17,10 @@ mikktspace.workspace = true
 image.workspace = true
 strum.workspace = true
 strum_macros.workspace = true
+rayon = {workspace = true, optional = true}
+cfg-if.workspace = true
 
 [features]
-default = []
+default = ["rayon", "ash"]
 ash = ["dep:vulkan"]
+rayon = ["dep:rayon"]

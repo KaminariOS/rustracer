@@ -1,26 +1,19 @@
 use crate::error::*;
 use crate::geometry::{GeoBuilder, Mesh};
-use crate::image::Image;
+use crate::image::{Image, process_images_par, process_images_unified};
 use crate::material::{find_linear_textures, Material, MaterialRaw};
 use crate::texture::{Sampler, Texture};
-use crate::{to_owned_string, MeshID, Name, NodeID, SceneID, check_extensions};
+use crate::{to_owned_string, MeshID, Name, NodeID, SceneID, check_extensions, check_indices};
 use glam::Mat4;
 use gltf::buffer;
 use gltf::image;
 use gltf::{Document};
 use std::collections::HashMap;
-use std::iter::{once};
+use std::iter::once;
 use std::path::Path;
 use std::time::Instant;
-
 use log::{info};
 use crate::light::{Light, LightRaw, report_lights};
-
-macro_rules! check_indices {
-    ($ident:ident) => {
-        assert!($ident.iter().enumerate().all(|(i, m)| i == m.index));
-    };
-}
 
 #[derive(Default)]
 pub struct Doc {
@@ -123,21 +116,8 @@ impl Doc {
 
         let linear = find_linear_textures(&materials);
 
-        now = Instant::now();
-        let images: Vec<_> = once(Image::default())
-            .chain(
-            gltf_images
-            .iter()
-            .map(Image::try_from)
-            .map(Result::unwrap)
-            .zip(doc.images())
-            .map(|(mut img, info)| {
-                img.update_info(info, &linear);
-                img
-            })
-        )
-            .collect::<_>();
-        check_indices!(images);
+        let now = Instant::now();
+        let images = process_images_unified(&gltf_images, &doc, &linear);
         info!("Finish processing images, time:{}s", now.elapsed().as_secs());
 
         let samplers: Vec<_> = once(Sampler::default())

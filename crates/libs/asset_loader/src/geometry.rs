@@ -137,8 +137,6 @@ impl Primitive {
                 .read_colors(0)
                 .map(|reader| reader.into_rgba_f32().map(Vec4::from).collect::<Vec<_>>());
 
-
-
             let vertices = positions
                 .into_iter()
                 .enumerate()

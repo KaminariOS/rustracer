@@ -39,11 +39,11 @@ pub enum Scene {
     Knight,
     Loba,
     Hulkbuster,
+    #[default]
     KikuHoshimi,
     SparkLence,
     Apollo,
     CyberSamurai,
-    #[default]
     Apex,
 }
 

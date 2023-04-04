@@ -108,13 +108,13 @@ impl Doc {
             .meshes()
             .map(|m| Mesh::new(m, &mut geo_builder))
             .collect();
+        geo_builder.buffers = Vec::with_capacity(0);
         check_indices!(meshes);
         info!("Finish processing meshes, time:{}s", now.elapsed().as_secs());
 
         let materials: Vec<_> = doc.materials().map(Material::from).collect();
         check_indices!(materials);
 
-        geo_builder.buffers = Vec::with_capacity(0);
         let animations = vec![];
 
         let linear = find_linear_textures(&materials);

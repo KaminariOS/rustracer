@@ -26,9 +26,9 @@ type MeshID = usize;
 type MaterialID = usize;
 type SamplerID = usize;
 
-fn to_owned_string(r: &str) -> String {
-    r.to_string()
-}
+// fn to_owned_string(r: &str) -> String {
+//     r.to_string()
+// }
 
 fn a3toa4<T: Copy>(a3: &[T], w: T) -> [T; 4] {
     [a3[0], a3[1], a3[2], w]

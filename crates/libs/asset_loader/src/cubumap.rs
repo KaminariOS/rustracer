@@ -1,10 +1,12 @@
 use std::path::Path;
 use crate::image::{Image, TexGamma};
 use std::str::FromStr;
+use std::time::Instant;
 use strum_macros::{EnumCount, EnumString};
 use strum::{EnumCount};
 use crate::texture::Sampler;
 use anyhow::Result;
+use log::info;
 
 pub struct SkyBox {
     pub images : Vec<Image>,
@@ -45,6 +47,7 @@ impl Face {
 
 impl SkyBox {
     pub fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
+        let now = Instant::now();
         let mut dir_entry = resource_manager::load_cubemap(path).unwrap();
         dir_entry.sort_by_key(|d| Face::get_index(d.file_name().to_str().unwrap()));
         let mut collector: Vec<u8> = Vec::with_capacity(Face::COUNT * 4 * 2048 * 2048);
@@ -52,6 +55,7 @@ impl SkyBox {
             .map(|d|
                 Image::load_image(d.path(), Some(&mut collector))
             ).collect::<Result<Vec<_>>>()?;
+        info!("Finish Skybox processing: {}s", now.elapsed().as_secs());
        Ok(Self {
            images,
            sampler: Default::default(),

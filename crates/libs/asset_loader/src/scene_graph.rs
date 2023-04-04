@@ -3,7 +3,7 @@ use crate::geometry::{GeoBuilder, Mesh};
 use crate::image::{Image, process_images_unified};
 use crate::material::{find_linear_textures, Material, MaterialRaw};
 use crate::texture::{Sampler, Texture};
-use crate::{to_owned_string, MeshID, Name, NodeID, SceneID, check_extensions, check_indices, get_index, get_name};
+use crate::{ MeshID, Name, NodeID, SceneID, check_extensions, check_indices, get_index, get_name};
 use glam::Mat4;
 use gltf::buffer;
 use gltf::image;
@@ -153,16 +153,7 @@ impl Doc {
             let root_nodes  = scene.root_nodes.clone();
             root_nodes
                 .into_iter()
-                .for_each(|n| self.load_node(n, &document, Mat4::IDENTITY));
-    }
-
-    fn load_node(&mut self, index: usize, document: &Document, parent_transform_cache: Mat4) {
-        let node = &mut self.nodes[index];
-        let world_transform_cache = parent_transform_cache * node.local_transform;
-        node.parent_transform_cache = parent_transform_cache;
-        node.children.clone()
-            .into_iter()
-            .for_each(|c| self.load_node(c, document, world_transform_cache));
+                .for_each(|n| self.update_parent_transform(n, Mat4::IDENTITY));
     }
 
     fn update_local_transform(&mut self, node_id: NodeID, new_local: Mat4) {

@@ -1,7 +1,7 @@
 use glam::{Mat4, Vec4};
 use gltf::khr_lights_punctual::Kind;
 use log::{error, info};
-use crate::{a3toa4, get_name, Name, to_owned_string};
+use crate::{a3toa4, get_name, Name};
 
 pub struct Light {
     pub index: usize,

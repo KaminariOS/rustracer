@@ -1,5 +1,5 @@
 use std::collections::{HashSet};
-use crate::{to_owned_string, Name, a3toa4, get_name};
+use crate::{Name, a3toa4, get_name};
 use gltf::material::{AlphaMode, NormalTexture, OcclusionTexture, PbrMetallicRoughness, Transmission, Volume};
 use gltf::texture;
 

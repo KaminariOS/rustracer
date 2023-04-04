@@ -107,11 +107,13 @@ impl Doc {
             ..Default::default()
         };
 
+        let mut now = Instant::now();
         let meshes: Vec<_> = doc
             .meshes()
             .map(|m| Mesh::new(m, &mut geo_builder))
             .collect();
         check_indices!(meshes);
+        info!("Finish processing meshes, time:{}s", now.elapsed().as_secs());
 
         let materials: Vec<_> = doc.materials().map(Material::from).collect();
         check_indices!(materials);
@@ -120,6 +122,8 @@ impl Doc {
         let animations = vec![];
 
         let linear = find_linear_textures(&materials);
+
+        now = Instant::now();
         let images: Vec<_> = once(Image::default())
             .chain(
             gltf_images
@@ -134,6 +138,7 @@ impl Doc {
         )
             .collect::<_>();
         check_indices!(images);
+        info!("Finish processing images, time:{}s", now.elapsed().as_secs());
 
         let samplers: Vec<_> = once(Sampler::default())
             .chain(doc.samplers().map(Sampler::from))
@@ -260,17 +265,16 @@ impl Node {
 
 
 pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Doc> {
-    let mut now = Instant::now();
+    let now = Instant::now();
     info!("Start loading glTF");
     let (document, buffers, gltf_images) =
         gltf::import(resource_manager::load_model(path)).map_err(|e| Error::Load(e.to_string()))?;
 
     info!("Finish loading glTF, time:{}s", now.elapsed().as_secs());
     check_extensions(&document);
+
     let mut doc = Doc::new(&document, buffers, gltf_images);
-    now = Instant::now();
     doc.load_scene(&document);
-    info!("Finish processing mesh, time:{}s", now.elapsed().as_secs());
 
     Ok(doc)
 }

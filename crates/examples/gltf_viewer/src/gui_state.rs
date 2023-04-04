@@ -1,7 +1,8 @@
 use app::anyhow::Result;
 use gui::imgui::{Condition, Ui};
 use strum::IntoEnumIterator;
-use strum_macros::{AsRefStr, EnumIter};
+use strum_macros::{AsRefStr, EnumIter, IntoStaticStr};
+use std::convert::AsRef;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Gui {
@@ -20,7 +21,7 @@ pub struct Gui {
     pub skybox: Skybox
 }
 
-#[derive(AsRefStr, EnumIter, PartialEq, Clone, Copy, Debug, Default)]
+#[derive(IntoStaticStr, AsRefStr, EnumIter, PartialEq, Clone, Copy, Debug, Default)]
 pub enum Scene {
     LucyInCornell,
     Cornell,
@@ -32,10 +33,18 @@ pub enum Scene {
     Punctual,
     Triss,
     EVA,
-    #[default]
     Anakin,
     Ford,
     Ironman,
+    Knight,
+    Loba,
+    Hulkbuster,
+    KikuHoshimi,
+    SparkLence,
+    Apollo,
+    #[default]
+    CyberSamurai,
+    Apex,
 }
 
 impl Scene {
@@ -49,20 +58,15 @@ impl Scene {
             Self::Sponza => "Sponza/glTF",
             Self::EmissiveTest => "EmissiveStrengthTest/glTF",
             Self::Punctual => "LightsPunctualLamp/glTF",
-            Self::Triss => "triss",
-            Self::EVA => "eva",
-            Self::Anakin => "Anakin",
-            Self::Ford => "Ford",
-            Self::Ironman => "Ironman",
-
+            scene => scene.into(),
         }
     }
 }
 
-#[derive(Default, Debug, AsRefStr, EnumIter, Copy, Clone, PartialEq)]
+#[derive(Default, Debug, AsRefStr, IntoStaticStr, EnumIter, Copy, Clone, PartialEq)]
 pub enum Skybox {
     #[default]
-    Chapel,
+    LancellottiChapel,
     Yokohama,
     SaintPetersBasilica,
     LearnOpengl,
@@ -71,13 +75,14 @@ pub enum Skybox {
 
 impl Skybox {
     pub fn path(&self) -> &'static str {
-        match self {
-            Self::Chapel => "LancellottiChapel",
-            Self::Yokohama => "Yokohama",
-            Self::SaintPetersBasilica => "SaintPetersBasilica",
-            Self::LearnOpengl => "LearnOpengl",
-            Self::UtahInteractiveGraphics => "UtahInteractiveGraphics"
-        }
+        self.into()
+        // match self {
+        //     Self::LancellottiChapel => "LancellottiChapel",
+        //     Self::Yokohama => "Yokohama",
+        //     Self::SaintPetersBasilica => "SaintPetersBasilica",
+        //     Self::LearnOpengl => "LearnOpengl",
+        //     Self::UtahInteractiveGraphics => "UtahInteractiveGraphics"
+        // }
     }
 }
 

@@ -4,7 +4,7 @@ use crate::image::{Image, TexGamma};
 use std::str::FromStr;
 use std::time::Instant;
 use strum_macros::{EnumCount, EnumString};
-use strum::{EnumCount};
+
 use crate::texture::Sampler;
 use anyhow::Result;
 use cfg_if::cfg_if;

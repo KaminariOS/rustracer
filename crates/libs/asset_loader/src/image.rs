@@ -7,7 +7,7 @@ use gltf::Document;
 use crate::error::*;
 use crate::{check_indices, Name};
 use gltf::image::{Format, Source};
-use image::{GenericImageView};
+use image::{DynamicImage, GenericImageView};
 use image::io::Reader as ImageReader;
 use log::info;
 
@@ -53,32 +53,31 @@ impl Image {
         };
     }
 
-    pub fn load_image<P: AsRef<Path>>(p: P) -> anyhow::Result<Self> {
+    pub fn load_image<P: AsRef<Path>>(p: P, skip_data: bool) -> anyhow::Result<(Self, DynamicImage)> {
         let source = p.as_ref().to_str().map(|i| i.to_string());
         let img = ImageReader::open(p)?.decode()?;
 
         let width = img.width();
         let height = img.height();
-        let iter =
+
+
+        let pixels = if skip_data {
+           Vec::with_capacity(0)
+        } else {
             img
                 .pixels()
                 .map(|(_x, _y, c)| c.0)
-                .flatten();
-        let pixels =
-        //     if let Some(collecter) = collector {
-        //     collecter.extend(iter);
-        //     Vec::with_capacity(0)
-        // } else {
-                iter.collect();
-        // };
-        Ok(Self {
+                .flatten()
+                .collect()
+        };
+        Ok((Self {
             pixels,
             width,
             height,
             source,
             index: 0,
             gamma: TexGamma::Srgb,
-        })
+        }, img))
     }
 }
 

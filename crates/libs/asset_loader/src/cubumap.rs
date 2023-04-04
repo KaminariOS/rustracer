@@ -8,6 +8,7 @@ use strum_macros::{EnumCount, EnumString};
 use crate::texture::Sampler;
 use anyhow::Result;
 use cfg_if::cfg_if;
+use image::GenericImageView;
 use log::info;
 
 pub struct SkyBox {
@@ -47,25 +48,40 @@ impl Face {
     }
 }
 
+#[cfg(not(feature = "rayon"))]
 fn load_skybox(dir_entry: Vec<DirEntry>) -> Result<(Vec<Image>, Vec<u8>)> {
-    let images = dir_entry.into_iter()
+    let res = dir_entry.into_iter()
         .map(|d|
-            Image::load_image(d.path())
+            Image::load_image(d.path(), true)
         ).collect::<Result<Vec<_>>>()?;
+    let (images, data): (Vec<_>, Vec<_>) = res.into_iter().unzip();
 
-    let collector = images.iter().map(|i| &i.pixels).flatten().map(|&p| p).collect();
+    let collector = data.iter().map(|i|
+        i.pixels()
+    )
+        .flatten()
+        .map(|(_x, _y, c)| c.0)
+        .flatten()
+        .collect();
     Ok((images, collector))
 }
 
 #[cfg(feature = "rayon")]
 fn load_skybox_par(dir_entry: Vec<DirEntry>) -> Result<(Vec<Image>, Vec<u8>)> {
     use rayon::prelude::*;
-    let images = dir_entry.into_par_iter()
+    let res = dir_entry.into_par_iter()
         .map(|d|
-            Image::load_image(d.path())
+            Image::load_image(d.path(), true)
         ).collect::<Result<Vec<_>>>()?;
+    let (images, data): (Vec<_>, Vec<_>) = res.into_iter().unzip();
 
-    let collector = images.par_iter().map(|i| &i.pixels).flatten().map(|&p| p).collect();
+    let collector = data.par_iter().map(|i|
+        i.pixels()
+            .map(|(_x, _y, c)| c.0)
+            .flatten().collect::<Vec<_>>()
+    )
+        .flatten()
+        .collect();
     Ok((images, collector))
 }
 

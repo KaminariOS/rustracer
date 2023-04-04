@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::iter::once;
 use std::path::Path;
-use std::time::Instant;
+
 use cfg_if::cfg_if;
 use gltf::Document;
 use crate::error::*;

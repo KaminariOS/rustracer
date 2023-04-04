@@ -8,7 +8,7 @@ use glam::Mat4;
 use gltf::buffer;
 use gltf::image;
 use gltf::{Document};
-use std::collections::HashMap;
+
 use std::iter::once;
 use std::path::Path;
 use std::time::Instant;
@@ -101,7 +101,7 @@ impl Doc {
             ..Default::default()
         };
 
-        let mut now = Instant::now();
+        let now = Instant::now();
         let meshes: Vec<_> = doc
             .meshes()
             .map(|m| Mesh::new(m, &mut geo_builder))
@@ -148,7 +148,7 @@ impl Doc {
         }
     }
 
-    fn load_scene(&mut self, document: &Document) {
+    fn load_scene(&mut self, _document: &Document) {
             let scene = &self.scenes[self.current_scene];
             let root_nodes  = scene.root_nodes.clone();
             root_nodes
@@ -276,11 +276,10 @@ fn test() {
     println!();
 
     let mut nodes: Vec<_> = doc.nodes.iter().collect();
-    nodes.sort_by(|a, b| a.0.cmp(b.0));
-    for (i, node) in nodes {
+    for  node in nodes {
         println!(
-            "Node {} {:?} mesh:{:?} children:{:?}",
-            i, node.name, node.mesh, node.children
+            "Node {:?} mesh:{:?} children:{:?}",
+              node.name, node.mesh, node.children
         );
     }
     println!();
@@ -290,7 +289,7 @@ fn test() {
         for primitive in mesh.primitives.iter() {
             println!(
                 "   primitive: {}; geo_id: {}",
-                primitive.material, primitive.geometry_id
+                primitive.geometry_id, primitive.geometry_id
             );
         }
     }

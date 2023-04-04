@@ -1,9 +1,9 @@
 use crate::error::*;
 use crate::geometry::{GeoBuilder, Mesh};
-use crate::image::{Image, process_images_par, process_images_unified};
+use crate::image::{Image, process_images_unified};
 use crate::material::{find_linear_textures, Material, MaterialRaw};
 use crate::texture::{Sampler, Texture};
-use crate::{to_owned_string, MeshID, Name, NodeID, SceneID, check_extensions, check_indices};
+use crate::{to_owned_string, MeshID, Name, NodeID, SceneID, check_extensions, check_indices, get_index, get_name};
 use glam::Mat4;
 use gltf::buffer;
 use gltf::image;
@@ -13,14 +13,15 @@ use std::iter::once;
 use std::path::Path;
 use std::time::Instant;
 use log::{info};
+use crate::animation::Animation;
 use crate::light::{Light, LightRaw, report_lights};
 
 #[derive(Default)]
 pub struct Doc {
     // Only one scene is in use
     current_scene: SceneID,
-    scenes: HashMap<SceneID, Scene>,
-    pub nodes: HashMap<NodeID, Node>,
+    scenes: Vec<Scene>,
+    pub nodes: Vec<Node>,
     pub meshes: Vec<Mesh>,
     materials: Vec<Material>,
     pub(crate) textures: Vec<Texture>,
@@ -35,7 +36,7 @@ pub struct Doc {
 
 impl Doc {
     pub fn get_current_scene(&self) -> &Scene {
-        &self.scenes[&self.current_scene]
+        &self.scenes[self.current_scene]
     }
 
     pub fn get_materials_raw(&self) -> Vec<MaterialRaw> {
@@ -68,7 +69,7 @@ impl Doc {
 
     pub fn traverse_root_nodes<F: FnMut(&Node)>(&self, f:&mut F) {
         self.get_current_scene().root_nodes.iter()
-            .map(|node| self.nodes.get(node).unwrap())
+            .map(|&node| &self.nodes[node])
             .for_each(|node| self.iter_gltf_node_tree(node, f));
     }
 
@@ -80,7 +81,7 @@ impl Doc {
     ) {
         f(node);
         node.children.iter()
-            .filter_map(|child| self.nodes.get(child))
+            .map(|&child| &self.nodes[child])
             .for_each(|child| self.iter_gltf_node_tree(child, f))
         }
 
@@ -89,8 +90,8 @@ impl Doc {
             .default_scene()
             .unwrap_or(doc.scenes().next().expect("No scene"))
             .index();
-        let scenes = HashMap::with_capacity(doc.scenes().len());
-        let nodes = HashMap::with_capacity(doc.nodes().len());
+        let scenes = doc.scenes().map(Scene::from).collect();
+        let nodes = doc.nodes().map(Node::from).collect();
         let lights: Vec<_> = doc.lights().into_iter().flat_map(|ls| ls.map(Light::from)).collect();
         check_indices!(lights);
         report_lights(&lights);
@@ -148,59 +149,31 @@ impl Doc {
     }
 
     fn load_scene(&mut self, document: &Document) {
-        if !self.scenes.contains_key(&self.current_scene) {
-            let scene = document.scenes().nth(self.current_scene).unwrap();
-            let root_nodes: Vec<_> = scene.nodes().map(|n| n.index()).collect();
-            self.scenes.insert(
-                self.current_scene,
-                Scene {
-                    name: scene.name().map(to_owned_string),
-                    root_nodes,
-                },
-            );
-
-            scene
-                .nodes()
+            let scene = &self.scenes[self.current_scene];
+            let root_nodes  = scene.root_nodes.clone();
+            root_nodes
                 .into_iter()
                 .for_each(|n| self.load_node(n, &document, Mat4::IDENTITY));
-        }
     }
 
-    fn load_node(&mut self, node: gltf::Node, document: &Document, parent_transform_cache: Mat4) {
-        let index = node.index();
-        assert!(!self.nodes.contains_key(&index));
-        let local_transform = Mat4::from_cols_array_2d(&node.transform().matrix());
-        let world_transform_cache = parent_transform_cache * local_transform;
-        let children_g: Vec<_> = node.children().collect();
-        let mesh_g = node.mesh();
-
-        let children = children_g.iter().map(|c| c.index()).collect();
-        let mesh = mesh_g.as_ref().map(|m| m.index());
-        let node_struct = Node {
-            name: node.name().map(to_owned_string),
-            children,
-            mesh,
-            local_transform,
-            parent_transform_cache,
-            light: node.light().map(|l| l.index())
-        };
-        self.nodes.insert(index, node_struct);
-
-        // mesh_g.map(|m| self.load_mesh(m, document));
-        children_g
+    fn load_node(&mut self, index: usize, document: &Document, parent_transform_cache: Mat4) {
+        let node = &mut self.nodes[index];
+        let world_transform_cache = parent_transform_cache * node.local_transform;
+        node.parent_transform_cache = parent_transform_cache;
+        node.children.clone()
             .into_iter()
             .for_each(|c| self.load_node(c, document, world_transform_cache));
     }
 
     fn update_local_transform(&mut self, node_id: NodeID, new_local: Mat4) {
-        let node = self.nodes.get_mut(&node_id).unwrap();
+        let node = &mut self.nodes[node_id];
         node.local_transform = new_local;
         let parent = node.parent_transform_cache;
         self.update_parent_transform(node_id, parent);
     }
 
     fn update_parent_transform(&mut self, node_id: NodeID, new_parent: Mat4) {
-        let node = self.nodes.get_mut(&node_id).unwrap();
+        let node = &mut self.nodes[node_id];
         node.parent_transform_cache = new_parent;
         let local_transform = node.local_transform;
         node.children
@@ -213,6 +186,15 @@ impl Doc {
 pub struct Scene {
     name: Name,
     pub root_nodes: Vec<NodeID>,
+}
+
+impl<'a> From<gltf::Scene<'_>> for Scene {
+    fn from(scene: gltf::Scene) -> Self {
+        Self {
+            name: get_name!(scene),
+            root_nodes: get_index!(scene.nodes()).collect(),
+        }
+    }
 }
 
 pub struct Node {
@@ -230,15 +212,25 @@ impl Node {
     }
 }
 
-struct Animation {
-    name: Name,
-    mesh: MeshID,
-}
+
 
 impl Node {
     pub fn get_world_transform(&self) -> Mat4 {
         self.parent_transform_cache *
             self.local_transform
+    }
+}
+
+impl<'a> From<gltf::Node<'_>> for Node {
+    fn from(node: gltf::Node) -> Self {
+        Self {
+            name: get_name!(node),
+            children: get_index!(node.children()).collect(),
+            light: get_index!(node.light()),
+            mesh: get_index!(node.mesh()),
+            local_transform: Mat4::from_cols_array_2d(&node.transform().matrix()),
+            parent_transform_cache: Mat4::IDENTITY,
+        }
     }
 }
 

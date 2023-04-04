@@ -52,7 +52,22 @@ fn check_extensions(doc: &Document) {
 
 #[macro_export]
 macro_rules! check_indices {
-    ($ident:ident) => {
-        assert!($ident.iter().enumerate().all(|(i, m)| i == m.index));
+    ($expr:expr) => {
+        assert!($expr.iter().enumerate().all(|(i, m)| i == m.index));
+    };
+}
+
+#[macro_export]
+macro_rules! get_index {
+    ($expr:expr) => {
+        $expr.map(|m| m.index())
+    };
+}
+
+
+#[macro_export]
+macro_rules! get_name {
+    ($expr:expr) => {
+        $expr.name().map(|n| n.to_string())
     };
 }

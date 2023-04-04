@@ -1,7 +1,7 @@
 use glam::{Mat4, Vec4};
 use gltf::khr_lights_punctual::Kind;
 use log::{error, info};
-use crate::{a3toa4, Name, to_owned_string};
+use crate::{a3toa4, get_name, Name, to_owned_string};
 
 pub struct Light {
     pub index: usize,
@@ -96,7 +96,7 @@ impl<'a> From<gltf::khr_lights_punctual::Light<'a>> for Light {
         Self {
             index: light.index(),
             color: light.color(),
-            name: light.name().map(to_owned_string),
+            name: get_name!(light),
             kind: light.kind().into(),
             range: light.range().unwrap_or(f32::MAX),
             intensity: light.intensity(),

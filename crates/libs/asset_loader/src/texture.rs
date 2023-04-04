@@ -1,4 +1,4 @@
-use crate::{to_owned_string, Name};
+use crate::{to_owned_string, Name, get_name};
 
 #[derive(Debug, Clone)]
 pub struct Texture {
@@ -72,7 +72,7 @@ impl<'a> From<gltf::Texture<'a>> for Texture {
             image_index: texture.source().index() + 1,
             index: texture.index() + 1,
             sampler_index: texture.sampler().index().map_or(0, |i| i + 1),
-            name: texture.name().map(to_owned_string),
+            name: get_name!(texture),
         }
     }
 }

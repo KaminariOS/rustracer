@@ -1,5 +1,5 @@
 use std::collections::{HashSet};
-use crate::{to_owned_string, Name, a3toa4};
+use crate::{to_owned_string, Name, a3toa4, get_name};
 use gltf::material::{AlphaMode, NormalTexture, OcclusionTexture, PbrMetallicRoughness, Transmission, Volume};
 use gltf::texture;
 
@@ -209,7 +209,7 @@ impl From<Transmission<'_>> for TransmissionInfo {
     }
 }
 
-impl<'a> From<gltf::Material<'a>> for Material {
+impl<'a> From<gltf::Material<'_>> for Material {
     fn from(material: gltf::Material) -> Self {
         let pbr = material.pbr_metallic_roughness();
         let em = material.emissive_factor();
@@ -238,7 +238,7 @@ impl<'a> From<gltf::Material<'a>> for Material {
 
             occlusion_texture: TextureInfo::new_occ(material.occlusion_texture()),
             ior: material.ior().unwrap_or(0.),
-            name: material.name().map(to_owned_string),
+            name: get_name!(material),
             index: material.index().unwrap_or(0),
             material_type: MaterialType::MetallicRoughness,
             transmission: material.transmission().map(TransmissionInfo::from),

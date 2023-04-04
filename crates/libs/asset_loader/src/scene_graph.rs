@@ -90,8 +90,10 @@ impl Doc {
             .default_scene()
             .unwrap_or(doc.scenes().next().expect("No scene"))
             .index();
-        let scenes = doc.scenes().map(Scene::from).collect();
-        let nodes = doc.nodes().map(Node::from).collect();
+        let scenes: Vec<_> = doc.scenes().map(Scene::from).collect();
+        check_indices!(scenes);
+        let nodes: Vec<_> = doc.nodes().map(Node::from).collect();
+        check_indices!(nodes);
         let lights: Vec<_> = doc.lights().into_iter().flat_map(|ls| ls.map(Light::from)).collect();
         check_indices!(lights);
         report_lights(&lights);
@@ -175,6 +177,7 @@ impl Doc {
 }
 
 pub struct Scene {
+    index: usize,
     name: Name,
     pub root_nodes: Vec<NodeID>,
 }
@@ -182,6 +185,7 @@ pub struct Scene {
 impl<'a> From<gltf::Scene<'_>> for Scene {
     fn from(scene: gltf::Scene) -> Self {
         Self {
+            index: scene.index(),
             name: get_name!(scene),
             root_nodes: get_index!(scene.nodes()).collect(),
         }
@@ -189,6 +193,7 @@ impl<'a> From<gltf::Scene<'_>> for Scene {
 }
 
 pub struct Node {
+    index: usize,
     name: Name,
     children: Vec<NodeID>,
     light: Option<usize>,
@@ -215,6 +220,7 @@ impl Node {
 impl<'a> From<gltf::Node<'_>> for Node {
     fn from(node: gltf::Node) -> Self {
         Self {
+            index: node.index(),
             name: get_name!(node),
             children: get_index!(node.children()).collect(),
             light: get_index!(node.light()),

@@ -81,6 +81,12 @@ pub struct Material {
     volume_info: Option<VolumeInfo>,
 }
 
+impl Material {
+    pub fn has_normal_texture(&self) -> bool {
+        !self.normal_texture.is_none()
+    }
+}
+
 pub fn find_linear_textures(materials: &[Material]) -> HashSet<usize> {
     let mut set: HashSet<_> = HashSet::new();
         materials.iter().for_each(|m|{

@@ -98,10 +98,12 @@ impl Doc {
         check_indices!(lights);
         report_lights(&lights);
 
-        let mut geo_builder = GeoBuilder {
-            buffers,
-            ..Default::default()
-        };
+        let materials: Vec<_> = doc.materials().map(Material::from).collect();
+        check_indices!(materials);
+
+        let mut geo_builder = GeoBuilder::new(buffers,
+                                              materials.iter().map(|m| m.has_normal_texture()).collect()
+        );
 
         let now = Instant::now();
         let meshes: Vec<_> = doc
@@ -112,8 +114,7 @@ impl Doc {
         check_indices!(meshes);
         info!("Finish processing meshes, time:{}s", now.elapsed().as_secs());
 
-        let materials: Vec<_> = doc.materials().map(Material::from).collect();
-        check_indices!(materials);
+
 
         let animations = vec![];
 

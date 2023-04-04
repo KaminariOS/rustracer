@@ -30,6 +30,17 @@ pub struct GeoBuilder {
     pub(crate) offsets: Vec<[u32; 3]>,
     // Vertex len, indices len
     pub len: Vec<[usize; 2]>,
+    pub normal_textures: Vec<bool>,
+}
+
+impl GeoBuilder {
+    pub fn new(buffers: Vec<buffer::Data>, normal_textures: Vec<bool>) -> Self {
+        Self {
+            buffers,
+            normal_textures,
+            ..Default::default()
+        }
+    }
 }
 
 #[repr(C)]
@@ -122,7 +133,7 @@ impl Primitive {
                 } else {
                     (vec![[1.0, 0.0, 0.0, 0.0]; positions.len()], false)
                 };
-            if !tangents_found && !uvs.is_empty() {
+            if !tangents_found && !uvs.is_empty() && builder.normal_textures[material_index as usize] {
                 info!("Tangents not found but uv found. Generating");
                 mikktspace::generate_tangents(&mut TangentCalcContext {
                     indices: indices.as_slice(),

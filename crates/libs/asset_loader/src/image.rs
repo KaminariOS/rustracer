@@ -170,6 +170,7 @@ impl<'a> Iterator for PixelIter<'a> {
     }
 }
 
+#[cfg(feature = "rayon")]
 pub fn process_images_par(gltf_images: &[gltf::image::Data], doc: &Document, linear: &HashSet<usize>) -> Vec<Image> {
     use rayon::prelude::*;
     let image_infos = doc.images().collect::<Vec<_>>();

@@ -57,6 +57,7 @@ fn load_skybox(dir_entry: Vec<DirEntry>) -> Result<(Vec<Image>, Vec<u8>)> {
     Ok((images, collector))
 }
 
+#[cfg(feature = "rayon")]
 fn load_skybox_par(dir_entry: Vec<DirEntry>) -> Result<(Vec<Image>, Vec<u8>)> {
     use rayon::prelude::*;
     let images = dir_entry.into_par_iter()

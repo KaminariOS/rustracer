@@ -53,7 +53,7 @@ impl Image {
         };
     }
 
-    pub fn load_image<P: AsRef<Path>>(p: P, collector: Option<&mut Vec<u8>>) -> anyhow::Result<Self> {
+    pub fn load_image<P: AsRef<Path>>(p: P) -> anyhow::Result<Self> {
         let source = p.as_ref().to_str().map(|i| i.to_string());
         let img = ImageReader::open(p)?.decode()?;
 
@@ -64,12 +64,13 @@ impl Image {
                 .pixels()
                 .map(|(_x, _y, c)| c.0)
                 .flatten();
-        let pixels = if let Some(collecter) = collector {
-            collecter.extend(iter);
-            Vec::with_capacity(0)
-        } else {
-                iter.collect()
-        };
+        let pixels =
+        //     if let Some(collecter) = collector {
+        //     collecter.extend(iter);
+        //     Vec::with_capacity(0)
+        // } else {
+                iter.collect();
+        // };
         Ok(Self {
             pixels,
             width,

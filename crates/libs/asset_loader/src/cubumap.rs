@@ -1,3 +1,4 @@
+use std::fs::DirEntry;
 use std::path::Path;
 use crate::image::{Image, TexGamma};
 use std::str::FromStr;
@@ -6,6 +7,7 @@ use strum_macros::{EnumCount, EnumString};
 use strum::{EnumCount};
 use crate::texture::Sampler;
 use anyhow::Result;
+use cfg_if::cfg_if;
 use log::info;
 
 pub struct SkyBox {
@@ -45,16 +47,42 @@ impl Face {
     }
 }
 
+fn load_skybox(dir_entry: Vec<DirEntry>) -> Result<(Vec<Image>, Vec<u8>)> {
+    let images = dir_entry.into_iter()
+        .map(|d|
+            Image::load_image(d.path())
+        ).collect::<Result<Vec<_>>>()?;
+
+    let collector = images.iter().map(|i| &i.pixels).flatten().map(|&p| p).collect();
+    Ok((images, collector))
+}
+
+fn load_skybox_par(dir_entry: Vec<DirEntry>) -> Result<(Vec<Image>, Vec<u8>)> {
+    use rayon::prelude::*;
+    let images = dir_entry.into_par_iter()
+        .map(|d|
+            Image::load_image(d.path())
+        ).collect::<Result<Vec<_>>>()?;
+
+    let collector = images.par_iter().map(|i| &i.pixels).flatten().map(|&p| p).collect();
+    Ok((images, collector))
+}
+
+
 impl SkyBox {
     pub fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
         let now = Instant::now();
         let mut dir_entry = resource_manager::load_cubemap(path).unwrap();
         dir_entry.sort_by_key(|d| Face::get_index(d.file_name().to_str().unwrap()));
-        let mut collector: Vec<u8> = Vec::with_capacity(Face::COUNT * 4 * 2048 * 2048);
-        let images = dir_entry.into_iter()
-            .map(|d|
-                Image::load_image(d.path(), Some(&mut collector))
-            ).collect::<Result<Vec<_>>>()?;
+        // let (images, collector) =
+        cfg_if! {
+            if #[cfg(feature = "rayon")] {
+                let (images, collector) = load_skybox_par(dir_entry)?;
+            } else {
+                 let (images, collector) = load_skybox(dir_entry)?;
+            }
+        }
+
         info!("Finish Skybox processing: {}s", now.elapsed().as_secs());
        Ok(Self {
            images,

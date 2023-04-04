@@ -275,7 +275,7 @@ fn test() {
 
     println!();
 
-    let mut nodes: Vec<_> = doc.nodes.iter().collect();
+    let nodes: Vec<_> = doc.nodes.iter().collect();
     for  node in nodes {
         println!(
             "Node {:?} mesh:{:?} children:{:?}",

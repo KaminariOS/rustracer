@@ -35,8 +35,8 @@ fn a3toa4<T: Copy>(a3: &[T], w: T) -> [T; 4] {
 }
 
 fn check_extensions(doc: &Document) {
-    const SUPPORTED: [&str; 1] = [
-        "KHR_materials_ior",
+    const SUPPORTED: [&str; 0] = [
+        // "KHR_materials_ior",
         // "KHR_materials_pbrSpecularGlossiness",
         // "KHR_materials_transmission",
         // "KHR_materials_variants",

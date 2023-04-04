@@ -54,14 +54,14 @@ struct GltfViewer {
     sbt: ShaderBindingTable,
     descriptor_res: DescriptorRes,
     total_number_of_samples: u32,
-    gui_state: Option<Gui>,
+    prev_gui_state: Option<Gui>,
     old_camera: Option<Camera>,
 
     buffers: Buffers,
     globals: VkGlobal,
 }
 impl GltfViewer {
-    fn new_with_scene(base: &mut BaseApp<Self>, scene: Scene) -> Result<Self> {
+    fn new_with_scene(base: &mut BaseApp<Self>, scene: Scene, skybox: Skybox) -> Result<Self> {
         let context = &mut base.context;
 
         let ubo_buffer = context.create_buffer(
@@ -70,7 +70,7 @@ impl GltfViewer {
             size_of::<UniformBufferObject>() as _,
         )?;
         let doc = asset_loader::load_file(scene.path())?;
-        let skybox = SkyboxResource::new(context, Skybox::default().path())?;
+        let skybox = SkyboxResource::new(context, skybox.path())?;
         let globals = create_global(context, &doc, skybox)?;
         let buffers = Buffers::new(context, &doc.geo_builder, &globals)?;
         let (blas, tlas) = create_as(context, &doc, &buffers)?;
@@ -106,7 +106,7 @@ impl GltfViewer {
             descriptor_res,
             total_number_of_samples: 0,
             old_camera: None,
-            gui_state: None,
+            prev_gui_state: None,
             buffers,
             globals
         })
@@ -116,7 +116,7 @@ impl App for GltfViewer {
     type Gui = Gui;
 
     fn new(base: &mut BaseApp<Self>) -> Result<Self> {
-        Self::new_with_scene(base, Default::default())
+        Self::new_with_scene(base, Default::default(), Default::default())
     }
 
     fn update(
@@ -226,8 +226,8 @@ impl App for GltfViewer {
         if self.old_camera.is_none() {
             self.old_camera = Some(base.camera);
         }
-        if self.gui_state.is_none() {
-            self.gui_state = Some(*gui_state);
+        if self.prev_gui_state.is_none() {
+            self.prev_gui_state = Some(*gui_state);
         }
 
         if self.old_camera.filter(|x| *x != base.camera).is_some() {
@@ -235,17 +235,17 @@ impl App for GltfViewer {
             self.total_number_of_samples = 0;
         }
 
-        if let Some(old_state) = self.gui_state.filter(|x| x != gui_state) {
+        if let Some(old_state) = self.prev_gui_state.filter(|x| x != gui_state) {
             if old_state.scene != gui_state.scene {
                 base.wait_for_gpu().unwrap();
-                *self = Self::new_with_scene(base, gui_state.scene).unwrap();
+                *self = Self::new_with_scene(base, gui_state.scene, gui_state.skybox).unwrap();
             }
             if old_state.skybox != gui_state.skybox {
                 let skybox = SkyboxResource::new(&base.context, gui_state.skybox.path()).unwrap();
                 skybox.update_desc(&self.descriptor_res.static_set, SKYBOX_BIND);
                 self.globals.skybox = skybox;
             }
-            self.gui_state = Some(*gui_state);
+            self.prev_gui_state = Some(*gui_state);
             self.total_number_of_samples = 0;
         }
     }

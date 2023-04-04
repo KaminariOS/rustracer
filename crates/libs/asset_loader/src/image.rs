@@ -201,6 +201,7 @@ pub fn process_images_unified(gltf_images: &[gltf::image::Data], doc: &Document,
     }
 }
 
+#[cfg(not(feature = "rayon"))]
 pub fn process_images(gltf_images: &[gltf::image::Data], doc: &Document, linear: &HashSet<usize>) -> Vec<Image> {
     let image_infos = doc.images().collect::<Vec<_>>();
     info!("Rayon disabled. Processing {} images", image_infos.len());

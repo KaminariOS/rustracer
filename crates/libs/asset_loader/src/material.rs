@@ -60,6 +60,8 @@ pub struct Material {
     pub(crate) name: Name,
     pub(crate) index: usize,
 
+    pub unlit: bool,
+
     pub alpha_mode: AlphaMode,
     pub alpha_cutoff: Option<f32>,
     pub double_sided: bool,
@@ -121,7 +123,7 @@ pub struct MaterialRaw {
     // 4 int
     pub occlusion_texture: TextureInfo,
     pub ior: f32,
-    pub _padding: u32,
+    pub unlit: u32,
     // 4 int
     pub transmission: TransmissionInfo,
     pub volume_info: VolumeInfo,
@@ -144,7 +146,7 @@ impl From<&Material> for MaterialRaw {
             emissive_factor: value.emissive_factor,
             occlusion_texture: value.occlusion_texture,
             ior: value.ior,
-            _padding: 0,
+            unlit: value.unlit.into(),
             transmission: value.transmission.unwrap_or_default(),
             volume_info: value.volume_info.unwrap_or_default(),
         }
@@ -219,6 +221,7 @@ impl<'a> From<gltf::Material<'_>> for Material {
     fn from(material: gltf::Material) -> Self {
         let pbr = material.pbr_metallic_roughness();
         let em = material.emissive_factor();
+        let unlit = material.unlit();
 
         let mut base_color_texture = TextureInfo::new(pbr.base_color_texture());
         if base_color_texture.is_none() {
@@ -249,6 +252,7 @@ impl<'a> From<gltf::Material<'_>> for Material {
             material_type: MaterialType::MetallicRoughness,
             transmission: material.transmission().map(TransmissionInfo::from),
             volume_info,
+            unlit,
         }
     }
 }

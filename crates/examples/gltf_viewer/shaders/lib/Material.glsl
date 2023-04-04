@@ -40,7 +40,7 @@ struct MaterialRaw {
 
     TextureInfo occlusion_texture;
     float ior;
-    float _padding;
+    bool unlit;
     TransmissionInfo transmission_info;
     VolumeInfo volume_info;
 };

@@ -36,15 +36,29 @@ pub fn load_spv<P: AsRef<Path>>(path: P) -> Vec<u8> {
     ))
 }
 
+fn find_gltf(search: &PathBuf) -> Option<PathBuf> {
+    for entry in fs::read_dir(search).ok()?.filter_map(|e| e.ok()) {
+        if entry.file_name().to_str().filter(|name| name.ends_with(".gltf") || name.ends_with(".glb")).is_some() {
+            return Some(entry.path())
+        }
+    }
+    None
+}
+
 pub fn load_model<P: AsRef<Path>>(path: P) -> PathBuf {
     let path_ref = path.as_ref();
     let mut res = None;
 
     for pre in MODEL_SEARCH_PATHS {
         let search = Path::new(pre).join(&path);
-        if search.exists() {
+        if search.exists() && search.is_file() {
             res = Some(search);
-            break;
+        }
+        else if let Some(p) = find_gltf(&search) {
+            res = Some(p);
+        }
+        if res.is_some() {
+            break
         }
     }
     res.expect(&*format!(

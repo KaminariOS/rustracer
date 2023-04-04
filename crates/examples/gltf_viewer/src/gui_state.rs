@@ -27,10 +27,15 @@ pub enum Scene {
     ABeautifulGame,
     Sponza,
     Type59,
-    #[default]
     DamagedHelmet,
     EmissiveTest,
-    Punctual
+    Punctual,
+    Triss,
+    EVA,
+    #[default]
+    Anakin,
+    Ford,
+    Ironman,
 }
 
 impl Scene {
@@ -39,11 +44,17 @@ impl Scene {
             Self::LucyInCornell => "cornellBoxLucy.gltf",
             Self::Cornell => "cornellBox.gltf",
             Self::Type59 => "type59.gltf",
-            Self::DamagedHelmet => "DamagedHelmet/glTF/DamagedHelmet.gltf",
-            Self::ABeautifulGame => "ABeautifulGame/glTF/ABeautifulGame.gltf",
-            Self::Sponza => "Sponza/glTF/Sponza.gltf",
-            Self::EmissiveTest => "EmissiveStrengthTest/glTF/EmissiveStrengthTest.gltf",
-            Self::Punctual => "LightsPunctualLamp/glTF/LightsPunctualLamp.gltf",
+            Self::DamagedHelmet => "DamagedHelmet/glTF",
+            Self::ABeautifulGame => "ABeautifulGame/glTF",
+            Self::Sponza => "Sponza/glTF",
+            Self::EmissiveTest => "EmissiveStrengthTest/glTF",
+            Self::Punctual => "LightsPunctualLamp/glTF",
+            Self::Triss => "triss",
+            Self::EVA => "eva",
+            Self::Anakin => "Anakin",
+            Self::Ford => "Ford",
+            Self::Ironman => "Ironman",
+
         }
     }
 }

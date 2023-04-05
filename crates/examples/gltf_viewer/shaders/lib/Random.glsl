@@ -1,5 +1,7 @@
 #extension GL_EXT_control_flow_attributes : require
 
+#define RngStateType uvec4
+
 // Generates a seed for a random number generator from 2 inputs plus a backoff
 // https://github.com/nvpro-samples/optix_prime_baking/blob/332a886f1ac46c0b3eea9e89a59593470c755a0e/random.h
 // https://github.com/nvpro-samples/vk_raytracing_tutorial_KHR/tree/master/ray_tracing_jitter_cam
@@ -33,7 +35,7 @@ float RandomFloat(inout uint seed)
 	//return uintBitsToFloat(one | (msk & (RandomInt(seed) >> 9))) - 1;
 
 	// Faster version from NVIDIA examples; quality good enough for our use case.
-	return (float(RandomInt(seed) & 0x00FFFFFF) / float(0x01000000));
+	return (float(RandomInt(seed) & 0x00FFFFFFu) / float(0x01000000));
 }
 
 vec2 RandomInUnitDisk(inout uint seed)
@@ -58,4 +60,63 @@ vec3 RandomInUnitSphere(inout uint seed)
 			return p;
 		}
 	}
+}
+
+
+// Converts unsigned integer into float int range <0; 1) by using 23 most significant bits for mantissa
+float uintToFloat(uint x) {
+	return uintBitsToFloat(0x3f800000u | (x >> 9)) - 1.0f;
+}
+
+// Initialize RNG for given pixel, and frame number (PCG version)
+RngStateType initRNG(uvec2 pixelCoords, uvec2 resolution, uint frameNumber) {
+	return RngStateType(pixelCoords.xy, frameNumber, 0); //< Seed for PCG uses a sequential sample number in 4th channel, which increments on every RNG call and starts from 0
+}
+
+// PCG random numbers generator
+// Source: "Hash Functions for GPU Rendering" by Jarzynski & Olano
+uvec4 pcg4d(uvec4 v)
+{
+	v = v * 1664525u + 1013904223u;
+
+	v.x += v.y * v.w;
+	v.y += v.z * v.x;
+	v.z += v.x * v.y;
+	v.w += v.y * v.z;
+
+	v = v ^ (v >> 16u);
+
+	v.x += v.y * v.w;
+	v.y += v.z * v.x;
+	v.z += v.x * v.y;
+	v.w += v.y * v.z;
+
+	return v;
+}
+
+
+// Return random float in <0; 1) range  (PCG version)
+float rand(inout RngStateType rngState) {
+	rngState.w++; //< Increment sample index
+	return uintToFloat(pcg4d(rngState).x);
+}
+
+// Jenkins's "one at a time" hash function
+uint jenkinsHash(uint x) {
+	x += x << 10;
+	x ^= x >> 6;
+	x += x << 3;
+	x ^= x >> 11;
+	x += x << 15;
+	return x;
+}
+
+
+// Maps integers to colors using the hash function (generates pseudo-random colors)
+vec3 hashAndColor(uint i) {
+	uint hash = jenkinsHash(i);
+	float r = ((hash >> 0) & 0xFFu) / 255.0f;
+	float g = ((hash >> 8) & 0xFFu) / 255.0f;
+	float b = ((hash >> 16) & 0xFFu) / 255.0f;
+	return vec3(r, g, b);
 }

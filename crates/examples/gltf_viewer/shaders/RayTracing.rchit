@@ -2,21 +2,11 @@
 #extension GL_EXT_nonuniform_qualifier : require
 #extension GL_GOOGLE_include_directive : require
 #extension GL_EXT_ray_tracing : require
-//#include "Material.glsl"
 #include "lib/Random.glsl"
 #include "lib/RayTracingCommons.glsl"
 #include "lib/Material.glsl"
 #include "lib/PBR.glsl"
 #include "lib/UniformBufferObject.glsl"
-
-struct Vertex {
-	vec3 pos;
-	vec3 normal;
-	vec4 tangent;
-	vec3 color;
-	vec2 uvs;
-	uint material_index;
-};
 
 layout(binding = VERTEX_BIND, set = 0) readonly buffer Vertices { Vertex v[]; } vertices;
 layout(binding = INDEX_BIND, set = 0) readonly buffer Indices { uint i[]; } indices;
@@ -80,10 +70,9 @@ void main()
 	const vec3 vertexColor = Mix(v0.color, v1.color, v2.color, barycentricCoords);
 	const vec3 baseColor = mat.baseColor.xyz;
 	vec3 color = vertexColor * baseColor;
-	if (mat.baseColorTexture.index > -1) {
+	if (mat.baseColorTexture.index >= 0) {
 		color = color * texture(textures[mat.baseColorTexture.index], uvs).rgb;
 	}
-
 
 	Ray.needScatter = false;
 	Ray.hitPoint = pos;
@@ -99,9 +88,9 @@ void main()
 			return;
 	}
 
-	vec3 normal = Mix(v0.normal, v1.normal, v2.normal, barycentricCoords);
-//	normal = normal_transform(normal);
-	if (mat.normal_texture.index > -1) {
+	vec3 geo_normal = Mix(v0.normal, v1.normal, v2.normal, barycentricCoords);
+	vec3 normal = geo_normal;
+	if (mat.normal_texture.index >= 0) {
 		vec3 normal_t = normalize(texture(textures[mat.normal_texture.index], uvs).xyz * 2. - 1.);
 
 		vec3 t = Mix(v0.tangent, v1.tangent, v2.tangent, barycentricCoords).xyz;
@@ -111,15 +100,20 @@ void main()
 		normal = normal_transform(normal);
 
 		mat3 tbn = mat3(t, b, normal);
+		// Shading normal
 		normal = normalize(tbn * normal_t);
 	} else {
 		normal = normal_transform(normal);
 	}
 
 	origin = offset_ray(origin, normal);
+	const float cos = dot(gl_WorldRayDirectionEXT, normal);
+	const bool frontFace = cos < 0.;
+	const vec3 outwardNormal = frontFace ? normal : -normal;
+	geo_normal = frontFace? geo_normal: -geo_normal;
 
 	vec3 emittance = mat.emissive_factor.rgb;
-	if (mat.emissive_texture.index > -1) {
+	if (mat.emissive_texture.index >= 0.) {
 		emittance *= texture(textures[mat.emissive_texture.index], uvs).rgb;
 	}
 
@@ -128,7 +122,7 @@ void main()
 	float roughness = metallicRoughnessInfo.roughness_factor;
 	const int mr_index = metallicRoughnessInfo.metallic_roughness_texture.index;
 
-	if (mr_index > -1) {
+	if (mr_index >= 0.) {
 		vec4 metallic_roughness = texture(textures[mr_index], uvs);
 		roughness *= metallic_roughness.g;
 		metallic *= metallic_roughness.b;
@@ -137,16 +131,37 @@ void main()
 
 	Ray.hitPoint = origin;
 	uint seed = Ray.RandomSeed;
-	if (length(emittance) > 0.) {
-		Ray.hitValue = emittance * 1.0;
-		Ray.needScatter = false;
-	} else
+	Ray.emittance = emittance * 1.0;
+//	uint brdfType;
+
+//	if (metallic == 1.0 && roughness == 1.0) {
+//		brdfType = SPECULAR_TYPE;
+//	} else {
+//		BRDF brdfProbability = getBrdfProbability(color, metallic, -gl_WorldRayDirectionEXT, outwardNormal);
+//		if (RandomFloat(seed) < brdfProbability.specular) {
+//			brdfType = SPECULAR_TYPE;
+//			color /= brdfProbability.specular;
+//		} else {
+//			brdfType = DIFFUSE_TYPE;
+//			color /= brdfProbability.diffuse;
+//		}
+//	}
+//	MaterialBrdf matbrdf;
+//	matbrdf.baseColor = color;
+//	matbrdf.metallic = metallic;
+//	matbrdf.roughness = roughness;
+//	matbrdf.ior = ior;
+//	vec3 brdfWeight;
+//	vec2 u = vec2(RandomFloat(seed), RandomFloat(seed));
+//	vec3 direction;
+//	Ray.needScatter = evalIndirectCombinedBRDF(u, outwardNormal, geo_normal, -gl_WorldRayDirectionEXT, matbrdf, brdfType, direction, brdfWeight);
+//	color *= brdfWeight;
+//	Ray.hitPoint = origin;
+//	Ray.scatterDirection = direction;
 	if (ior > 1.) {
-		const float dot = dot(gl_WorldRayDirectionEXT, normal);
-		const bool frontFace = dot < 0.;
-		const vec3 outwardNormal = frontFace ? normal : -normal;
+
 		const float refraction_ratio = frontFace ? 1 / ior: ior;
-		const float cos_theta = abs(dot);
+		const float cos_theta = abs(cos);
 		const vec3 refracted = refract(gl_WorldRayDirectionEXT, outwardNormal, refraction_ratio);
 		const float reflectProb = refracted != vec3(0) ? Schlick(cos_theta, refraction_ratio) : 1;
 

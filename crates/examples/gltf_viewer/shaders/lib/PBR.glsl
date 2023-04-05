@@ -1,5 +1,9 @@
 #extension GL_EXT_nonuniform_qualifier : require
 
+// BRDF types
+#define DIFFUSE_TYPE 1
+#define SPECULAR_TYPE 2
+#define TRANSMISSION_TYPE 3
 // Polynomial approximation by Christophe Schlick
 float Schlick(const float cosine, const float refractionIndex)
 {

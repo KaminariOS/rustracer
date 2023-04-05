@@ -6,6 +6,7 @@ struct RayPayload
 	vec3 scatterDirection;
 	bool needScatter;
 	uint RandomSeed;
+	vec3 emittance;
 //	uint instance_id;
 //	vec2 bary;
 };
@@ -15,6 +16,15 @@ struct PrimInfo {
     uint i_offset;
     uint material_id;
     uint _padding;
+};
+
+struct Vertex {
+	vec3 pos;
+	vec3 normal;
+	vec4 tangent;
+	vec3 color;
+	vec2 uvs;
+	uint material_index;
 };
 
 const uint DIRECT_LIGHT = 0;
@@ -30,31 +40,22 @@ struct Light {
     float _padding;
 };
 
-
-// Jenkins's "one at a time" hash function
-uint jenkinsHash(uint x) {
-	x += x << 10;
-	x ^= x >> 6;
-	x += x << 3;
-	x ^= x >> 11;
-	x += x << 15;
-	return x;
+vec3 getLightIntensityAtPoint(Light light, float distance) {
+    vec3 color = light.intensity * light.color.rgb;
+	if (light.kind == POINT_LIGHT) {
+		// Cem Yuksel's improved attenuation avoiding singularity at distance=0
+		// Source: http://www.cemyuksel.com/research/pointlightattenuation/
+		const float radius = 0.5f; //< We hardcode radius at 0.5, but this should be a light parameter
+		const float radiusSquared = radius * radius;
+		const float distanceSquared = distance * distance;
+		const float attenuation = 2.0f / (distanceSquared + radiusSquared + distance * sqrt(distanceSquared + radiusSquared));
+		return color * attenuation;
+	} else {
+	    return color;
+	}
 }
 
 
-// Maps integers to colors using the hash function (generates pseudo-random colors)
-vec3 hashAndColor(uint i) {
-	uint hash = jenkinsHash(i);
-	float r = ((hash >> 0) & 0xFF) / 255.0f;
-	float g = ((hash >> 8) & 0xFF) / 255.0f;
-	float b = ((hash >> 16) & 0xFF) / 255.0f;
-	return vec3(r, g, b);
-}
-
-// Converts unsigned integer into float int range <0; 1) by using 23 most significant bits for mantissa
-float uintToFloat(uint x) {
-	return uintBitsToFloat(0x3f800000 | (x >> 9)) - 1.0f;
-}
 
 vec3 bary_to_color(vec2 bary) {
     return vec3(1 - bary[0] - bary[1], bary);

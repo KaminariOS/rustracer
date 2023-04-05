@@ -1,0 +1,64 @@
+#version 460
+#extension GL_EXT_nonuniform_qualifier : require
+#extension GL_GOOGLE_include_directive : require
+#extension GL_EXT_ray_tracing : require
+
+#include "lib/Random.glsl"
+#include "lib/RayTracingCommons.glsl"
+#include "lib/Material.glsl"
+
+layout(binding = MAT_BIND, set = 0) readonly buffer Materials { MaterialRaw m[]; } materials;
+layout(binding = TEXTURE_BIND) uniform sampler2D[] textures;
+hitAttributeEXT vec2 HitAttributes;
+rayPayloadInEXT RayPayload Ray;
+
+const uint OPAQUE = 1;
+const uint MASH = 2;
+const uint BLEND = 3;
+
+// Performs an opacity test in any hit shader for potential hit. Returns true if hit point is transparent and can be ignored
+bool testOpacityAnyHit() {
+
+	// Load material at hit point
+
+	const PrimInfo primInfo = primInfos.p[gl_InstanceCustomIndexEXT];
+	const MaterialRaw mat = materials.m[primInfo.material_id];
+
+
+	const uint i0 = vertexOffset + indices.i[indexOffset];
+	const uint i1 = vertexOffset + indices.i[indexOffset + 1];
+	const uint i2 = vertexOffset + indices.i[indexOffset + 2];
+
+	const Vertex v0 = vertices.v[i0];
+	const Vertex v1 = vertices.v[i1];
+	const Vertex v2 = vertices.v[i2];
+
+	// Compute the ray hit point properties.
+	const vec3 barycentricCoords = vec3(1.0 - HitAttributes.x - HitAttributes.y, HitAttributes.x, HitAttributes.y);
+	const vec2 uvs = Mix(v0.uvs, v1.uvs, v2.uvs, barycentricCoords);
+	// Also load the opacity texture if available
+	const vec4 baseColor = mat.baseColor;
+	vec3 color = vertexColor * baseColor;
+	if (mat.baseColorTexture.index >= 0) {
+		color = color * texture(textures[mat.baseColorTexture.index], uvs);
+	}
+	float opacity = color.a;
+
+	// Decide whether this hit is opaque or not according to chosen alpha testing mode
+	if (mat.alpha_mode == MASK) {
+		return (opacity < mat.alpha_cutoff);
+	} else {
+		// Alpha blending mode
+		float seed = Ray.RandomSeed;
+		float u = RandomFloat(seed); // If you want alpha blending, there should be a random u. Semi-transparent things are, however, better rendered using refracted rays with real IoR
+		Ray.RandomSeed = seed;
+		return (opacity < u);
+	}
+}
+
+void main() {
+		if (testOpacityAnyHit()) {
+			ignoreIntersectionEXT;
+		}
+	}
+}

@@ -15,7 +15,7 @@ mod pipeline_res;
 mod ubo;
 
 use crate::gui_state::{Scene, Skybox};
-use asset_loader::acceleration_structures::{create_as, TopAS};
+use asset_loader::acceleration_structures::{BlasInput, create_as, TopAS};
 use asset_loader::globals::{create_global, Buffers, VkGlobal, SkyboxResource};
 use asset_loader::Doc;
 use desc_sets::*;
@@ -49,6 +49,7 @@ struct GltfViewer {
     ubo_buffer: Buffer,
     _model: Doc,
     _bottom_as: Vec<AccelerationStructure>,
+    blas_inputs: Vec<BlasInput>,
     _top_as: TopAS,
     pipeline_res: PipelineRes,
     sbt: ShaderBindingTable,
@@ -73,7 +74,11 @@ impl GltfViewer {
         let skybox = SkyboxResource::new(context, skybox.path())?;
         let globals = create_global(context, &doc, skybox)?;
         let buffers = Buffers::new(context, &doc.geo_builder, &globals)?;
-        let (blas, tlas) = create_as(context, &doc, &buffers)?;
+        let (blas, blas_inputs, tlas) = create_as(context, &doc, &buffers, if true {
+            vk::BuildAccelerationStructureFlagsKHR::ALLOW_UPDATE
+        } else {
+            vk::BuildAccelerationStructureFlagsKHR::empty()
+        })?;
         // let bottom_as = create_bottom_as(context, &model)?;
 
         // let top_as = create_top_as(context, &bottom_as)?;
@@ -100,6 +105,7 @@ impl GltfViewer {
             ubo_buffer,
             _model: doc,
             _bottom_as: blas,
+            blas_inputs,
             _top_as: tlas,
             pipeline_res,
             sbt,

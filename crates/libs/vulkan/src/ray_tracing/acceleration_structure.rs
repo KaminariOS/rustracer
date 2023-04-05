@@ -21,10 +21,11 @@ impl AccelerationStructure {
         as_geometry: &[vk::AccelerationStructureGeometryKHR],
         as_ranges: &[vk::AccelerationStructureBuildRangeInfoKHR],
         max_primitive_counts: &[u32],
+        flags: vk::BuildAccelerationStructureFlagsKHR,
     ) -> Result<Self> {
         let build_geo_info = vk::AccelerationStructureBuildGeometryInfoKHR::builder()
             .ty(level)
-            .flags(vk::BuildAccelerationStructureFlagsKHR::PREFER_FAST_TRACE)
+            .flags(vk::BuildAccelerationStructureFlagsKHR::PREFER_FAST_TRACE | flags)
             .geometries(as_geometry);
 
         let build_size = unsafe {
@@ -98,6 +99,7 @@ impl Context {
         as_geometry: &[vk::AccelerationStructureGeometryKHR],
         as_ranges: &[vk::AccelerationStructureBuildRangeInfoKHR],
         max_primitive_counts: &[u32],
+        flags: vk::BuildAccelerationStructureFlagsKHR,
     ) -> Result<AccelerationStructure> {
         let ray_tracing = self.ray_tracing.clone().expect(
             "Cannot call Context::create_bottom_level_acceleration_structure when ray tracing is not enabled",
@@ -110,6 +112,7 @@ impl Context {
             as_geometry,
             as_ranges,
             max_primitive_counts,
+            flags
         )
     }
 
@@ -118,6 +121,7 @@ impl Context {
         as_geometry: &[vk::AccelerationStructureGeometryKHR],
         as_ranges: &[vk::AccelerationStructureBuildRangeInfoKHR],
         max_primitive_counts: &[u32],
+        flags: vk::BuildAccelerationStructureFlagsKHR,
     ) -> Result<AccelerationStructure> {
         let ray_tracing = self.ray_tracing.clone().expect(
             "Cannot call Context::create_top_level_acceleration_structure when ray tracing is not enabled",
@@ -130,6 +134,7 @@ impl Context {
             as_geometry,
             as_ranges,
             max_primitive_counts,
+            flags,
         )
     }
 }

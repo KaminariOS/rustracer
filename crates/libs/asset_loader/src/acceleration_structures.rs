@@ -55,6 +55,7 @@ fn primitive_to_vk_geometry(
         // .transform_offset((node_index * size_of::<vk::TransformMatrixKHR>()) as u32)
         .build();
     BlasInput {
+        as_geo_data: as_geo_triangles_data,
         geometries: vec![geometry],
         build_range_infos: vec![build_range_info],
         max_primitives: vec![primitive_count],
@@ -66,7 +67,8 @@ pub fn create_as(
     context: &Context,
     doc: &Doc,
     buffers: &Buffers,
-) -> Result<(Vec<AccelerationStructure>, TopAS)> {
+    flags: vk::BuildAccelerationStructureFlagsKHR,
+) -> Result<(Vec<AccelerationStructure>, Vec<BlasInput>, TopAS)> {
     let mut blas_inputs: Vec<_> = doc
         .meshes
         .iter()
@@ -77,20 +79,22 @@ pub fn create_as(
     blas_inputs.sort_by_key(|b| b.geo_id);
 
     let blases: Vec<_> = blas_inputs
-        .into_iter()
+        .iter()
         .map(|b| {
             context
                 .create_bottom_level_acceleration_structure(
                     &b.geometries,
                     &b.build_range_infos,
                     &b.max_primitives,
+                    // vk::BuildAccelerationStructureFlagsKHR::ALLOW_UPDATE,
+                    vk::BuildAccelerationStructureFlagsKHR::empty(),
                 )
                 .unwrap()
         })
         .collect();
-    let tlas = create_top_as(context, doc, &blases)?;
+    let tlas = create_top_as(context, doc, &blases, flags)?;
 
-    Ok((blases, tlas))
+    Ok((blases, blas_inputs, tlas))
 }
 
 pub struct TopAS {
@@ -102,6 +106,7 @@ fn create_top_as(
     context: &Context,
     doc: &Doc,
     blases: &Vec<AccelerationStructure>,
+    flags: vk::BuildAccelerationStructureFlagsKHR,
 ) -> Result<TopAS> {
     let mut ins = vec![];
     let mut f = |node: &Node| {
@@ -162,12 +167,14 @@ fn create_top_as(
             &[as_struct_geo],
             &[as_ranges],
             &[ins.len() as u32],
+            flags,
         )?,
         _instance_buffer: instance_buffer,
     })
 }
 
-struct BlasInput {
+pub struct BlasInput {
+    as_geo_data: vk::AccelerationStructureGeometryTrianglesDataKHR,
     geometries: Vec<vk::AccelerationStructureGeometryKHR>,
     build_range_infos: Vec<vk::AccelerationStructureBuildRangeInfoKHR>,
     max_primitives: Vec<u32>,

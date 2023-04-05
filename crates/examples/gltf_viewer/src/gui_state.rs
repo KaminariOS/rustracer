@@ -165,6 +165,7 @@ impl app::Gui for Gui {
     fn build(&mut self, ui: &Ui) {
         ui.window("Vulkan RT")
             .size([300.0, 400.0], Condition::FirstUseEver)
+            .bg_alpha(0.5)
             .build(|| {
                 // RT controls
                 ui.text_wrapped("Rays");

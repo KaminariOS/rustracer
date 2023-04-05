@@ -468,7 +468,7 @@ impl<B: App> BaseApp<B> {
     fn build_perf_ui(&self, ui: &Ui, frame_stats: &mut FrameStats, scale: f32) {
         let width = self.swapchain.extent.width as f32 / scale;
         let height = self.swapchain.extent.height as f32 / scale;
-        println!("width{} height{}", width, height);
+        // println!("width{} height{}", width, height);
         if matches!(
             self.stats_display_mode,
             StatsDisplayMode::Basic | StatsDisplayMode::Full

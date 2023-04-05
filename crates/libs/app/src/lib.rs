@@ -417,7 +417,7 @@ impl<B: App> BaseApp<B> {
         let ui = gui_context.imgui.frame();
 
         gui.build(&ui);
-        self.build_perf_ui(&ui, frame_stats);
+        self.build_perf_ui(&ui, frame_stats, window.scale_factor() as _);
 
         gui_context.platform.prepare_render(&ui, window);
         let draw_data = gui_context.imgui.render();
@@ -465,10 +465,10 @@ impl<B: App> BaseApp<B> {
         Ok(false)
     }
 
-    fn build_perf_ui(&self, ui: &Ui, frame_stats: &mut FrameStats) {
-        let width = self.swapchain.extent.width as f32;
-        let height = self.swapchain.extent.height as f32;
-
+    fn build_perf_ui(&self, ui: &Ui, frame_stats: &mut FrameStats, scale: f32) {
+        let width = self.swapchain.extent.width as f32 / scale;
+        let height = self.swapchain.extent.height as f32 / scale;
+        println!("width{} height{}", width, height);
         if matches!(
             self.stats_display_mode,
             StatsDisplayMode::Basic | StatsDisplayMode::Full
@@ -477,7 +477,7 @@ impl<B: App> BaseApp<B> {
                 .focus_on_appearing(false)
                 .no_decoration()
                 .bg_alpha(0.5)
-                .position([width - 165.0, 5.0], gui::imgui::Condition::Always)
+                .position([width * 0.7, 5.0], gui::imgui::Condition::Always)
                 .size([160.0, 140.0], gui::imgui::Condition::FirstUseEver)
                 .build(|| {
                     ui.text("Framerate");
@@ -498,7 +498,7 @@ impl<B: App> BaseApp<B> {
                 .focus_on_appearing(false)
                 .no_decoration()
                 .bg_alpha(0.5)
-                .position([5.0, height - 145.0], gui::imgui::Condition::Always)
+                .position([5.0, height * 0.7], gui::imgui::Condition::Always)
                 .size([width - 10.0, 140.0], gui::imgui::Condition::Always)
                 .build(|| {
                     ui.plot_lines("Frame", &frame_stats.frame_time_ms_log.0)

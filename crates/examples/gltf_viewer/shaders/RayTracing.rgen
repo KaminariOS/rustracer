@@ -9,11 +9,7 @@
 #include "lib/RayTracingCommons.glsl"
 #include "lib/UniformBufferObject.glsl"
 
-const uint RENDER = 0;
-const uint HEAT = 1;
-const uint INSTANCE = 2;
-const uint TRIANGLE = 3;
-const uint DISTANCE = 4;
+
 
 layout(binding = AS_BIND, set = 0) uniform accelerationStructureEXT Scene;
 layout(binding = ACC_BIND, set = 1, rgba32f) uniform image2D AccumulationImage;
@@ -34,7 +30,7 @@ void main()
     Ray.RandomSeed = InitRandomSeed(InitRandomSeed(gl_LaunchIDEXT.x, gl_LaunchIDEXT.y), uint(clockARB()));
 
     vec3 pixelColor = vec3(0);
-    Ray.instance_id = 0xFFFFFFFF;
+//    Ray.instance_id = 0xFFFFFFFF;
 
     // Accumulate all the rays for this pixels.
     for (uint s = 0; s < Camera.NumberOfSamples; ++s)
@@ -50,10 +46,8 @@ void main()
         vec3 rayColor = vec3(1);
 
         // Ray scatters are handled in this loop. There are no recursive traceRayEXT() calls in other shaders.
-        for (uint b = 0; b <= Camera.NumberOfBounces; ++b)
+        for (uint b = 0; b <= Camera.NumberOfBounces; b++)
         {
-
-
             // If we've exceeded the ray bounce limit without hitting a light source, no light is gathered.
             // Light emitting materials never scatter in this implementation, allowing us to make this logical shortcut.
             if (b == Camera.NumberOfBounces)
@@ -105,14 +99,9 @@ void main()
             const float deltaTimeScaled = clamp(float(deltaTime) / heatmapScale, 0.0f, 1.0f);
             pixelColor = heatmap(deltaTimeScaled);
             break;
-        case INSTANCE:
-            pixelColor = hashAndColor(Ray.instance_id);
-            break;
-        case TRIANGLE:
-            pixelColor = bary_to_color(Ray.bary);
-            break;
         case DISTANCE:
             pixelColor = vec3(min((Camera.HeatmapScale - max(Ray.t, tMin)) / Camera.HeatmapScale, 1));
+            break;
         case RENDER:
             break;
     }

@@ -7,6 +7,7 @@
 #include "lib/RayTracingCommons.glsl"
 #include "lib/Material.glsl"
 #include "lib/PBR.glsl"
+#include "lib/UniformBufferObject.glsl"
 
 struct Vertex {
 	vec3 pos;
@@ -23,6 +24,7 @@ layout(binding = GEO_BIND, set = 0) readonly buffer PrimInfos { PrimInfo p[]; } 
 layout(binding = MAT_BIND, set = 0) readonly buffer Materials { MaterialRaw m[]; } materials;
 layout(binding = TEXTURE_BIND) uniform sampler2D[] textures;
 layout(binding = PLIGHT_BIND) readonly buffer Lights { Light[] lights; };
+layout(binding = UNIFORM_BIND, set = 0) readonly uniform UniformBufferObjectStruct { UniformBufferObject Camera; };
 
 //#include "Scatter.glsl"
 //#include "Vertex.glsl"
@@ -51,26 +53,51 @@ vec3 normal_transform(vec3 normal) {
 
 void main()
 {
-	PrimInfo primInfo = primInfos.p[gl_InstanceCustomIndexEXT];
-	MaterialRaw mat = materials.m[primInfo.material_id];
+	const PrimInfo primInfo = primInfos.p[gl_InstanceCustomIndexEXT];
+	const MaterialRaw mat = materials.m[primInfo.material_id];
 
-	Ray.instance_id = gl_InstanceID;
-	Ray.bary = HitAttributes;
+//	Ray.instance_id = gl_InstanceID;
+	Ray.t = gl_HitTEXT;
 	// Fetch vertices
-	uint vertexOffset = primInfo.v_offset;
-	uint indexOffset = primInfo.i_offset + (3 * gl_PrimitiveID);
+	const uint vertexOffset = primInfo.v_offset;
+	const uint indexOffset = primInfo.i_offset + (3 * gl_PrimitiveID);
 
-	uint i0 = vertexOffset + indices.i[indexOffset];
-	uint i1 = vertexOffset + indices.i[indexOffset + 1];
-	uint i2 = vertexOffset + indices.i[indexOffset + 2];
+	const uint i0 = vertexOffset + indices.i[indexOffset];
+	const uint i1 = vertexOffset + indices.i[indexOffset + 1];
+	const uint i2 = vertexOffset + indices.i[indexOffset + 2];
 
-	Vertex v0 = vertices.v[i0];
-	Vertex v1 = vertices.v[i1];
-	Vertex v2 = vertices.v[i2];
+	const Vertex v0 = vertices.v[i0];
+	const Vertex v1 = vertices.v[i1];
+	const Vertex v2 = vertices.v[i2];
 
 	// Compute the ray hit point properties.
 	const vec3 barycentricCoords = vec3(1.0 - HitAttributes.x - HitAttributes.y, HitAttributes.x, HitAttributes.y);
 	const vec2 uvs = Mix(v0.uvs, v1.uvs, v2.uvs, barycentricCoords);
+	const vec3 pos = Mix(v0.pos, v1.pos, v2.pos, barycentricCoords);
+	vec3 origin = vec3(gl_ObjectToWorldEXT * vec4(pos, 1.0)) ;
+
+	// Interpolate Color
+	const vec3 vertexColor = Mix(v0.color, v1.color, v2.color, barycentricCoords);
+	const vec3 baseColor = mat.baseColor.xyz;
+	vec3 color = vertexColor * baseColor;
+	if (mat.baseColorTexture.index > -1) {
+		color = color * texture(textures[mat.baseColorTexture.index], uvs).rgb;
+	}
+
+
+	Ray.needScatter = false;
+	Ray.hitPoint = pos;
+	switch (Camera.mapping) {
+		case ALBEDO:
+			Ray.hitValue = color;
+			return;
+		case TRIANGLE:
+			Ray.hitValue = bary_to_color(HitAttributes);
+			return;
+		case INSTANCE:
+			Ray.hitValue = hashAndColor(gl_InstanceID);
+			return;
+	}
 
 	vec3 normal = Mix(v0.normal, v1.normal, v2.normal, barycentricCoords);
 //	normal = normal_transform(normal);
@@ -89,18 +116,6 @@ void main()
 		normal = normal_transform(normal);
 	}
 
-
-	// Interpolate Color
-	vec3 vertexColor = Mix(v0.color, v1.color, v2.color, barycentricCoords);
-	vec3 baseColor = mat.baseColor.xyz;
-	vec3 color = vertexColor * baseColor;
-
-	if (mat.baseColorTexture.index > -1) {
-		color = color * texture(textures[mat.baseColorTexture.index], uvs).rgb;
-	}
-
-	const vec3 pos = Mix(v0.pos, v1.pos, v2.pos, barycentricCoords);
-	vec3 origin = vec3(gl_ObjectToWorldEXT * vec4(pos, 1.0)) ;
 	origin = offset_ray(origin, normal);
 
 	vec3 emittance = mat.emissive_factor.rgb;
@@ -108,23 +123,20 @@ void main()
 		emittance *= texture(textures[mat.emissive_texture.index], uvs).rgb;
 	}
 
-	MetallicRoughnessInfo metallicRoughnessInfo = mat.metallicRoughnessInfo;
+	const MetallicRoughnessInfo metallicRoughnessInfo = mat.metallicRoughnessInfo;
 	float metallic = metallicRoughnessInfo.metallic_factor;
 	float roughness = metallicRoughnessInfo.roughness_factor;
-	int mr_index = metallicRoughnessInfo.metallic_roughness_texture.index;
+	const int mr_index = metallicRoughnessInfo.metallic_roughness_texture.index;
 
 	if (mr_index > -1) {
 		vec4 metallic_roughness = texture(textures[mr_index], uvs);
 		roughness *= metallic_roughness.g;
 		metallic *= metallic_roughness.b;
 	}
-	float ior = mat.ior;
+	const float ior = mat.ior;
 
 	Ray.hitPoint = origin;
-	Ray.t = gl_HitTEXT;
 	uint seed = Ray.RandomSeed;
-
-
 	if (length(emittance) > 0.) {
 		Ray.hitValue = emittance * 1.0;
 		Ray.needScatter = false;
@@ -161,7 +173,6 @@ void main()
 		Ray.hitValue = isScattered? color: vec3(0.);
 		Ray.scatterDirection = reflected + 0.08 * RandomInUnitSphere(seed);
 	}
-
 
 	Ray.RandomSeed = seed;
 }

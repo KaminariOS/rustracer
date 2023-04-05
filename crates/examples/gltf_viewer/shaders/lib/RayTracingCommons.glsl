@@ -6,8 +6,8 @@ struct RayPayload
 	vec3 scatterDirection;
 	bool needScatter;
 	uint RandomSeed;
-	uint instance_id;
-	vec2 bary;
+//	uint instance_id;
+//	vec2 bary;
 };
 
 struct PrimInfo {
@@ -93,3 +93,11 @@ const uint MAT_BIND = 9;
 const uint DLIGHT_BIND = 10;
 const uint PLIGHT_BIND = 11;
 const uint SKYBOX_BIND = 12;
+
+
+const uint RENDER = 0;
+const uint HEAT = 1;
+const uint INSTANCE = 2;
+const uint TRIANGLE = 3;
+const uint DISTANCE = 4;
+const uint ALBEDO = 5;

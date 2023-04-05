@@ -18,7 +18,8 @@ pub struct Gui {
     pub scale: f32,
     pub scene: Scene,
     pub mapping: Mapping,
-    pub skybox: Skybox
+    pub skybox: Skybox,
+    animation: bool
 }
 
 #[derive(IntoStaticStr, AsRefStr, EnumIter, PartialEq, Clone, Copy, Debug, Default)]
@@ -93,7 +94,8 @@ pub enum Mapping {
     HEAT = 1,
     INSTANCE = 2,
     TRIANGLE = 3,
-    DISTANCE = 4
+    DISTANCE = 4,
+    ALBEDO = 5,
 }
 
 impl Gui {
@@ -114,7 +116,7 @@ impl Gui {
     }
 
     pub fn acc(&self) -> bool {
-        self.acc && !self.is_mapping()
+        self.acc && !self.is_mapping() && !self.animation
     }
 
     pub fn get_bounce(&self) -> u32 {
@@ -147,6 +149,7 @@ impl app::Gui for Gui {
             scale: 1.,
             mapping: Default::default(),
             skybox: Default::default(),
+            animation: false
         })
     }
 
@@ -246,6 +249,10 @@ impl app::Gui for Gui {
 
                 if ui.radio_button_bool("Acc", self.acc) {
                     self.acc = !self.acc;
+                }
+
+                if ui.radio_button_bool("Animation", self.animation) {
+                    self.animation = !self.animation;
                 }
 
                 if ui.radio_button_bool("sky", self.sky) {

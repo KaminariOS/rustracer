@@ -13,7 +13,6 @@ layout(location = 0) rayPayloadInEXT RayPayload Ray;
 
 void main()
 {
-	Ray.bary = vec2(0.0);
 	vec3 light_acc = vec3(0.);
 	for(int i = 0; i < lights.length(); i++) {
 		Light li = lights[i];

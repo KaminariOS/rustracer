@@ -61,6 +61,7 @@ struct GltfViewer {
     buffers: Buffers,
     globals: VkGlobal,
     clock: Instant,
+    last_update: Instant,
 }
 impl GltfViewer {
     fn new_with_scene(base: &mut BaseApp<Self>, scene: Scene, skybox: Skybox) -> Result<Self> {
@@ -117,6 +118,7 @@ impl GltfViewer {
             buffers,
             globals,
             clock: Instant::now(),
+            last_update: Instant::now(),
         })
     }
 }
@@ -257,8 +259,9 @@ impl App for GltfViewer {
             self.total_number_of_samples = 0;
         }
 
-        if !self.doc.static_scene() && gui_state.animation {
-            let t = self.clock.elapsed().as_secs_f32() / 1.;
+        if !self.doc.static_scene() && gui_state.animation && self.need_update() {
+            self.last_update = Instant::now();
+            let t = self.clock.elapsed().as_secs_f32() * gui_state.animation_speed;
             self.doc.animate(t);
             let tlas = create_top_as(&base.context, &self.doc, &self._bottom_as, vk::BuildAccelerationStructureFlagsKHR::ALLOW_UPDATE).unwrap();
             self.update_tlas(tlas);
@@ -279,5 +282,9 @@ impl GltfViewer {
             },
         ]);
         self._top_as = tlas;
+    }
+
+    fn need_update(&self) -> bool {
+        self.last_update.elapsed().as_secs_f32() >= 1./60.
     }
 }

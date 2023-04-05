@@ -19,7 +19,8 @@ pub struct Gui {
     pub scene: Scene,
     pub mapping: Mapping,
     pub skybox: Skybox,
-    pub animation: bool
+    pub animation: bool,
+    pub animation_speed: f32,
 }
 
 #[derive(IntoStaticStr, AsRefStr, EnumIter, PartialEq, Clone, Copy, Debug, Default)]
@@ -156,7 +157,8 @@ impl app::Gui for Gui {
             scale: 1.,
             mapping: Default::default(),
             skybox: Default::default(),
-            animation: false
+            animation: false,
+            animation_speed: 1.,
         })
     }
 
@@ -260,6 +262,9 @@ impl app::Gui for Gui {
 
                 if ui.radio_button_bool("Animation", self.animation) {
                     self.animation = !self.animation;
+                }
+                if self.animation {
+                    ui.slider("Animation speed", 0.1, 10., &mut self.animation_speed);
                 }
 
                 if ui.radio_button_bool("sky", self.sky) {

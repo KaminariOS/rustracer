@@ -79,8 +79,7 @@ impl AnimationChannel {
         let len = self.input.len();
         let max = self.input[len - 1];
         let interval = max - min;
-        t = t.max(min);
-        let t = (t - min) % interval + min;
+        let t = if t > min {(t - min) % interval + min} else {t};
         let mut s = 0;
         let mut e = 0;
         for (i, &d) in self.input[..len - 1].iter().enumerate() {

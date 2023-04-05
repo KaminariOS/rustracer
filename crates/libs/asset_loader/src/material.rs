@@ -1,6 +1,6 @@
 use std::collections::{HashSet};
 use crate::{Name, a3toa4, get_name};
-use gltf::material::{AlphaMode, NormalTexture, OcclusionTexture, PbrMetallicRoughness, Transmission, Volume};
+use gltf::material::{AlphaMode, NormalTexture, OcclusionTexture, PbrMetallicRoughness, PbrSpecularGlossiness, Transmission, Volume};
 use gltf::texture;
 
 #[repr(C)]
@@ -106,6 +106,8 @@ pub fn find_linear_textures(materials: &[Material]) -> HashSet<usize> {
 #[derive(Copy, Clone)]
 pub struct MaterialRaw {
     pub alpha_mode: u32,
+    pub alpha_cutoff: f32,
+    pub _padding: [f32; 3],
     pub double_sided: u32,
 
     pub base_color_texture: TextureInfo,
@@ -132,11 +134,9 @@ pub struct MaterialRaw {
 impl From<&Material> for MaterialRaw {
     fn from(value: &Material) -> Self {
         Self {
-            alpha_mode: match value.alpha_mode {
-                AlphaMode::Opaque => 1,
-                AlphaMode::Mask => 2,
-                AlphaMode::Blend => 3,
-            },
+            alpha_mode: value.alpha_mode as _,
+            alpha_cutoff: value.alpha_cutoff.unwrap_or_default(),
+            _padding: [0.; 3],
             double_sided: value.double_sided.into(),
             base_color_texture: value.base_color_texture,
             base_color: value.base_color,
@@ -216,12 +216,32 @@ impl From<Transmission<'_>> for TransmissionInfo {
         }
     }
 }
+struct SpecularGlossiness {
+    diffuse_factor: [f32; 4],
+    diffuse_texture: TextureInfo,
+    specular_glossiness_texture: TextureInfo,
+    glossiness_factor: f32,
+    specular_factor: [f32; 3],
+}
+
+impl<'a> From<PbrSpecularGlossiness<'_>> for SpecularGlossiness {
+    fn from(pbr: PbrSpecularGlossiness<'_>) -> Self {
+        Self {
+            diffuse_factor: pbr.diffuse_factor(),
+            glossiness_factor: pbr.glossiness_factor(),
+            specular_factor: pbr.specular_factor(),
+            diffuse_texture: TextureInfo::new(pbr.diffuse_texture()),
+            specular_glossiness_texture: TextureInfo::new(pbr.specular_glossiness_texture())
+        }
+    }
+}
 
 impl<'a> From<gltf::Material<'_>> for Material {
     fn from(material: gltf::Material) -> Self {
         let pbr = material.pbr_metallic_roughness();
         let em = material.emissive_factor();
         let unlit = material.unlit();
+        let sg = material.pbr_specular_glossiness().map(SpecularGlossiness::from);
 
         let mut base_color_texture = TextureInfo::new(pbr.base_color_texture());
         if base_color_texture.is_none() {

@@ -13,3 +13,4 @@ asset_loader = { path = "../../libs/asset_loader", features = ["ash"]}
 rand.workspace = true
 strum.workspace = true
 strum_macros.workspace = true
+

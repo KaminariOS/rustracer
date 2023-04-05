@@ -19,12 +19,11 @@ pub struct Gui {
     pub scene: Scene,
     pub mapping: Mapping,
     pub skybox: Skybox,
-    animation: bool
+    pub animation: bool
 }
 
 #[derive(IntoStaticStr, AsRefStr, EnumIter, PartialEq, Clone, Copy, Debug, Default)]
 pub enum Scene {
-    #[default]
     LucyInCornell,
     Cornell,
     ABeautifulGame,
@@ -42,10 +41,17 @@ pub enum Scene {
     Loba,
     Hulkbuster,
     KikuHoshimi,
+    #[default]
     SparkLence,
     Apollo,
     CyberSamurai,
     Apex,
+    Ra,
+    BlueEye,
+    Puzzle,
+    Titan,
+    MilleniumEye,
+    VC,
 }
 
 impl Scene {
@@ -59,6 +65,7 @@ impl Scene {
             Self::Sponza => "Sponza/glTF",
             Self::EmissiveTest => "EmissiveStrengthTest/glTF",
             Self::Punctual => "LightsPunctualLamp/glTF",
+            Self::VC => "VC/glTF",
             scene => scene.into(),
         }
     }

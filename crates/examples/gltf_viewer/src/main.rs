@@ -7,7 +7,7 @@ use app::vulkan::gpu_allocator::MemoryLocation;
 use app::App;
 use app::{vulkan::*, BaseApp};
 use std::mem::size_of;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 mod desc_sets;
 mod gui_state;
@@ -15,7 +15,7 @@ mod pipeline_res;
 mod ubo;
 
 use crate::gui_state::{Scene, Skybox};
-use asset_loader::acceleration_structures::{BlasInput, create_as, TopAS};
+use asset_loader::acceleration_structures::{BlasInput, create_as, create_top_as, TopAS};
 use asset_loader::globals::{create_global, Buffers, VkGlobal, SkyboxResource};
 use asset_loader::Doc;
 use desc_sets::*;
@@ -47,7 +47,7 @@ fn main() -> Result<()> {
 
 struct GltfViewer {
     ubo_buffer: Buffer,
-    _model: Doc,
+    doc: Doc,
     _bottom_as: Vec<AccelerationStructure>,
     blas_inputs: Vec<BlasInput>,
     _top_as: TopAS,
@@ -60,6 +60,7 @@ struct GltfViewer {
 
     buffers: Buffers,
     globals: VkGlobal,
+    clock: Instant,
 }
 impl GltfViewer {
     fn new_with_scene(base: &mut BaseApp<Self>, scene: Scene, skybox: Skybox) -> Result<Self> {
@@ -74,10 +75,10 @@ impl GltfViewer {
         let skybox = SkyboxResource::new(context, skybox.path())?;
         let globals = create_global(context, &doc, skybox)?;
         let buffers = Buffers::new(context, &doc.geo_builder, &globals)?;
-        let (blas, blas_inputs, tlas) = create_as(context, &doc, &buffers, if true {
-            vk::BuildAccelerationStructureFlagsKHR::ALLOW_UPDATE
-        } else {
+        let (blas, blas_inputs, tlas) = create_as(context, &doc, &buffers, if doc.static_scene() {
             vk::BuildAccelerationStructureFlagsKHR::empty()
+        } else {
+            vk::BuildAccelerationStructureFlagsKHR::ALLOW_UPDATE
         })?;
         // let bottom_as = create_bottom_as(context, &model)?;
 
@@ -103,7 +104,7 @@ impl GltfViewer {
 
         Ok(Self {
             ubo_buffer,
-            _model: doc,
+            doc: doc,
             _bottom_as: blas,
             blas_inputs,
             _top_as: tlas,
@@ -114,7 +115,8 @@ impl GltfViewer {
             old_camera: None,
             prev_gui_state: None,
             buffers,
-            globals
+            globals,
+            clock: Instant::now(),
         })
     }
 }
@@ -254,5 +256,28 @@ impl App for GltfViewer {
             self.prev_gui_state = Some(*gui_state);
             self.total_number_of_samples = 0;
         }
+
+        if !self.doc.static_scene() && gui_state.animation {
+            let t = self.clock.elapsed().as_secs_f32() / 1.;
+            self.doc.animate(t);
+            let tlas = create_top_as(&base.context, &self.doc, &self._bottom_as, vk::BuildAccelerationStructureFlagsKHR::ALLOW_UPDATE).unwrap();
+            self.update_tlas(tlas);
+        }
+    }
+
+
+}
+
+impl GltfViewer {
+    fn update_tlas(&mut self, tlas: TopAS) {
+        self.descriptor_res.static_set.update(&[
+            WriteDescriptorSet {
+                binding: AS_BIND,
+                kind: WriteDescriptorSetKind::AccelerationStructure {
+                    acceleration_structure: &tlas.inner,
+                },
+            },
+        ]);
+        self._top_as = tlas;
     }
 }

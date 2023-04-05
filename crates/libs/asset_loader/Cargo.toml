@@ -19,6 +19,7 @@ strum.workspace = true
 strum_macros.workspace = true
 rayon = {workspace = true, optional = true}
 cfg-if.workspace = true
+interpolation.workspace = true
 
 [features]
 default = ["rayon", "ash"]

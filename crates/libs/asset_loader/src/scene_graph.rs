@@ -12,8 +12,9 @@ use gltf::{Document};
 use std::iter::once;
 use std::path::Path;
 use std::time::Instant;
+use gltf::scene::Transform;
 use log::{info};
-use crate::animation::Animation;
+use crate::animation::{Animation, PropertyOutput};
 use crate::light::{Light, LightRaw, report_lights};
 
 #[derive(Default)]
@@ -25,7 +26,7 @@ pub struct Doc {
     pub meshes: Vec<Mesh>,
     materials: Vec<Material>,
     pub(crate) textures: Vec<Texture>,
-    animations: Vec<Animation>,
+    pub animations: Vec<Animation>,
     lights: Vec<Light>,
     // default_material_id: MaterialID,
     // default_sampler_id: SamplerID,
@@ -105,6 +106,9 @@ impl Doc {
                                               materials.iter().map(|m| m.has_normal_texture()).collect()
         );
 
+        let animations: Vec<_> = doc.animations().map(|a| Animation::new(a, &geo_builder) ).collect();
+        check_indices!(animations);
+
         let now = Instant::now();
         let meshes: Vec<_> = doc
             .meshes()
@@ -113,10 +117,6 @@ impl Doc {
         geo_builder.buffers = Vec::with_capacity(0);
         check_indices!(meshes);
         info!("Finish processing meshes, time:{}s", now.elapsed().as_secs());
-
-
-
-        let animations = vec![];
 
         let linear = find_linear_textures(&materials);
 
@@ -159,7 +159,7 @@ impl Doc {
                 .for_each(|n| self.update_parent_transform(n, Mat4::IDENTITY));
     }
 
-    fn update_local_transform(&mut self, node_id: NodeID, new_local: Mat4) {
+    fn update_local_transform(&mut self, node_id: NodeID, new_local: Transform) {
         let node = &mut self.nodes[node_id];
         node.local_transform = new_local;
         let parent = node.parent_transform_cache;
@@ -169,11 +169,31 @@ impl Doc {
     fn update_parent_transform(&mut self, node_id: NodeID, new_parent: Mat4) {
         let node = &mut self.nodes[node_id];
         node.parent_transform_cache = new_parent;
-        let local_transform = node.local_transform;
+        let local_transform = node.get_local_transform();
         node.children
             .clone()
             .into_iter()
             .for_each(|c| self.update_parent_transform(c, new_parent * local_transform));
+    }
+
+    pub fn animate(&mut self, t: f32) {
+        let all: Vec<_> = self.animations.iter().map(|a| &a.channels)
+            .flatten()
+            .map(|c| {
+                let target = c.target;
+                let trans = c.get_transform(t);
+                (target, trans)
+            }).collect();
+        all.into_iter().for_each(|(target, trans)|
+            {
+                let transform = self.nodes[target].animate(trans);
+                self.update_local_transform(target, transform);
+            }
+        );
+    }
+
+    pub fn static_scene(&self) -> bool {
+        self.animations.is_empty()
     }
 }
 
@@ -199,7 +219,7 @@ pub struct Node {
     children: Vec<NodeID>,
     light: Option<usize>,
     pub mesh: Option<MeshID>,
-    local_transform: Mat4,
+    local_transform: Transform,
     parent_transform_cache: Mat4,
 }
 
@@ -209,12 +229,23 @@ impl Node {
     }
 }
 
-
-
 impl Node {
     pub fn get_world_transform(&self) -> Mat4 {
         self.parent_transform_cache *
-            self.local_transform
+            self.get_local_transform()
+    }
+    pub fn get_local_transform(&self) -> Mat4 {
+        Mat4::from_cols_array_2d(&self.local_transform.clone().matrix())
+    }
+
+    pub fn animate(&self, update: PropertyOutput) -> Transform {
+        let (mut t, mut r, mut s ) = self.local_transform.clone().decomposed();
+        match update {
+            PropertyOutput::Translation(t_new) => {t = t_new;}
+            PropertyOutput::Rotation(r_new) => {r = r_new;}
+            PropertyOutput::Scale(s_new) => {s = s_new;}
+        }
+        Transform::Decomposed {translation: t, scale: s, rotation: r}
     }
 }
 
@@ -227,7 +258,7 @@ struct Skin {
 
 impl<'a> From<gltf::Skin<'_>> for Skin {
     fn from(skin: gltf::Skin<'_>) -> Self {
-        let reader = skin.inverse_bind_matrices();
+        // let reader = skin.inverse_bind_matrices();
         let joints = get_index!(skin.joints()).collect();
         skin.skeleton();
         // let reader = skin.reader();
@@ -241,14 +272,14 @@ impl<'a> From<gltf::Skin<'_>> for Skin {
 
 impl<'a> From<gltf::Node<'_>> for Node {
     fn from(node: gltf::Node) -> Self {
-        node.skin();
+        // node.skin();
         Self {
             index: node.index(),
             name: get_name!(node),
             children: get_index!(node.children()).collect(),
             light: get_index!(node.light()),
             mesh: get_index!(node.mesh()),
-            local_transform: Mat4::from_cols_array_2d(&node.transform().matrix()),
+            local_transform: node.transform(),
             parent_transform_cache: Mat4::IDENTITY,
         }
     }
@@ -267,7 +298,9 @@ pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Doc> {
 
     let mut doc = Doc::new(&document, buffers, gltf_images);
     doc.load_scene(&document);
-
+    if !doc.static_scene() {
+        info!("Animation available.");
+    }
     Ok(doc)
 }
 

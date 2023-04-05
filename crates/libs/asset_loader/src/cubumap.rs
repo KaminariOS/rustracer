@@ -47,6 +47,7 @@ impl Face {
     }
 }
 
+#[cfg(not(feature = "rayon"))]
 fn load_skybox(dir_entry: Vec<DirEntry>) -> Result<(Vec<Image>, Vec<u8>)> {
     let images = dir_entry.into_iter()
         .map(|d|

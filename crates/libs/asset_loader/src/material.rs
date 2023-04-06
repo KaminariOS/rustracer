@@ -325,7 +325,8 @@ impl<'a> From<gltf::Material<'_>> for Material {
             emissive_texture: TextureInfo::new(material.emissive_texture()),
 
             occlusion_texture: TextureInfo::new_occ(material.occlusion_texture()),
-            ior: material.ior().unwrap_or(0.),
+            // glTF default
+            ior: material.ior().unwrap_or(1.5),
             name: get_name!(material),
             index: material.index().unwrap_or(0),
             material_type: MaterialType::MetallicRoughness,

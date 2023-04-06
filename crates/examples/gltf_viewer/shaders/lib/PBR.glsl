@@ -130,15 +130,34 @@ float Schlick(const float cosine, const float refractionIndex)
 #define SPECULAR_TYPE 2
 #define TRANSMISSION_TYPE 3
 
+const float OURSIDE_IOR = 1.;
+
 struct MaterialBrdf {
 	vec3 baseColor;
 	float metallic;
 	float roughness;
 	float ior;
 	float transmission;
+	bool use_spec;
 	float specular_factor;
 	vec3 specular_color_factor;
+	vec3 dielectricSpecularF0;
+	vec3 dielectricSpecularF90;
+	vec3 F0;
+	vec3 F90;
 };
+
+void matBuild(inout MaterialBrdf material) {
+	// https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_ior/README.md
+	// Note that for the default index of refraction ior = 1.5 this term evaluates to dielectricSpecular = 0.04.
+	 // MIN_DIELECTRICS_F0 = 0.04
+	float factor = (material.ior - OURSIDE_IOR) / (material.ior + OURSIDE_IOR);
+	material.dielectricSpecularF0 = min(factor * factor * material.specular_color_factor, vec3(1.0)) *
+	material.specular_factor;
+	material.dielectricSpecularF90 = material.specular_color_factor;
+	material.F0 = mix(material.dielectricSpecularF0, material.baseColor, material.metallic);
+	material.F90 = mix(material.dielectricSpecularF90, vec3(1.), material.metallic);
+}
 
 
 float rsqrt(float x) { return inversesqrt(x); }
@@ -146,8 +165,11 @@ float rsqrt(float x) { return inversesqrt(x); }
 
 float saturate(float x) { return clamp(x, 0.0f, 1.0f); }
 
-vec3 baseColorToSpecularF0(vec3 baseColor, float metalness) {
-	return mix(vec3(MIN_DIELECTRICS_F0), baseColor, metalness);
+vec3 baseColorToSpecularF0(const MaterialBrdf material, vec3 baseColor, float metalness) {
+
+	vec3 dielectricSpecularF0 = min(MIN_DIELECTRICS_F0 * material.specular_color_factor, vec3(1.0)) *
+	material.specular_factor;
+	return mix(dielectricSpecularF0, baseColor, metalness);
 }
 
 float luminance(vec3 rgb)
@@ -187,21 +209,25 @@ vec3 evalFresnel(vec3 f0, float f90, float NdotS)
 // Also see section "Overbright highlights" in Hoffman's 2010 "Crafting Physically Motivated Shading Models for Game Development" for discussion
 // IMPORTANT: Note that when F0 is calculated using metalness, it's value is never less than MIN_DIELECTRICS_F0, and therefore,
 // this adjustment has no effect. To be effective, F0 must be authored separately, or calculated in different way. See main text for discussion.
-float shadowedF90(vec3 F0) {
+float shadowedF90(const vec3 F90
+//, vec3 F0
+) {
 	// This scaler value is somewhat arbitrary, Schuler used 60 in his article. In here, we derive it from MIN_DIELECTRICS_F0 so
 	// that it takes effect for any reflectance lower than least reflective dielectrics
 	//const float t = 60.0f;
-	const float t = (1.0f / MIN_DIELECTRICS_F0);
-	return min(1.0f, t * luminance(F0));
+//	const float t = (1.0f / MIN_DIELECTRICS_F0);
+//	vec3 dielectricSpecularF90 = mat.specular_color_factor;
+//	vec3 F90 = mix(dielectricSpecularF90, vec3(1.), mat.metallic);
+	return min(1.0f, luminance(F90));
 }
 
 BRDF getBrdfProbability(MaterialBrdf mat, vec3 V, vec3 shadingNormal) {
 
 	// Evaluate Fresnel term using the shading normal
 	// Note: we use the shading normal instead of the microfacet normal (half-vector) for Fresnel term here. That's suboptimal for rough surfaces at grazing angles, but half-vector is yet unknown at this point
-	float specularF0 = luminance(baseColorToSpecularF0(mat.baseColor, mat.metallic));
+	float specularF0 = luminance(mat.F0);
 	float diffuseReflectance = luminance(baseColorToDiffuseReflectance(mat.baseColor, mat.metallic));
-	float Fresnel = saturate(luminance(evalFresnel(vec3(specularF0), shadowedF90(vec3(specularF0)), max(0.0f, dot(V, shadingNormal)))));
+	float Fresnel = saturate(luminance(evalFresnel(vec3(specularF0), shadowedF90(mat.F90), max(0.0f, dot(V, shadingNormal)))));
 
 	// Approximate relative contribution of BRDFs using the Fresnel term
 	float specular = Fresnel;
@@ -265,6 +291,7 @@ struct BrdfData
 // Material properties
 	vec3 specularF0;
 	vec3 diffuseReflectance;
+	vec3 specularF90;
 
 // Roughnesses
 	float roughness;    //< perceptively linear roughness (artist's input)
@@ -431,7 +458,8 @@ BrdfData prepareBRDFData(vec3 N, vec3 L, vec3 V, MaterialBrdf material) {
 	data.VdotH = saturate(dot(V, data.H));
 
 	// Unpack material properties
-	data.specularF0 = baseColorToSpecularF0(material.baseColor, material.metallic);
+	data.specularF0 = material.F0;
+	data.specularF90 = material.F90;
 	data.diffuseReflectance = baseColorToDiffuseReflectance(material.baseColor, material.metallic);
 
 	// Unpack 'perceptively linear' -> 'linear' -> 'squared' roughness
@@ -440,7 +468,7 @@ BrdfData prepareBRDFData(vec3 N, vec3 L, vec3 V, MaterialBrdf material) {
 	data.alphaSquared = data.alpha * data.alpha;
 
 	// Pre-calculate some more BRDF terms
-	data.F = evalFresnel(data.specularF0, shadowedF90(data.specularF0), data.LdotH);
+	data.F = evalFresnel(data.specularF0, shadowedF90(material.F90), data.LdotH);
 
 	return data;
 }
@@ -466,7 +494,7 @@ vec4 invertRotation(vec4 q)
 
 // Samples a reflection ray from the rough surface using selected microfacet distribution and sampling method
 // Resulting weight includes multiplication by cosine (NdotL) term
-vec3 sampleSpecularMicrofacet(vec3 Vlocal, float alpha, float alphaSquared, vec3 specularF0, vec2 u, inout vec3 weight) {
+vec3 sampleSpecularMicrofacet(vec3 Vlocal, float alpha, float alphaSquared, vec3 specularF0, vec2 u, inout vec3 weight, vec3 specularF90) {
 
 	// Sample a microfacet normal (H) in local space
 	vec3 Hlocal;
@@ -488,7 +516,7 @@ vec3 sampleSpecularMicrofacet(vec3 Vlocal, float alpha, float alphaSquared, vec3
 	float NdotL = max(0.00001f, min(1.0f, dot(Nlocal, Llocal)));
 	float NdotV = max(0.00001f, min(1.0f, dot(Nlocal, Vlocal)));
 	float NdotH = max(0.00001f, min(1.0f, dot(Nlocal, Hlocal)));
-	vec3 F = evalFresnel(specularF0, shadowedF90(specularF0), HdotL);
+	vec3 F = evalFresnel(specularF0, shadowedF90(specularF90), HdotL);
 
 	// Calculate weight of the sample specific for selected sampling method
 	// (this is microfacet BRDF divided by PDF of sampling method - notice how most terms cancel out)
@@ -524,7 +552,7 @@ bool evalIndirectCombinedBRDF(vec2 u, vec3 shadingNormal, vec3 geometryNormal, v
 	}
 	else if (brdfType == SPECULAR_TYPE) {
 		const BrdfData data = prepareBRDFData(Nlocal, vec3(0.0f, 0.0f, 1.0f) /* unused L vector */, Vlocal, material);
-		rayDirectionLocal = sampleSpecular(Vlocal, data.alpha, data.alphaSquared, data.specularF0, u, sampleWeight);
+		rayDirectionLocal = sampleSpecular(Vlocal, data.alpha, data.alphaSquared, data.specularF0, u, sampleWeight, data.specularF90);
 		//        sampleWeight = vec3(1.);
 	}
 

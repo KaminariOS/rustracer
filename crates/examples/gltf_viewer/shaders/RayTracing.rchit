@@ -131,7 +131,11 @@ void main()
 
 	Ray.needScatter = false;
 	Ray.hitPoint = pos;
-	switch (Camera.mapping) {
+	uint mapping = Camera.mapping;
+	if (mat.unlit) {
+		mapping = ALBEDO;
+	}
+	switch (mapping) {
 		case ALBEDO:
 			Ray.emittance = color;
 			return;
@@ -221,7 +225,8 @@ void main()
 	matbrdf.transmission = transmission_factor;
 	matbrdf.specular_factor = spec_factor;
 	matbrdf.specular_color_factor = spec_color_factor;
-
+	matbrdf.use_spec = spec_info.exist;
+	matBuild(matbrdf);
 	if (metallic == 1.0 && roughness == 0.0) {
 		brdfType = SPECULAR_TYPE;
 	}

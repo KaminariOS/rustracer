@@ -219,6 +219,8 @@ void main()
 	matbrdf.roughness = roughness;
 	matbrdf.ior = ior;
 	matbrdf.transmission = transmission_factor;
+	matbrdf.specular_factor = spec_factor;
+	matbrdf.specular_color_factor = spec_color_factor;
 
 	if (metallic == 1.0 && roughness == 0.0) {
 		brdfType = SPECULAR_TYPE;

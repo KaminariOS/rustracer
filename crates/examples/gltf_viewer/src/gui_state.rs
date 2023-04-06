@@ -21,6 +21,7 @@ pub struct Gui {
     pub skybox: Skybox,
     pub animation: bool,
     pub animation_speed: f32,
+    pub antialiasing: bool,
 }
 
 #[derive(IntoStaticStr, AsRefStr, EnumIter, PartialEq, Clone, Copy, Debug, Default)]
@@ -159,6 +160,7 @@ impl app::Gui for Gui {
             skybox: Default::default(),
             animation: false,
             animation_speed: 1.,
+            antialiasing: true,
         })
     }
 
@@ -270,6 +272,10 @@ impl app::Gui for Gui {
 
                 if ui.radio_button_bool("sky", self.sky) {
                     self.sky = !self.sky;
+                }
+
+                if ui.radio_button_bool("Anti-aliasing", self.antialiasing) {
+                    self.antialiasing = !self.antialiasing;
                 }
                 // ui.color_picker3_config("color", &mut self.light.color)
                 //     .display_rgb(true)

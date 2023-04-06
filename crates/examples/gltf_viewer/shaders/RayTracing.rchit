@@ -78,13 +78,13 @@ void main()
 	Ray.hitPoint = pos;
 	switch (Camera.mapping) {
 		case ALBEDO:
-			Ray.hitValue = color;
+			Ray.emittance = color;
 			return;
 		case TRIANGLE:
-			Ray.hitValue = bary_to_color(HitAttributes);
+			Ray.emittance = bary_to_color(HitAttributes);
 			return;
 		case INSTANCE:
-			Ray.hitValue = hashAndColor(gl_InstanceID);
+			Ray.emittance = hashAndColor(gl_InstanceID);
 			return;
 	}
 

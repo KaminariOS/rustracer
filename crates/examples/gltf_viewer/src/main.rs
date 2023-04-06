@@ -163,6 +163,7 @@ impl App for GltfViewer {
             random_seed: 3,
             has_sky: gui.sky.into(),
             mapping: gui.mapping as _,
+            antialiasing: gui.antialiasing.into(),
         };
 
         self.ubo_buffer.copy_data_to_buffer(&[ubo])?;

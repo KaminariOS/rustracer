@@ -20,6 +20,25 @@ layout(binding = UNIFORM_BIND, set = 0) readonly uniform UniformBufferObjectStru
 layout(location = 0) rayPayloadEXT RayPayload Ray;
 
 
+// Casts a shadow ray and returns true if light is unoccluded
+// Note that we use dedicated hit group with simpler shaders for shadow rays
+bool castShadowRay(vec3 hitPosition, vec3 surfaceNormal, vec3 directionToLight, float tMax)
+{
+    vec3 origin = offset_ray(hitPosition, surfaceNormal);
+    vec3 direction = directionToLight;
+
+//    ShadowHitInfo payload;
+//    payload.hasHit = true; //< Initialize hit flag to true, it will be set to false on a miss
+    float tMin = 0.1;
+
+    // Trace the ray
+    traceRayEXT(
+    Scene, gl_RayFlagsOpaqueEXT | gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsSkipClosestHitShaderEXT, 0xff,
+    SHADOW_RAY_INDEX /*sbtRecordOffset*/, 0 /*sbtRecordStride*/, 0 /*missIndex*/,
+    origin.xyz, tMin, direction.xyz, tMax, 0 /*payload*/);
+    return Ray.t < 0;
+}
+
 void main()
 {
     const uint64_t clock = ubo.mapping == HEAT ? clockARB() : 0;
@@ -30,6 +49,7 @@ void main()
     uint pixelRandomSeed = ubo.RandomSeed;
     Ray.RandomSeed = InitRandomSeed(InitRandomSeed(gl_LaunchIDEXT.x, gl_LaunchIDEXT.y), uint(pixelRandomSeed));
     RngStateType rngState = initRNG(uvec2(gl_LaunchIDEXT), uvec2(gl_LaunchSizeEXT.xy), uint(pixelRandomSeed));
+    Ray.rngState = initRNG(uvec2(gl_LaunchIDEXT), uvec2(gl_LaunchSizeEXT.xy), uint(clock));
     vec3 radiance = vec3(0);
 //    Ray.instance_id = 0xFFFFFFFF;
     // Accumulate all the rays for this pixels.
@@ -38,9 +58,10 @@ void main()
         //if (ubo.NumberOfSamples != ubo.TotalNumberOfSamples) break;
         vec2 pixel;
         if (ubo.antialiasing) {
-            pixel = vec2(gl_LaunchIDEXT.x + RandomFloat(pixelRandomSeed), gl_LaunchIDEXT.y + RandomFloat(pixelRandomSeed));
+            vec2 offset = vec2(rand(rngState), rand(rngState)) - 0.5;
+            pixel = gl_LaunchIDEXT.xy + offset;
         } else {
-            pixel = vec2(gl_LaunchIDEXT.x, gl_LaunchIDEXT.y);
+            pixel = gl_LaunchIDEXT.xy;
         }
         const vec2 uv = (pixel / gl_LaunchSizeEXT.xy) * 2.0 - 1.0;
 
@@ -51,16 +72,8 @@ void main()
         vec3 throughput = vec3(1);
 
         // Ray scatters are handled in this loop. There are no recursive traceRayEXT() calls in other shaders.
-        for (uint b = 0; b <= ubo.NumberOfBounces; b++)
+        for (uint b = 0; b < ubo.NumberOfBounces; b++)
         {
-            // If we've exceeded the ray bounce limit without hitting a light source, no light is gathered.
-            // Light emitting materials never scatter in this implementation, allowing us to make this logical shortcut.
-            if (b == ubo.NumberOfBounces)
-            {
-                throughput = vec3(0, 0, 0);
-                break;
-            }
-
             traceRayEXT(
             Scene, gl_RayFlagsOpaqueEXT, 0xff,
             0 /*sbtRecordOffset*/, 0 /*sbtRecordStride*/, 0 /*missIndex*/,
@@ -72,6 +85,13 @@ void main()
 
             radiance += throughput * Ray.emittance;
             Ray.emittance = vec3(0.);
+
+            // Should sample light here
+
+            // No need to do more work if it is the last bounce
+            if (b + 1 == ubo.NumberOfBounces) {
+                break;
+            }
 
             // Russian roulette
             if (b > MIN_BOUNCES) {
@@ -98,7 +118,6 @@ void main()
             origin = vec4(Ray.hitPoint, 1.);
             direction = vec4(Ray.scatterDirection, 0);
         }
-//        radiance += throughput;
     }
 
     const bool accumulate = ubo.NumberOfSamples != ubo.TotalNumberOfSamples;

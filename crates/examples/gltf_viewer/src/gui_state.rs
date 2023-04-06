@@ -152,7 +152,7 @@ impl app::Gui for Gui {
             ray_tracing: true,
             acc: true,
             map_scale: 1.0,
-            max_number_of_samples: 5000,
+            max_number_of_samples: 100,
             sky: !false,
             scene: Default::default(),
             scale: 1.,

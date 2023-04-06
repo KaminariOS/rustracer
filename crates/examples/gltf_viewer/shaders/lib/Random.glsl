@@ -1,6 +1,9 @@
+#ifndef RANDOM
+#define RANDOM
 #extension GL_EXT_control_flow_attributes : require
 
 #define RngStateType uvec4
+#define RIS_CANDIDATES_LIGHTS 8
 
 // Generates a seed for a random number generator from 2 inputs plus a backoff
 // https://github.com/nvpro-samples/optix_prime_baking/blob/332a886f1ac46c0b3eea9e89a59593470c755a0e/random.h
@@ -120,3 +123,4 @@ vec3 hashAndColor(uint i) {
 	float b = ((hash >> 16) & 0xFFu) / 255.0f;
 	return vec3(r, g, b);
 }
+#endif

@@ -73,6 +73,7 @@ struct MaterialBrdf {
     float metallic;
     float roughness;
     float ior;
+    float transmission;
 };
 
 // https://github.com/boksajak/referencePT

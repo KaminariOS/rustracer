@@ -1,3 +1,9 @@
+#include "Random.glsl"
+
+#define STANDARD_RAY_INDEX 0
+#define SHADOW_RAY_INDEX 1
+#define SHADOW_RAY_IN_RIS 0
+
 struct RayPayload
 {
 	vec3 hitValue;
@@ -7,6 +13,7 @@ struct RayPayload
 	bool needScatter;
 	uint RandomSeed;
 	vec3 emittance;
+	RngStateType rngState;
 //	uint instance_id;
 //	vec2 bary;
 };
@@ -102,3 +109,18 @@ const uint INSTANCE = 2;
 const uint TRIANGLE = 3;
 const uint DISTANCE = 4;
 const uint ALBEDO = 5;
+
+vec2 Mix(vec2 a, vec2 b, vec2 c, vec3 barycentrics)
+{
+	return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
+}
+
+vec3 Mix(vec3 a, vec3 b, vec3 c, vec3 barycentrics)
+{
+	return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
+}
+
+vec4 Mix(vec4 a, vec4 b, vec4 c, vec3 barycentrics)
+{
+	return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
+}

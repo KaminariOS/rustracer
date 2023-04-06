@@ -22,24 +22,73 @@ layout(binding = UNIFORM_BIND, set = 0) readonly uniform UniformBufferObjectStru
 hitAttributeEXT vec2 HitAttributes;
 rayPayloadInEXT RayPayload Ray;
 
-vec2 Mix(vec2 a, vec2 b, vec2 c, vec3 barycentrics)
-{
-	return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
-}
-
-vec3 Mix(vec3 a, vec3 b, vec3 c, vec3 barycentrics) 
-{
-    return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
-}
-
-vec4 Mix(vec4 a, vec4 b, vec4 c, vec3 barycentrics)
-{
-	return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
-}
 
 vec3 normal_transform(vec3 normal) {
 	return normalize(vec3(normal * gl_WorldToObjectEXT));
 }
+
+
+// Samples a random light from the pool of all lights using simplest uniform distirbution
+bool sampleLightUniform(inout RngStateType rngState, vec3 hitPosition, vec3 surfaceNormal, out Light light, out float lightSampleWeight) {
+	uint light_num = lights.length();
+	if (light_num == 0) {
+		return false;
+	}
+
+	uint randomLightIndex = min(light_num - 1, uint(rand(rngState) * light_num));
+	light = lights[randomLightIndex];
+
+	// PDF of uniform distribution is (1/light count). Reciprocal of that PDF (simply a light count) is a weight of this sample
+	lightSampleWeight = float(light_num);
+
+	return true;
+}
+
+bool sampleLightRIS(inout RngStateType rngState, vec3 hitPosition, vec3 surfaceNormal, out Light selectedSample, out float lightSampleWeight) {
+	uint light_num = lights.length();
+	if (light_num == 0) {
+		return false;
+	}
+	float totalWeights = 0.0f;
+	float samplePdfG = 0.0f;
+	uint candidates_num = min(light_num, RIS_CANDIDATES_LIGHTS);
+	for (int i = 0; i < candidates_num; i++) {
+
+		float candidateWeight;
+		Light candidate;
+		if (sampleLightUniform(rngState, hitPosition, surfaceNormal, candidate, candidateWeight)) {
+
+			vec3	lightVector = candidate.transform.xyz - hitPosition;
+			float lightDistance = length(lightVector);;
+
+			// Ignore backfacing light
+			vec3 L = normalize(lightVector);
+			if (dot(surfaceNormal, L) < 0.00001f) continue;
+
+			#if SHADOW_RAY_IN_RIS
+			// Casting a shadow ray for all candidates here is expensive, but can significantly decrease noise
+			if (!castShadowRay(hitPosition, surfaceNormal, L, lightDistance)) continue;
+			#endif
+
+			float candidatePdfG = luminance(getLightIntensityAtPoint(candidate, length(lightVector)));
+			const float candidateRISWeight = candidatePdfG * candidateWeight;
+
+			totalWeights += candidateRISWeight;
+			if (rand(rngState) < (candidateRISWeight / totalWeights)) {
+				selectedSample = candidate;
+				samplePdfG = candidatePdfG;
+			}
+		}
+	}
+
+	if (totalWeights == 0.0f) {
+		return false;
+	} else {
+		lightSampleWeight = (totalWeights / float(RIS_CANDIDATES_LIGHTS)) / samplePdfG;
+		return true;
+	}
+}
+
 
 void main()
 {
@@ -68,7 +117,7 @@ void main()
 
 	// Interpolate Color
 	const vec3 vertexColor = Mix(v0.color, v1.color, v2.color, barycentricCoords);
-	const vec3 baseColor = mat.baseColor.xyz;
+	const vec3 baseColor = mat.baseColor.rgb;
 	vec3 color = vertexColor * baseColor;
 	if (mat.baseColorTexture.index >= 0) {
 		color = color * texture(textures[mat.baseColorTexture.index], uvs).rgb;
@@ -122,6 +171,15 @@ void main()
 	float roughness = metallicRoughnessInfo.roughness_factor;
 	const int mr_index = metallicRoughnessInfo.metallic_roughness_texture.index;
 
+	TransmissionInfo trans_info = mat.transmission_info;
+	float transmission_factor = 0.;
+	if (mat.transmission_info.exist) {
+		transmission_factor = trans_info.transmission_factor;
+		if (trans_info.transmission_texture.index >= 0) {
+			transmission_factor *= texture(textures[trans_info.transmission_texture.index], uvs).r;
+		}
+	}
+
 	if (mr_index >= 0.) {
 		vec4 metallic_roughness = texture(textures[mr_index], uvs);
 		roughness *= metallic_roughness.g;
@@ -131,31 +189,36 @@ void main()
 
 	Ray.hitPoint = origin;
 	uint seed = Ray.RandomSeed;
+	RngStateType rngState = Ray.rngState;
+
 	Ray.emittance = emittance * 1.0;
 	Ray.needScatter = false;
 	Ray.hitValue = vec3(1.);
-//	uint brdfType;
+	uint brdfType;
 
-//	if (metallic == 1.0 && roughness == 1.0) {
-//		brdfType = SPECULAR_TYPE;
-//	} else {
-//		BRDF brdfProbability = getBrdfProbability(color, metallic, -gl_WorldRayDirectionEXT, outwardNormal);
-//		if (RandomFloat(seed) < brdfProbability.specular) {
-//			brdfType = SPECULAR_TYPE;
-//			color /= brdfProbability.specular;
-//		} else {
-//			brdfType = DIFFUSE_TYPE;
-//			color /= brdfProbability.diffuse;
-//		}
-//	}
-//	MaterialBrdf matbrdf;
-//	matbrdf.baseColor = color;
-//	matbrdf.metallic = metallic;
-//	matbrdf.roughness = roughness;
-//	matbrdf.ior = ior;
-//	vec3 brdfWeight;
-//	vec2 u = vec2(RandomFloat(seed), RandomFloat(seed));
-//	vec3 direction;
+	float throughput = 1.;
+
+	if (metallic == 1.0 && roughness == 0.0) {
+		brdfType = SPECULAR_TYPE;
+	} else {
+		BRDF brdfProbability = getBrdfProbability(color, metallic, -gl_WorldRayDirectionEXT, outwardNormal);
+		if (RandomFloat(seed) < brdfProbability.specular) {
+			brdfType = SPECULAR_TYPE;
+			throughput /= brdfProbability.specular;
+		} else {
+			brdfType = DIFFUSE_TYPE;
+			throughput /= brdfProbability.diffuse;
+		}
+	}
+	MaterialBrdf matbrdf;
+	matbrdf.baseColor = color;
+	matbrdf.metallic = metallic;
+	matbrdf.roughness = roughness;
+	matbrdf.ior = ior;
+	matbrdf.transmission = transmission_factor;
+	vec3 brdfWeight;
+	vec2 u = vec2(rand(rngState), rand(rngState));
+	vec3 direction;
 //	Ray.needScatter = evalIndirectCombinedBRDF(u, outwardNormal, geo_normal, -gl_WorldRayDirectionEXT, matbrdf, brdfType, direction, brdfWeight);
 //	color *= brdfWeight;
 //	Ray.hitPoint = origin;

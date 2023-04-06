@@ -48,17 +48,23 @@ fn find_gltf(search: &PathBuf) -> Option<PathBuf> {
 pub fn load_model<P: AsRef<Path>>(path: P) -> PathBuf {
     let path_ref = path.as_ref();
     let mut res = None;
-
+    let tails = ["", "glTF"];
     for pre in MODEL_SEARCH_PATHS {
         let search = Path::new(pre).join(&path);
-        if search.exists() && search.is_file() {
-            res = Some(search);
-        }
-        else if let Some(p) = find_gltf(&search) {
-            res = Some(p);
-        }
-        if res.is_some() {
-            break
+        for tail in tails {
+            let mut path = search.clone();
+            if !tail.is_empty() {
+                path = path.join(tail);
+            }
+            if path.exists() && path.is_file() {
+                res = Some(path);
+            }
+            else if let Some(p) = find_gltf(&path) {
+                res = Some(p);
+            }
+            if res.is_some() {
+                break
+            }
         }
     }
     res.expect(&*format!(

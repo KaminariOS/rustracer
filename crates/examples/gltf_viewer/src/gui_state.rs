@@ -34,8 +34,8 @@ pub enum Scene {
     Sponza,
     Type59,
     DamagedHelmet,
-    EmissiveTest,
-    Punctual,
+    EmissiveStrengthTest,
+    LightsPunctualLamp,
     Triss,
     EVA,
     Anakin,
@@ -63,12 +63,6 @@ impl Scene {
             Self::LucyInCornell => "cornellBoxLucy.gltf",
             Self::Cornell => "cornellBox.gltf",
             Self::Type59 => "type59.gltf",
-            Self::DamagedHelmet => "DamagedHelmet/glTF",
-            Self::ABeautifulGame => "ABeautifulGame/glTF",
-            Self::Sponza => "Sponza/glTF",
-            Self::EmissiveTest => "EmissiveStrengthTest/glTF",
-            Self::Punctual => "LightsPunctualLamp/glTF",
-            Self::VC => "VC/glTF",
             scene => scene.into(),
         }
     }

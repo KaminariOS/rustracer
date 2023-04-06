@@ -4,7 +4,7 @@ use app::camera::Camera;
 use app::types::*;
 use app::vulkan::ash::vk::{self};
 use app::vulkan::gpu_allocator::MemoryLocation;
-use app::App;
+use app::{App, FrameStats};
 use app::{vulkan::*, BaseApp};
 use std::mem::size_of;
 use std::time::{Duration, Instant};
@@ -134,7 +134,7 @@ impl App for GltfViewer {
         base: &mut BaseApp<Self>,
         gui: &mut <Self as App>::Gui,
         _image_index: usize,
-        _: Duration,
+        frame_stats: &FrameStats
     ) -> Result<()> {
         self.state_change(base, gui);
         let view = base.camera.view_matrix() * gui.scale;
@@ -160,7 +160,7 @@ impl App for GltfViewer {
             total_number_of_samples: self.total_number_of_samples,
             number_of_samples,
             number_of_bounces: gui.get_bounce(),
-            random_seed: 3,
+            random_seed: frame_stats.frame_count,
             has_sky: gui.sky.into(),
             mapping: gui.mapping as _,
             antialiasing: gui.antialiasing.into(),

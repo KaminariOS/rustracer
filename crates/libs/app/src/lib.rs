@@ -57,7 +57,7 @@ pub trait App: Sized {
         base: &mut BaseApp<Self>,
         gui: &mut Self::Gui,
         image_index: usize,
-        delta_time: Duration,
+        frame_stats: &FrameStats,
     ) -> Result<()>;
 
     fn record_raytracing_commands(
@@ -422,7 +422,7 @@ impl<B: App> BaseApp<B> {
         gui_context.platform.prepare_render(&ui, window);
         let draw_data = gui_context.imgui.render();
 
-        base_app.update(self, gui, image_index, frame_stats.frame_time)?;
+        base_app.update(self, gui, image_index, frame_stats)?;
 
         let command_buffer = &self.command_buffers[image_index];
 
@@ -787,18 +787,18 @@ impl InFlightFrames {
 }
 
 #[derive(Debug)]
-struct FrameStats {
+pub struct FrameStats {
     // we collect gpu timings the frame after it was computed
     // so we keep frame times for the two last frames
     previous_frame_time: Duration,
-    frame_time: Duration,
+    pub frame_time: Duration,
     cpu_time: Duration,
     gpu_time: Duration,
     frame_time_ms_log: Queue<f32>,
     cpu_time_ms_log: Queue<f32>,
     gpu_time_ms_log: Queue<f32>,
     total_frame_count: u32,
-    frame_count: u32,
+    pub frame_count: u32,
     fps_counter: u32,
     timer: Duration,
 }

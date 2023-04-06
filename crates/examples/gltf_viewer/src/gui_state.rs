@@ -25,6 +25,7 @@ pub struct Gui {
 
 #[derive(IntoStaticStr, AsRefStr, EnumIter, PartialEq, Clone, Copy, Debug, Default)]
 pub enum Scene {
+    #[default]
     LucyInCornell,
     Cornell,
     ABeautifulGame,
@@ -42,7 +43,6 @@ pub enum Scene {
     Loba,
     Hulkbuster,
     KikuHoshimi,
-    #[default]
     SparkLence,
     Apollo,
     CyberSamurai,

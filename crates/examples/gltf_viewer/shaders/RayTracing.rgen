@@ -10,7 +10,7 @@
 #include "lib/UniformBufferObject.glsl"
 #include "lib/Material.glsl"
 
-#define MIN_BOUNCES 4
+#define MIN_BOUNCES 3
 
 layout(binding = AS_BIND, set = 0) uniform accelerationStructureEXT Scene;
 layout(binding = ACC_BIND, set = 1, rgba32f) uniform image2D AccumulationImage;
@@ -56,8 +56,6 @@ void main()
                 break;
             }
 
-
-
             traceRayEXT(
             Scene, gl_RayFlagsOpaqueEXT, 0xff,
             0 /*sbtRecordOffset*/, 0 /*sbtRecordStride*/, 0 /*missIndex*/,
@@ -94,8 +92,7 @@ void main()
             origin = vec4(Ray.hitPoint, 1.);
             direction = vec4(Ray.scatterDirection, 0);
         }
-
-        radiance += throughput;
+//        radiance += throughput;
     }
 
     const bool accumulate = Camera.NumberOfSamples != Camera.TotalNumberOfSamples;

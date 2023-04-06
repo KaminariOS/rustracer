@@ -368,32 +368,32 @@ vec4 invertRotation(vec4 q)
 vec3 sampleSpecularMicrofacet(vec3 Vlocal, float alpha, float alphaSquared, vec3 specularF0, vec2 u, inout vec3 weight) {
 
 // Sample a microfacet normal (H) in local space
-vec3 Hlocal;
-if (alpha == 0.0f) {
-    // Fast path for zero roughness (perfect reflection), also prevents NaNs appearing due to divisions by zeroes
-    Hlocal = vec3(0.0f, 0.0f, 1.0f);
-} else {
-    // For non-zero roughness, this calls VNDF sampling for GG-X distribution or Walter's sampling for Beckmann distribution
-    Hlocal = sampleSpecularHalfVector(Vlocal, vec2(alpha, alpha), u);
-}
+    vec3 Hlocal;
+    if (alpha == 0.0f) {
+        // Fast path for zero roughness (perfect reflection), also prevents NaNs appearing due to divisions by zeroes
+        Hlocal = vec3(0.0f, 0.0f, 1.0f);
+    } else {
+        // For non-zero roughness, this calls VNDF sampling for GG-X distribution or Walter's sampling for Beckmann distribution
+        Hlocal = sampleSpecularHalfVector(Vlocal, vec2(alpha, alpha), u);
+    }
 
-// Reflect view direction to obtain light vector
-vec3 Llocal = reflect(-Vlocal, Hlocal);
+    // Reflect view direction to obtain light vector
+    vec3 Llocal = reflect(-Vlocal, Hlocal);
 
-// Note: HdotL is same as HdotV here
-// Clamp dot products here to small value to prevent numerical instability. Assume that rays incident from below the hemisphere have been filtered
-float HdotL = max(0.00001f, min(1.0f, dot(Hlocal, Llocal)));
-const vec3 Nlocal = vec3(0.0f, 0.0f, 1.0f);
-float NdotL = max(0.00001f, min(1.0f, dot(Nlocal, Llocal)));
-float NdotV = max(0.00001f, min(1.0f, dot(Nlocal, Vlocal)));
-float NdotH = max(0.00001f, min(1.0f, dot(Nlocal, Hlocal)));
-vec3 F = evalFresnel(specularF0, shadowedF90(specularF0), HdotL);
+    // Note: HdotL is same as HdotV here
+    // Clamp dot products here to small value to prevent numerical instability. Assume that rays incident from below the hemisphere have been filtered
+    float HdotL = max(0.00001f, min(1.0f, dot(Hlocal, Llocal)));
+    const vec3 Nlocal = vec3(0.0f, 0.0f, 1.0f);
+    float NdotL = max(0.00001f, min(1.0f, dot(Nlocal, Llocal)));
+    float NdotV = max(0.00001f, min(1.0f, dot(Nlocal, Vlocal)));
+    float NdotH = max(0.00001f, min(1.0f, dot(Nlocal, Hlocal)));
+    vec3 F = evalFresnel(specularF0, shadowedF90(specularF0), HdotL);
 
-// Calculate weight of the sample specific for selected sampling method
-// (this is microfacet BRDF divided by PDF of sampling method - notice how most terms cancel out)
-weight = F * specularSampleWeight(alpha, alphaSquared, NdotL, NdotV, HdotL, NdotH);
+    // Calculate weight of the sample specific for selected sampling method
+    // (this is microfacet BRDF divided by PDF of sampling method - notice how most terms cancel out)
+    weight = F * specularSampleWeight(alpha, alphaSquared, NdotL, NdotV, HdotL, NdotH);
 
-return Llocal;
+    return Llocal;
 }
 
 bool evalIndirectCombinedBRDF(vec2 u, vec3 shadingNormal, vec3 geometryNormal, vec3 V, MaterialBrdf material, const uint brdfType, inout vec3 rayDirection, inout vec3 sampleWeight) {

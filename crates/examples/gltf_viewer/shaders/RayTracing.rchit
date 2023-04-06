@@ -132,6 +132,8 @@ void main()
 	Ray.hitPoint = origin;
 	uint seed = Ray.RandomSeed;
 	Ray.emittance = emittance * 1.0;
+	Ray.needScatter = false;
+	Ray.hitValue = vec3(1.);
 //	uint brdfType;
 
 //	if (metallic == 1.0 && roughness == 1.0) {

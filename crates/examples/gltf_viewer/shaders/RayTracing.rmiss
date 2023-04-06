@@ -34,6 +34,6 @@ void main()
 	}
 	Ray.hitValue = light_acc;
 	Ray.needScatter = false;
-	Ray.emittance = vec3(0.);
+	Ray.emittance = vec3(light_acc);
 	Ray.t = -1.;
 }

@@ -142,6 +142,15 @@ struct VolumeInfo {
     bool exists;
 };
 
+struct SpecularInfo {
+    TextureInfo specular_texture;
+    TextureInfo specular_color_texture;
+    vec4 specular_color_factor;
+    float specular_factor;
+    bool exist;
+    vec2 _padding;
+};
+
 struct MaterialRaw {
     uint alpha_mode;
 	float alpha_cutoff;
@@ -162,6 +171,8 @@ struct MaterialRaw {
     bool unlit;
     TransmissionInfo transmission_info;
     VolumeInfo volume_info;
+    SpecularInfo specular_info;
+
 };
 
 struct MaterialBrdf {

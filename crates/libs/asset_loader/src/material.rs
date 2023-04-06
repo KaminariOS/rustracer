@@ -1,6 +1,6 @@
 use std::collections::{HashSet};
 use crate::{Name, a3toa4, get_name};
-use gltf::material::{AlphaMode, NormalTexture, OcclusionTexture, PbrMetallicRoughness, PbrSpecularGlossiness, Transmission, Volume};
+use gltf::material::{AlphaMode, NormalTexture, OcclusionTexture, PbrMetallicRoughness, PbrSpecularGlossiness, Specular, Transmission, Volume};
 use gltf::texture;
 
 #[repr(C)]
@@ -53,6 +53,10 @@ impl TextureInfo {
     fn is_none(&self) -> bool {
         self.texture_index == -1
     }
+
+    fn is_some(&self) -> bool {
+        !self.is_none()
+    }
 }
 
 #[derive(Clone)]
@@ -81,6 +85,7 @@ pub struct Material {
     pub material_type: MaterialType,
     transmission: Option<TransmissionInfo>,
     volume_info: Option<VolumeInfo>,
+    specular_info: Option<SpecularInfo>,
 }
 
 impl Material {
@@ -90,13 +95,27 @@ impl Material {
 }
 
 pub fn find_linear_textures(materials: &[Material]) -> HashSet<usize> {
+    // https://gltf-transform.donmccurdy.com/classes/core.material.html
+    // Textures containing color data (baseColorTexture, emissiveTexture) are sRGB.
+    // All other textures are linear. Like other resources, textures should be reused when possible.
     let mut set: HashSet<_> = HashSet::new();
         materials.iter().for_each(|m|{
-        if !m.normal_texture.is_none() {
+        if m.normal_texture.is_some() {
             set.insert(m.normal_texture.texture_index as usize);
         }
-        if !m.metallic_roughness_info.metallic_roughness_texture.is_none() {
+        if m.metallic_roughness_info.metallic_roughness_texture.is_some() {
             set.insert(m.metallic_roughness_info.metallic_roughness_texture.texture_index as usize);
+        }
+        if let Some(tr) = m.transmission
+            .filter(|t| t.transmission_texture.is_some())
+            .map(|t| t.transmission_texture.texture_index)
+        {
+            set.insert(tr as _);
+        }
+        if let Some(sp) = m.specular_info
+            .filter(|s| s.specular_texture.is_some())
+            .map(|s| s.specular_texture.texture_index) {
+            set.insert(sp as _);
         }
     });
     set
@@ -129,6 +148,7 @@ pub struct MaterialRaw {
     // 4 int
     pub transmission: TransmissionInfo,
     pub volume_info: VolumeInfo,
+    specular_info: SpecularInfo,
 }
 
 impl From<&Material> for MaterialRaw {
@@ -149,6 +169,7 @@ impl From<&Material> for MaterialRaw {
             unlit: value.unlit.into(),
             transmission: value.transmission.unwrap_or_default(),
             volume_info: value.volume_info.unwrap_or_default(),
+            specular_info: value.specular_info.unwrap_or_default(),
         }
     }
 }
@@ -236,9 +257,47 @@ impl<'a> From<PbrSpecularGlossiness<'_>> for SpecularGlossiness {
     }
 }
 
+#[repr(C)]
+#[derive(Clone, Copy)]
+struct SpecularInfo {
+    specular_texture: TextureInfo,
+    specular_color_texture: TextureInfo,
+    specular_color_factor: [f32; 4],
+    specular_factor: f32,
+    exist: u32,
+    _padding: f64,
+}
+
+impl<'a> From<Specular<'_>> for SpecularInfo {
+    fn from(sp: Specular) -> Self {
+        Self {
+            specular_texture: TextureInfo::new(sp.specular_texture()),
+            specular_color_texture: TextureInfo::new(sp.specular_color_texture()),
+            specular_color_factor: a3toa4(&sp.specular_color_factor(), 0.),
+            specular_factor: sp.specular_factor(),
+            exist: true.into(),
+            _padding: 0.0,
+        }
+    }
+}
+
+impl Default for SpecularInfo {
+    fn default() -> Self {
+        Self {
+            specular_texture: Default::default(),
+            specular_color_texture: Default::default(),
+            specular_color_factor: [1.; 4],
+            specular_factor: 1.0,
+            exist: false.into(),
+            _padding: 0.0,
+        }
+    }
+}
+
 impl<'a> From<gltf::Material<'_>> for Material {
     fn from(material: gltf::Material) -> Self {
         let pbr = material.pbr_metallic_roughness();
+        let specular = material.specular().map(SpecularInfo::from);
         let em = material.emissive_factor();
         let unlit = material.unlit();
         let sg = material.pbr_specular_glossiness().map(SpecularGlossiness::from);
@@ -273,6 +332,7 @@ impl<'a> From<gltf::Material<'_>> for Material {
             transmission: material.transmission().map(TransmissionInfo::from),
             volume_info,
             unlit,
+            specular_info: specular,
         }
     }
 }

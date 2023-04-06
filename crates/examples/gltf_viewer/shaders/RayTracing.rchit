@@ -185,11 +185,20 @@ void main()
 			transmission_factor *= texture(textures[trans_info.transmission_texture.index], uvs).r;
 		}
 	}
-
 	if (mr_index >= 0.) {
 		vec4 metallic_roughness = texture(textures[mr_index], uvs);
 		roughness *= metallic_roughness.g;
 		metallic *= metallic_roughness.b;
+	}
+
+	SpecularInfo spec_info = mat.specular_info;
+	float spec_factor = spec_info.specular_factor;
+	vec3 spec_color_factor = spec_info.specular_color_factor.rgb;
+	if (spec_info.specular_texture.index >= 0) {
+		spec_factor *= texture(textures[spec_info.specular_texture.index], uvs).a;
+	}
+	if (spec_info.specular_color_texture.index >= 0) {
+		spec_color_factor *= texture(textures[spec_info.specular_color_texture.index], uvs).rgb;
 	}
 	const float ior = mat.ior;
 
@@ -244,9 +253,9 @@ void main()
 //	}
 	Ray.hitValue = throughput;
 
-	if (brdfType == DIFFUSE_TYPE) {
-
-	}
+//	if (brdfType == DIFFUSE_TYPE) {
+//
+//	}
 //	else {
 //		Ray.emittance = vec3(0.);
 //	}

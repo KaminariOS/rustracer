@@ -27,6 +27,12 @@ vec3 normal_transform(vec3 normal) {
 	return normalize(vec3(normal * gl_WorldToObjectEXT));
 }
 
+vec3 calculate_geo_normal(vec3 p0, vec3 p1, vec3 p2) {
+	vec3 v1 = p2 - p0;
+	vec3 edge21 = p2 - p1;
+	vec3 v0 = p1 - p0;
+	return normal_transform(cross(v0, v1));
+}
 
 // Samples a random light from the pool of all lights using simplest uniform distirbution
 bool sampleLightUniform(inout RngStateType rngState, vec3 hitPosition, vec3 surfaceNormal, out Light light, out float lightSampleWeight) {
@@ -137,8 +143,8 @@ void main()
 			return;
 	}
 
-	vec3 geo_normal = Mix(v0.normal, v1.normal, v2.normal, barycentricCoords);
-	vec3 normal = geo_normal;
+	vec3 geo_normal = calculate_geo_normal(v0.pos, v1.pos, v2.pos);
+	vec3 normal = Mix(v0.normal, v1.normal, v2.normal, barycentricCoords);
 	if (mat.normal_texture.index >= 0) {
 		vec3 normal_t = normalize(texture(textures[mat.normal_texture.index], uvs).xyz * 2. - 1.);
 
@@ -196,7 +202,7 @@ void main()
 	Ray.hitValue = vec3(1.);
 	uint brdfType;
 
-	float throughput = 1.;
+	vec3 throughput = vec3(1.);
 
 	if (metallic == 1.0 && roughness == 0.0) {
 		brdfType = SPECULAR_TYPE;
@@ -219,40 +225,47 @@ void main()
 	vec3 brdfWeight;
 	vec2 u = vec2(rand(rngState), rand(rngState));
 	vec3 direction;
-//	Ray.needScatter = evalIndirectCombinedBRDF(u, outwardNormal, geo_normal, -gl_WorldRayDirectionEXT, matbrdf, brdfType, direction, brdfWeight);
-//	color *= brdfWeight;
-//	Ray.hitPoint = origin;
-//	Ray.scatterDirection = direction;
-	if (ior > 1.) {
-
-		const float refraction_ratio = frontFace ? 1 / ior: ior;
-		const float cos_theta = abs(cos);
-		const vec3 refracted = refract(gl_WorldRayDirectionEXT, outwardNormal, refraction_ratio);
-		const float reflectProb = refracted != vec3(0) ? Schlick(cos_theta, refraction_ratio) : 1;
-
-		Ray.hitValue =  color;
-		Ray.needScatter = true;
-
-		 if (RandomFloat(seed) < reflectProb) {
-			 Ray.scatterDirection = reflect(gl_WorldRayDirectionEXT, normal);
-		 } else {
-			 Ray.scatterDirection = refracted;
-		 }
-	}
-	else if (length(emittance) < 0.01 && roughness > 0.) {
-		const bool isScattered = dot(gl_WorldRayDirectionEXT, normal) < 0.;
-		const vec3 scatter = vec3(normal + RandomInUnitSphere(seed));
-		Ray.needScatter = isScattered;
-		Ray.scatterDirection = scatter;
-		Ray.hitValue = isScattered? color: vec3(0.);
-	}
-	else if (metallic > 0.) {
-		const vec3 reflected = reflect(gl_WorldRayDirectionEXT, normal);
-		const bool isScattered = dot(reflected, normal) > 0;
-		Ray.needScatter = isScattered;
-		Ray.hitValue = isScattered? color: vec3(0.);
-		Ray.scatterDirection = reflected + 0.08 * RandomInUnitSphere(seed);
-	}
+	Ray.needScatter = evalIndirectCombinedBRDF(u, outwardNormal, geo_normal, -gl_WorldRayDirectionEXT, matbrdf, brdfType, direction, brdfWeight);
+	throughput *= brdfWeight;
+	Ray.hitPoint = origin;
+	Ray.scatterDirection = direction;
+	Ray.hitValue = throughput;
+//	if (Ray.needScatter) {
+//		Ray.emittance = vec3(dot(geo_normal, outwardNormal));
+//		Ray.needScatter = false;
+//	} else {
+//		Ray.emittance = vec3(0.);
+//	}
+//	if (ior > 1.) {
+//
+//		const float refraction_ratio = frontFace ? 1 / ior: ior;
+//		const float cos_theta = abs(cos);
+//		const vec3 refracted = refract(gl_WorldRayDirectionEXT, outwardNormal, refraction_ratio);
+//		const float reflectProb = refracted != vec3(0) ? Schlick(cos_theta, refraction_ratio) : 1;
+//
+//		Ray.hitValue =  color;
+//		Ray.needScatter = true;
+//
+//		 if (RandomFloat(seed) < reflectProb) {
+//			 Ray.scatterDirection = reflect(gl_WorldRayDirectionEXT, normal);
+//		 } else {
+//			 Ray.scatterDirection = refracted;
+//		 }
+//	}
+//	else if (length(emittance) < 0.01 && roughness > 0.) {
+//		const bool isScattered = dot(gl_WorldRayDirectionEXT, normal) < 0.;
+//		const vec3 scatter = vec3(normal + RandomInUnitSphere(seed));
+//		Ray.needScatter = isScattered;
+//		Ray.scatterDirection = scatter;
+//		Ray.hitValue = isScattered? color: vec3(0.);
+//	}
+//	else if (metallic > 0.) {
+//		const vec3 reflected = reflect(gl_WorldRayDirectionEXT, normal);
+//		const bool isScattered = dot(reflected, normal) > 0;
+//		Ray.needScatter = isScattered;
+//		Ray.hitValue = isScattered? color: vec3(0.);
+//		Ray.scatterDirection = reflected + 0.08 * RandomInUnitSphere(seed);
+//	}
 
 	Ray.RandomSeed = seed;
 }

@@ -3,7 +3,7 @@ use std::time::Duration;
 use crate::types::*;
 use winit::event::{DeviceEvent, ElementState, Event, KeyboardInput, MouseButton, WindowEvent};
 
-const MOVE_SPEED: f32 = 3.0;
+const MOVE_SPEED: f32 = 12.0;
 const ANGLE_PER_POINT: f32 = 0.001745;
 
 const FORWARD_SCANCODE: u32 = 17;

@@ -168,7 +168,7 @@ impl app::Gui for Gui {
 
     fn build(&mut self, ui: &Ui) {
         ui.window("Vulkan RT")
-            .size([300.0, 400.0], Condition::FirstUseEver)
+            .size([400.0, 400.0], Condition::FirstUseEver)
             .bg_alpha(0.5)
             .build(|| {
                 // RT controls
@@ -187,12 +187,13 @@ impl app::Gui for Gui {
                 let mut number_of_bounces = self.number_of_bounces as _;
                 ui.input_int("Max Number of bounces", &mut number_of_bounces)
                     .build();
+                self.number_of_bounces = number_of_bounces as _;
 
                 let mut debug_number = self.debug as _;
                 ui.input_int("Debug control", &mut debug_number)
                     .build();
                 self.debug = debug_number.abs() as _;
-                ui.slider("scale", 0.1, 10., &mut self.scale);
+                ui.slider("scale", -20., 20., &mut self.scale);
                 ui.slider("Apertures", 0., 1., &mut self.aperture);
                 ui.slider("Focus", 0.1, 20., &mut self.focus_distance);
 
@@ -265,7 +266,7 @@ impl app::Gui for Gui {
                     self.ray_tracing = !self.ray_tracing;
                 }
 
-                if ui.radio_button_bool("Acc", self.acc) {
+                if ui.radio_button_bool("Accumulation", self.acc) {
                     self.acc = !self.acc;
                 }
 

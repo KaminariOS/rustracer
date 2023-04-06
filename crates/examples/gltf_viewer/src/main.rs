@@ -137,7 +137,7 @@ impl App for GltfViewer {
         frame_stats: &FrameStats
     ) -> Result<()> {
         self.state_change(base, gui);
-        let view = base.camera.view_matrix() * gui.scale;
+        let view = base.camera.view_matrix() * if gui.scale > 0. {gui.scale} else {1./(gui.scale.abs() + 1.)};
         let inverted_view = view.try_inverse().expect("Should be invertible");
 
         let proj = base.camera.projection_matrix();

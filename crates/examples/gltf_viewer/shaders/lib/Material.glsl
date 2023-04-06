@@ -3,9 +3,102 @@
 #define ONE_OVER_PI (1.0f / PI)
 #define TWO_PI (2.0f * PI)
 
+// Specify what NDF (GGX or BECKMANN you want to use)
+#ifndef MICROFACET_DISTRIBUTION
+#define MICROFACET_DISTRIBUTION GGX
+//#define MICROFACET_DISTRIBUTION BECKMANN
+#endif
 
+#ifndef DIFFUSE_BRDF
+//#define DIFFUSE_BRDF LAMBERTIAN
+//#define DIFFUSE_BRDF OREN_NAYAR
+//#define DIFFUSE_BRDF DISNEY
+#define DIFFUSE_BRDF FROSTBITE
+//#define DIFFUSE_BRDF NONE
+#endif
+
+
+// Select distribution function
+#if MICROFACET_DISTRIBUTION == GGX
+#define Microfacet_D GGX_D
+#elif MICROFACET_DISTRIBUTION == BECKMANN
+#define Microfacet_D Beckmann_D
+#endif
+
+// Select G functions (masking/shadowing) depending on selected distribution
+#if MICROFACET_DISTRIBUTION == GGX
+#define Smith_G_Lambda Smith_G_Lambda_GGX
+#elif MICROFACET_DISTRIBUTION == BECKMANN
+#define Smith_G_Lambda Smith_G_Lambda_Beckmann_Walter
+#endif
+
+
+#ifndef Smith_G1
+// Define version of G1 optimized specifically for selected NDF
+#if MICROFACET_DISTRIBUTION == GGX
+#define Smith_G1 Smith_G1_GGX
+#elif MICROFACET_DISTRIBUTION == BECKMANN
+#define Smith_G1 Smith_G1_Beckmann_Walter
+#endif
+#endif
+
+// Select default specular and diffuse BRDF functions
+#if SPECULAR_BRDF == MICROFACET
+#define evalSpecular evalMicrofacet
+#define sampleSpecular sampleSpecularMicrofacet
+#if MICROFACET_DISTRIBUTION == GGX
+#define sampleSpecularHalfVector sampleGGXVNDF
+#else
+#define sampleSpecularHalfVector sampleBeckmannWalter
+#endif
+#elif SPECULAR_BRDF == PHONG
+#define evalSpecular evalPhong
+#define sampleSpecular sampleSpecularPhong
+#define sampleSpecularHalfVector samplePhong
+#else
+#define evalSpecular evalVoid
+#define sampleSpecular sampleSpecularVoid
+#define sampleSpecularHalfVector sampleSpecularHalfVectorVoid
+#endif
+
+#if MICROFACET_DISTRIBUTION == GGX
+#define specularSampleWeight specularSampleWeightGGXVNDF
+#define specularPdf sampleGGXVNDFReflectionPdf
+#else
+#define specularSampleWeight specularSampleWeightBeckmannWalter
+#define specularPdf sampleBeckmannWalterReflectionPdf
+#endif
+
+#if DIFFUSE_BRDF == LAMBERTIAN
+#define evalDiffuse evalLambertian
+#define diffuseTerm lambertian
+//#elif DIFFUSE_BRDF == OREN_NAYAR
+//#define evalDiffuse evalOrenNayar
+//#define diffuseTerm orenNayar
+//#elif DIFFUSE_BRDF == DISNEY
+//#define evalDiffuse evalDisneyDiffuse
+//#define diffuseTerm disneyDiffuse
+#elif DIFFUSE_BRDF == FROSTBITE
 #define evalDiffuse evalFrostbiteDisneyDiffuse
 #define diffuseTerm frostbiteDisneyDiffuse
+//#else
+//#define evalDiffuse evalVoid
+//#define evalIndirectDiffuse evalIndirectVoid
+//#define diffuseTerm none
+#endif
+
+
+// Enable optimized G2 implementation which includes division by specular BRDF denominator (not available for all NDFs, check macro G2_DIVIDED_BY_DENOMINATOR if it was actually used)
+#define USE_OPTIMIZED_G2 1
+
+// Enable height correlated version of G2 term. Separable version will be used otherwise
+#define USE_HEIGHT_CORRELATED_G2 1
+
+// Enable this to weigh diffuse by Fresnel too, otherwise specular and diffuse will be simply added together
+// (this is disabled by default for Frostbite diffuse which is normalized to combine well with GGX Specular BRDF)
+#if DIFFUSE_BRDF != FROSTBITE
+#define COMBINE_BRDFS_WITH_FRESNEL 1
+#endif
 
 #define sampleSpecular sampleSpecularMicrofacet
 #define sampleSpecularHalfVector sampleGGXVNDF
@@ -18,6 +111,9 @@
 #define DIFFUSE_TYPE 1
 #define SPECULAR_TYPE 2
 #define TRANSMISSION_TYPE 3
+
+
+
 
 float rsqrt(float x) { return inversesqrt(x); }
 
@@ -84,7 +180,7 @@ float shininessToBeckmannAlpha(float shininess) {
 float saturate(float x) { return clamp(x, 0.0f, 1.0f); }
 
 vec3 baseColorToSpecularF0(vec3 baseColor, float metalness) {
-	return mix(vec3(MIN_DIELECTRICS_F0, MIN_DIELECTRICS_F0, MIN_DIELECTRICS_F0), baseColor, metalness);
+	return mix(vec3(MIN_DIELECTRICS_F0), baseColor, metalness);
 }
 
 float luminance(vec3 rgb)
@@ -117,6 +213,8 @@ vec3 evalFresnel(vec3 f0, float f90, float NdotS)
 }
 
 
+
+
 // Attenuates F90 for very low F0 values
 // Source: "An efficient and Physically Plausible Real-Time Shading Model" in ShaderX7 by Schuler
 // Also see section "Overbright highlights" in Hoffman's 2010 "Crafting Physically Motivated Shading Models for Game Development" for discussion
@@ -130,12 +228,12 @@ float shadowedF90(vec3 F0) {
     return min(1.0f, t * luminance(F0));
 }
 
-BRDF getBrdfProbability(vec3 baseColor, float metalness, vec3 V, vec3 shadingNormal) {
+BRDF getBrdfProbability(MaterialBrdf mat, vec3 V, vec3 shadingNormal) {
 
 	// Evaluate Fresnel term using the shading normal
 	// Note: we use the shading normal instead of the microfacet normal (half-vector) for Fresnel term here. That's suboptimal for rough surfaces at grazing angles, but half-vector is yet unknown at this point
-	float specularF0 = luminance(baseColorToSpecularF0(baseColor, metalness));
-	float diffuseReflectance = luminance(baseColorToDiffuseReflectance(baseColor, metalness));
+	float specularF0 = luminance(baseColorToSpecularF0(mat.baseColor, mat.metallic));
+	float diffuseReflectance = luminance(baseColorToDiffuseReflectance(mat.baseColor, mat.metallic));
 	float Fresnel = saturate(luminance(evalFresnel(vec3(specularF0), shadowedF90(vec3(specularF0)), max(0.0f, dot(V, shadingNormal)))));
 
 	// Approximate relative contribution of BRDFs using the Fresnel term
@@ -176,17 +274,17 @@ vec3 rotatePoint(vec4 q, vec3 v) {
 // Source: "Sampling Transformations Zoo" in Ray Tracing Gems by Shirley et al.
 vec3 sampleHemisphere(vec2 u, inout float pdf) {
 
-float a = sqrt(u.x);
-float b = TWO_PI * u.y;
+    float a = sqrt(u.x);
+    float b = TWO_PI * u.y;
 
-vec3 result = vec3(
-a * cos(b),
-a * sin(b),
-sqrt(1.0f - u.x));
+    vec3 result = vec3(
+    a * cos(b),
+    a * sin(b),
+    sqrt(1.0f - u.x));
 
-pdf = result.z * ONE_OVER_PI;
+    pdf = result.z * ONE_OVER_PI;
 
-return result;
+    return result;
 }
 
 vec3 sampleHemisphere(vec2 u) {
@@ -287,12 +385,35 @@ float sampleGGXVNDFReflectionPdf(float alpha, float alphaSquared, float NdotH, f
     return (GGX_D(max(0.00001f, alphaSquared), NdotH) * Smith_G1_GGX(alpha, NdotV, alphaSquared, NdotV * NdotV)) / (4.0f * NdotV);
 }
 
+// Function to calculate 'a' parameter for lambda functions needed in Smith G term
+// This is a version for shape invariant (isotropic) NDFs
+// Note: makse sure NdotS is not negative
+float Smith_G_a(float alpha, float NdotS) {
+    return NdotS / (max(0.00001f, alpha) * sqrt(1.0f - min(0.99999f, NdotS * NdotS)));
+}
+
+// Smith G2 term (masking-shadowing function)
+// Separable version assuming independent (uncorrelated) masking and shadowing, uses G1 functions for selected NDF
+float Smith_G2_Separable(float alpha, float NdotL, float NdotV) {
+    float aL = Smith_G_a(alpha, NdotL);
+    float aV = Smith_G_a(alpha, NdotV);
+    return Smith_G1(aL) * Smith_G1(aV);
+}
+
+// A fraction G2/G1 where G2 is height correlated can be expressed using only G1 terms
+// Source: "Implementing a Simple Anisotropic Rough Diffuse Material with Stochastic Evaluation", Appendix A by Heitz & Dupuy
+float Smith_G2_Over_G1_Height_Correlated(float alpha, float alphaSquared, float NdotL, float NdotV) {
+    float G1V = Smith_G1(alpha, NdotV, alphaSquared, NdotV * NdotV);
+    float G1L = Smith_G1(alpha, NdotL, alphaSquared, NdotL * NdotL);
+    return G1L / (G1V + G1L - G1V * G1L);
+}
+
 // Weight for the reflection ray sampled from GGX distribution using VNDF method
 float specularSampleWeightGGXVNDF(float alpha, float alphaSquared, float NdotL, float NdotV, float HdotL, float NdotH) {
     //    #if USE_HEIGHT_CORRELATED_G2
-    //    return Smith_G2_Over_G1_Height_Correlated(alpha, alphaSquared, NdotL, NdotV);
+        return Smith_G2_Over_G1_Height_Correlated(alpha, alphaSquared, NdotL, NdotV);
     //    #else
-    return Smith_G1_GGX(alpha, NdotL, alphaSquared, NdotL * NdotL);
+//    return Smith_G1_GGX(alpha, NdotL, alphaSquared, NdotL * NdotL);
     //    #endif
 }
 // Frostbite's version of Disney diffuse with energy normalization.
@@ -358,6 +479,18 @@ BrdfData prepareBRDFData(vec3 N, vec3 L, vec3 V, MaterialBrdf material) {
 }
 
 
+// -------------------------------------------------------------------------
+//    Lambert
+// -------------------------------------------------------------------------
+
+float lambertian(const BrdfData data) {
+    return 1.0f;
+}
+
+vec3 evalLambertian(const BrdfData data) {
+    return data.diffuseReflectance * (ONE_OVER_PI * data.NdotL);
+}
+
 // Returns the quaternion with inverted rotation
 vec4 invertRotation(vec4 q)
 {
@@ -393,7 +526,7 @@ vec3 sampleSpecularMicrofacet(vec3 Vlocal, float alpha, float alphaSquared, vec3
     // Calculate weight of the sample specific for selected sampling method
     // (this is microfacet BRDF divided by PDF of sampling method - notice how most terms cancel out)
     weight = F * specularSampleWeight(alpha, alphaSquared, NdotL, NdotV, HdotL, NdotH);
-
+//    weight = vec3(1.);
     return Llocal;
 }
 
@@ -411,17 +544,21 @@ bool evalIndirectCombinedBRDF(vec2 u, vec3 shadingNormal, vec3 geometryNormal, v
         // Function 'diffuseTerm' is predivided by PDF of sampling the cosine weighted hemisphere
         sampleWeight = data.diffuseReflectance * diffuseTerm(data);
 
+//        sampleWeight = data.diffuseReflectance * lambertian(data);
 
-        // Sample a half-vector of specular BRDF. Note that we're reusing random variable 'u' here, but correctly it should be an new independent random number
-        vec3 Hspecular = sampleSpecularHalfVector(Vlocal, vec2(data.alpha, data.alpha), u);
-
-        // Clamp HdotL to small value to prevent numerical instability. Assume that rays incident from below the hemisphere have been filtered
-        float VdotH = max(0.00001f, min(1.0f, dot(Vlocal, Hspecular)));
-        sampleWeight *= (vec3(1.0f, 1.0f, 1.0f) - evalFresnel(data.specularF0, shadowedF90(data.specularF0), VdotH));
+//        #if COMBINE_BRDFS_WITH_FRESNEL
+         // Sample a half-vector of specular BRDF. Note that we're reusing random variable 'u' here, but correctly it should be an new independent random number
+//        vec3 Hspecular = sampleSpecularHalfVector(Vlocal, vec2(data.alpha, data.alpha), u);
+//
+//        // Clamp HdotL to small value to prevent numerical instability. Assume that rays incident from below the hemisphere have been filtered
+//        float VdotH = max(0.00001f, min(1.0f, dot(Vlocal, Hspecular)));
+//        sampleWeight *= (vec3(1.0f) - evalFresnel(data.specularF0, shadowedF90(data.specularF0), VdotH));
+//        #endif
     }
     else if (brdfType == SPECULAR_TYPE) {
         const BrdfData data = prepareBRDFData(Nlocal, vec3(0.0f, 0.0f, 1.0f) /* unused L vector */, Vlocal, material);
         rayDirectionLocal = sampleSpecular(Vlocal, data.alpha, data.alphaSquared, data.specularF0, u, sampleWeight);
+//        sampleWeight = vec3(1.);
     }
 
     // Prevent tracing direction with no contribution

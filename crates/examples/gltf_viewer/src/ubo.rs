@@ -21,4 +21,6 @@ pub struct UniformBufferObject {
 
     pub antialiasing: u32,
     pub(crate) mapping: u32,
+    pub frame_count: u32,
+    pub debug: u32,
 }

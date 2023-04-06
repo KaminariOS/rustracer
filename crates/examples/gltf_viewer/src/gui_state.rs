@@ -22,6 +22,7 @@ pub struct Gui {
     pub animation: bool,
     pub animation_speed: f32,
     pub antialiasing: bool,
+    pub debug: u32,
 }
 
 #[derive(IntoStaticStr, AsRefStr, EnumIter, PartialEq, Clone, Copy, Debug, Default)]
@@ -161,6 +162,7 @@ impl app::Gui for Gui {
             animation: false,
             animation_speed: 1.,
             antialiasing: true,
+            debug: 0,
         })
     }
 
@@ -185,7 +187,11 @@ impl app::Gui for Gui {
                 let mut number_of_bounces = self.number_of_bounces as _;
                 ui.input_int("Max Number of bounces", &mut number_of_bounces)
                     .build();
-                self.number_of_bounces = number_of_bounces.abs() as _;
+
+                let mut debug_number = self.debug as _;
+                ui.input_int("Debug control", &mut debug_number)
+                    .build();
+                self.debug = debug_number.abs() as _;
                 ui.slider("scale", 0.1, 10., &mut self.scale);
                 ui.slider("Apertures", 0., 1., &mut self.aperture);
                 ui.slider("Focus", 0.1, 20., &mut self.focus_distance);

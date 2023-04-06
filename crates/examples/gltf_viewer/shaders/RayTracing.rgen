@@ -49,7 +49,17 @@ void main()
     uint pixelRandomSeed = ubo.RandomSeed;
     Ray.RandomSeed = InitRandomSeed(InitRandomSeed(gl_LaunchIDEXT.x, gl_LaunchIDEXT.y), uint(pixelRandomSeed));
     RngStateType rngState = initRNG(uvec2(gl_LaunchIDEXT), uvec2(gl_LaunchSizeEXT.xy), uint(pixelRandomSeed));
-    Ray.rngState = initRNG(uvec2(gl_LaunchIDEXT), uvec2(gl_LaunchSizeEXT.xy), uint(clock));
+//    switch (ubo.debug) {
+//        case 0:
+//            Ray.rngState = initRNG(uvec2(gl_LaunchIDEXT), uvec2(gl_LaunchSizeEXT.xy), uint(clockARB()));
+//            break;
+//        case 1:
+            Ray.rngState = initRNG(uvec2(gl_LaunchIDEXT), uvec2(gl_LaunchSizeEXT.xy), uint(ubo.frame_count));
+//            break;
+//        case 2:
+//            Ray.rngState = initRNG(uvec2(gl_LaunchIDEXT), uvec2(gl_LaunchSizeEXT.xy), uint(ubo.TotalNumberOfSamples));
+//    }
+
     vec3 radiance = vec3(0);
 //    Ray.instance_id = 0xFFFFFFFF;
     // Accumulate all the rays for this pixels.

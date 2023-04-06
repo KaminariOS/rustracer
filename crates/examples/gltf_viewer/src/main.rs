@@ -164,6 +164,8 @@ impl App for GltfViewer {
             has_sky: gui.sky.into(),
             mapping: gui.mapping as _,
             antialiasing: gui.antialiasing.into(),
+            frame_count: frame_stats.frame_count,
+            debug: gui.debug,
         };
 
         self.ubo_buffer.copy_data_to_buffer(&[ubo])?;

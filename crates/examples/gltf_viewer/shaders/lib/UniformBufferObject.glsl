@@ -17,4 +17,7 @@ struct UniformBufferObject
 
 	bool antialiasing;
 	uint mapping;
+
+	uint frame_count;
+	uint debug;
 };

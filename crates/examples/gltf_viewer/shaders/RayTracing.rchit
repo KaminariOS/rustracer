@@ -202,13 +202,24 @@ void main()
 	Ray.hitValue = vec3(1.);
 	uint brdfType;
 
-	vec3 throughput = vec3(1.);
+	vec3 throughput = color;
+
+	MaterialBrdf matbrdf;
+	matbrdf.baseColor = color;
+	matbrdf.metallic = metallic;
+	matbrdf.roughness = roughness;
+	matbrdf.ior = ior;
+	matbrdf.transmission = transmission_factor;
 
 	if (metallic == 1.0 && roughness == 0.0) {
 		brdfType = SPECULAR_TYPE;
-	} else {
-		BRDF brdfProbability = getBrdfProbability(color, metallic, -gl_WorldRayDirectionEXT, outwardNormal);
-		if (RandomFloat(seed) < brdfProbability.specular) {
+	}
+//	else if (metallic == 0.) {
+//		brdfType = DIFFUSE_TYPE;
+//	}
+	else {
+		BRDF brdfProbability = getBrdfProbability(matbrdf, -gl_WorldRayDirectionEXT, outwardNormal);
+		if (rand(rngState) < brdfProbability.specular) {
 			brdfType = SPECULAR_TYPE;
 			throughput /= brdfProbability.specular;
 		} else {
@@ -216,26 +227,30 @@ void main()
 			throughput /= brdfProbability.diffuse;
 		}
 	}
-	MaterialBrdf matbrdf;
-	matbrdf.baseColor = color;
-	matbrdf.metallic = metallic;
-	matbrdf.roughness = roughness;
-	matbrdf.ior = ior;
-	matbrdf.transmission = transmission_factor;
+
 	vec3 brdfWeight;
 	vec2 u = vec2(rand(rngState), rand(rngState));
 	vec3 direction;
 	Ray.needScatter = evalIndirectCombinedBRDF(u, outwardNormal, geo_normal, -gl_WorldRayDirectionEXT, matbrdf, brdfType, direction, brdfWeight);
+
+//	Ray.needScatter = false;
+//	Ray.emittance = vec3(brdfWeight);
+
 	throughput *= brdfWeight;
 	Ray.hitPoint = origin;
 	Ray.scatterDirection = direction;
+//	if (transmission_factor > 0.) {
+//		throughput *= (1. - transmission_factor);
+//	}
 	Ray.hitValue = throughput;
-//	if (Ray.needScatter) {
-//		Ray.emittance = vec3(dot(geo_normal, outwardNormal));
-//		Ray.needScatter = false;
-//	} else {
+
+	if (brdfType == DIFFUSE_TYPE) {
+
+	}
+//	else {
 //		Ray.emittance = vec3(0.);
 //	}
+
 //	if (ior > 1.) {
 //
 //		const float refraction_ratio = frontFace ? 1 / ior: ior;
@@ -252,7 +267,8 @@ void main()
 //			 Ray.scatterDirection = refracted;
 //		 }
 //	}
-//	else if (length(emittance) < 0.01 && roughness > 0.) {
+//	else
+//if (length(emittance) < 0.01 && roughness == 1.) {
 //		const bool isScattered = dot(gl_WorldRayDirectionEXT, normal) < 0.;
 //		const vec3 scatter = vec3(normal + RandomInUnitSphere(seed));
 //		Ray.needScatter = isScattered;
@@ -268,4 +284,5 @@ void main()
 //	}
 
 	Ray.RandomSeed = seed;
+	Ray.rngState = rngState;
 }

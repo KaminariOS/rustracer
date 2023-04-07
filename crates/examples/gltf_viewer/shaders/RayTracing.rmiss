@@ -14,12 +14,14 @@ layout(location = 0) rayPayloadInEXT RayPayload Ray;
 void main()
 {
 	vec3 light_acc = vec3(0.);
-	for(int i = 0; i < lights.length(); i++) {
-		Light li = lights[i];
-			float cos = dot(li.transform.xyz, gl_WorldRayDirectionEXT);
+	if (Ray.t != 0) {
+		for(int i = 0; i < lights.length(); i++) {
+			Light li = lights[i];
+			float cos = dot(normalize(li.transform.xyz), gl_WorldRayDirectionEXT);
 			if (cos < 0.) {
 				light_acc += -cos * li.color.xyz * li.intensity;
 			}
+		}
 	}
 	if (Camera.HasSky)
 	{

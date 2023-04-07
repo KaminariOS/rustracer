@@ -102,6 +102,7 @@ void main()
 	const MaterialRaw mat = materials.m[primInfo.material_id];
 
 //	Ray.instance_id = gl_InstanceID;
+	float last_t = Ray.t;
 	Ray.t = gl_HitTEXT;
 	// Fetch vertices
 	const uint vertexOffset = primInfo.v_offset;
@@ -206,6 +207,8 @@ void main()
 	}
 	const float ior = mat.ior;
 
+	VolumeInfo volume_info = mat.volume_info;
+
 	Ray.hitPoint = origin;
 	uint seed = Ray.RandomSeed;
 	RngStateType rngState = Ray.rngState;
@@ -226,7 +229,12 @@ void main()
 	matbrdf.specular_factor = spec_factor;
 	matbrdf.specular_color_factor = spec_color_factor;
 	matbrdf.use_spec = spec_info.exist;
+	matbrdf.frontFace = frontFace;
 	matBuild(matbrdf);
+	matbrdf.attenuation_color = volume_info.attenuation_color;
+	matbrdf.attenuation_distance = volume_info.attenuation_distance;
+	matbrdf.t_diff = gl_HitTEXT - last_t;
+
 	if (metallic == 1.0 && roughness == 0.0) {
 		brdfType = SPECULAR_TYPE;
 	}
@@ -235,12 +243,17 @@ void main()
 //	}
 	else {
 		BRDF brdfProbability = getBrdfProbability(matbrdf, -gl_WorldRayDirectionEXT, outwardNormal);
-		if (rand(rngState) < brdfProbability.specular) {
+		float randfloat = rand(rngState);
+
+		if (randfloat < brdfProbability.specular) {
 			brdfType = SPECULAR_TYPE;
 			throughput /= brdfProbability.specular;
-		} else {
+		} else if (randfloat >= brdfProbability.specular && randfloat <= brdfProbability.specular + brdfProbability.diffuse) {
 			brdfType = DIFFUSE_TYPE;
 			throughput /= brdfProbability.diffuse;
+		} else {
+			brdfType = TRANSMISSION_TYPE;
+			throughput /= brdfProbability.transmission;
 		}
 	}
 
@@ -249,8 +262,6 @@ void main()
 	vec3 direction;
 	Ray.needScatter = evalIndirectCombinedBRDF(u, outwardNormal, geo_normal, -gl_WorldRayDirectionEXT, matbrdf, brdfType, direction, brdfWeight);
 
-//	Ray.needScatter = false;
-//	Ray.emittance = vec3(brdfWeight);
 
 	throughput *= brdfWeight;
 	Ray.hitPoint = origin;
@@ -260,6 +271,13 @@ void main()
 //	}
 	Ray.hitValue = throughput;
 
+//	Ray.needScatter = false;
+//	Ray.emittance = vec3(hashAndColor(brdfType));
+//	if (brdfType == SPECULAR_TYPE) {
+//		Ray.emittance = vec3(brdfWeight);
+//	}
+//	Ray.hitValue = vec3(0.);
+
 //	if (brdfType == DIFFUSE_TYPE) {
 //
 //	}
@@ -267,7 +285,7 @@ void main()
 //		Ray.emittance = vec3(0.);
 //	}
 
-//	if (ior > 1.) {
+//	if (matbrdf.transmission > 0.) {
 //
 //		const float refraction_ratio = frontFace ? 1 / ior: ior;
 //		const float cos_theta = abs(cos);

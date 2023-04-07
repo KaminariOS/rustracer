@@ -4,7 +4,7 @@ use crate::image::{Image, process_images_unified};
 use crate::material::{find_linear_textures, Material, MaterialRaw};
 use crate::texture::{Sampler, Texture};
 use crate::{ MeshID, Name, NodeID, SceneID, check_extensions, check_indices, get_index, get_name};
-use glam::Mat4;
+use glam::{Mat4, Vec4};
 use gltf::buffer;
 use gltf::image;
 use gltf::{Document};
@@ -63,7 +63,12 @@ impl Doc {
         }
 
         if dlights.is_empty() {
-            dlights.push(Default::default());
+            dlights.push(LightRaw {
+                color: [1.; 4],
+                transform: Vec4::new(-1., -2., -3., 4.),
+                intensity: 10.,
+                ..Default::default()
+            });
         }
         [dlights, plights]
     }

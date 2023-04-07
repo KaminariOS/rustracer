@@ -14,6 +14,7 @@ struct RayPayload
 	uint RandomSeed;
 	vec3 emittance;
 	RngStateType rngState;
+	float volume_dis;
 //	uint instance_id;
 //	vec2 bary;
 };

@@ -23,12 +23,17 @@ pub struct Gui {
     pub animation_speed: f32,
     pub antialiasing: bool,
     pub debug: u32,
+    pub light_intensity: f32
 }
 
 #[derive(IntoStaticStr, AsRefStr, EnumIter, PartialEq, Clone, Copy, Debug, Default)]
 pub enum Scene {
-    #[default]
-    LucyInCornell,
+    TransmissionRoughnessTest,
+    // Passed tests
+    // UnlitTest,
+    // VertexColorTest,
+    SpecularTest,
+    CornellBoxLucy,
     Cornell,
     ABeautifulGame,
     Sponza,
@@ -55,12 +60,15 @@ pub enum Scene {
     Titan,
     MilleniumEye,
     VC,
+
+    #[default]
+    DragonAttenuation,
+    TransmissionTest,
 }
 
 impl Scene {
     pub fn path(&self) -> &'static str {
         match self {
-            Self::LucyInCornell => "cornellBoxLucy.gltf",
             Self::Cornell => "cornellBox.gltf",
             Self::Type59 => "type59.gltf",
             scene => scene.into(),
@@ -71,10 +79,10 @@ impl Scene {
 #[derive(Default, Debug, AsRefStr, IntoStaticStr, EnumIter, Copy, Clone, PartialEq)]
 pub enum Skybox {
     LancellottiChapel,
-    #[default]
     Yokohama,
     SaintPetersBasilica,
     LearnOpengl,
+    #[default]
     UtahInteractiveGraphics
 }
 
@@ -135,11 +143,6 @@ impl Gui {
 impl app::Gui for Gui {
     fn new() -> Result<Self> {
         Ok(Gui {
-            // light: Light {
-            //     direction: [-2.0, -1.0, -2.0],
-            //     color: [1.0; 3],
-            //
-            // },
             aperture: 0.01,
             focus_distance: 10.0,
             number_of_samples: 3,
@@ -157,6 +160,7 @@ impl app::Gui for Gui {
             animation_speed: 1.,
             antialiasing: true,
             debug: 0,
+            light_intensity: 1.0,
         })
     }
 
@@ -234,6 +238,7 @@ impl app::Gui for Gui {
                     _ => {false}
                 };
 
+                ui.slider("Virtual light intensity",0., 2.0, &mut self.light_intensity);
                 // Light control
                 // ui.text_wrapped("Light");
                 ui.separator();

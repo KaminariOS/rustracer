@@ -64,12 +64,12 @@ impl From<Kind> for LightType {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct LightRaw {
-    color: [f32; 4],
-    transform: Vec4,
-    kind: u32,
-    range: f32,
-    intensity: f32,
-    _padding: u32
+    pub(crate) color: [f32; 4],
+    pub(crate) transform: Vec4,
+    pub kind: u32,
+    pub range: f32,
+    pub intensity: f32,
+    pub _padding: u32
 }
 
 impl LightRaw {

@@ -3,7 +3,7 @@ use crate::material::MaterialRaw;
 use crate::scene_graph::Doc;
 use crate::texture;
 use anyhow::Result;
-use std::mem::size_of_val;
+use std::mem::{size_of, size_of_val};
 use std::time::Instant;
 use log::info;
 use vulkan::ash::vk;
@@ -66,18 +66,25 @@ impl Buffers {
             &globals.materials,
         )?;
 
-        let dlights_buffer = create_gpu_only_buffer_from_data(
-            context,
-            vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
-                | vk::BufferUsageFlags::STORAGE_BUFFER,
-            &globals.d_lights,
+        // let dlights_buffer = create_gpu_only_buffer_from_data(
+        //     context,
+        //     vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
+        //         | vk::BufferUsageFlags::STORAGE_BUFFER,
+        //     &globals.d_lights,
+        // )?;
+
+        let dlights_buffer = context.create_buffer(
+            vk::BufferUsageFlags::STORAGE_BUFFER,
+            MemoryLocation::CpuToGpu,
+            size_of_val(&globals.d_lights) as _,
         )?;
+        dlights_buffer.copy_data_to_buffer(globals.d_lights.as_slice())?;
 
         let plights_buffer = create_gpu_only_buffer_from_data(
             context,
             vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
                 | vk::BufferUsageFlags::STORAGE_BUFFER,
-            &globals.d_lights,
+            &globals.p_lights,
         )?;
         info!("Buffers: {}s", now.elapsed().as_secs());
         // println!("v_b: {:#02x}, i_b: {:#02x}, g_b: {:#02x}, m_b: {:#02x}", vertex_buffer.as_raw(), index_buffer.as_raw(), geo_buffer.as_raw(), material_buffer.as_raw());
@@ -144,7 +151,7 @@ pub struct VkGlobal {
 
     pub prim_info: Vec<PrimInfo>,
     materials: Vec<MaterialRaw>,
-    d_lights: Vec<LightRaw>,
+    pub d_lights: Vec<LightRaw>,
     p_lights: Vec<LightRaw>,
     pub skybox: SkyboxResource
 }

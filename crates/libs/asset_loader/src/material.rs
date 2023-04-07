@@ -176,13 +176,25 @@ impl From<&Material> for MaterialRaw {
 
 // 8 floats
 #[repr(C)]
-#[derive(Default, Copy, Clone)]
+#[derive(Copy, Clone)]
 pub struct VolumeInfo {
     attenuation_color: [f32; 3],
     thickness_factor: f32,
     thickness_texture: TextureInfo,
     attenuation_distance: f32,
     exists: u32,
+}
+
+impl Default for VolumeInfo {
+    fn default() -> Self {
+        Self {
+            attenuation_color: [1.; 3],
+            thickness_factor: 0.0,
+            thickness_texture: Default::default(),
+            attenuation_distance: f32::MAX,
+            exists: false.into(),
+        }
+    }
 }
 
 impl From<Volume<'_>> for VolumeInfo {

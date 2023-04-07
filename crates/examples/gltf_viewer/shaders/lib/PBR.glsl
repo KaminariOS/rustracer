@@ -27,21 +27,21 @@ float Schlick(const float cosine, const float refractionIndex)
 //#define MICROFACET_DISTRIBUTION BECKMANN
 #endif
 
-#ifndef DIFFUSE_BRDF
+//#ifndef DIFFUSE_BRDF
 //#define DIFFUSE_BRDF LAMBERTIAN
 //#define DIFFUSE_BRDF OREN_NAYAR
 //#define DIFFUSE_BRDF DISNEY
 #define DIFFUSE_BRDF FROSTBITE
 //#define DIFFUSE_BRDF NONE
-#endif
+//#endif
 
 
 // Select distribution function
-#if MICROFACET_DISTRIBUTION == GGX
+//#if MICROFACET_DISTRIBUTION == GGX
 #define Microfacet_D GGX_D
-#elif MICROFACET_DISTRIBUTION == BECKMANN
-#define Microfacet_D Beckmann_D
-#endif
+//#elif MICROFACET_DISTRIBUTION == BECKMANN
+//#define Microfacet_D Beckmann_D
+//#endif
 
 // Select G functions (masking/shadowing) depending on selected distribution
 #if MICROFACET_DISTRIBUTION == GGX
@@ -69,14 +69,14 @@ float Schlick(const float cosine, const float refractionIndex)
 #else
 #define sampleSpecularHalfVector sampleBeckmannWalter
 #endif
-#elif SPECULAR_BRDF == PHONG
-#define evalSpecular evalPhong
-#define sampleSpecular sampleSpecularPhong
-#define sampleSpecularHalfVector samplePhong
-#else
-#define evalSpecular evalVoid
-#define sampleSpecular sampleSpecularVoid
-#define sampleSpecularHalfVector sampleSpecularHalfVectorVoid
+//#elif SPECULAR_BRDF == PHONG
+//#define evalSpecular evalPhong
+//#define sampleSpecular sampleSpecularPhong
+//#define sampleSpecularHalfVector samplePhong
+//#else
+//#define evalSpecular evalVoid
+//#define sampleSpecular sampleSpecularVoid
+//#define sampleSpecularHalfVector sampleSpecularHalfVectorVoid
 #endif
 
 #if MICROFACET_DISTRIBUTION == GGX
@@ -145,6 +145,11 @@ struct MaterialBrdf {
 	vec3 dielectricSpecularF90;
 	vec3 F0;
 	vec3 F90;
+	bool frontFace;
+
+	vec3 attenuation_color;
+	float attenuation_distance;
+	float t_diff;
 };
 
 void matBuild(inout MaterialBrdf material) {
@@ -231,15 +236,26 @@ BRDF getBrdfProbability(MaterialBrdf mat, vec3 V, vec3 shadingNormal) {
 
 	// Approximate relative contribution of BRDFs using the Fresnel term
 	float specular = Fresnel;
-	float diffuse = diffuseReflectance * (1.0f - Fresnel); //< If diffuse term is weighted by Fresnel, apply it here as well
+	float penetration = diffuseReflectance * (1.0f - Fresnel);
+	float diffuse = penetration * (1. - mat.transmission);  //< If diffuse term is weighted by Fresnel, apply it here as well
+	float transmission = penetration * mat.transmission;
 
 	// Return probability of selecting specular BRDF over diffuse BRDF
-	float p = (specular / max(0.0001f, (specular + diffuse)));
-	p = clamp(p, 0.1f, 0.9f);
+	float sum = max(0.0001f, (specular + diffuse + transmission));
+	float p = specular / sum ;
+	const float min = 0.1;
+	const float max = 0.9;
+	p = clamp(p, min, max);
+	float d = (1 - p) * (1 - mat.transmission);
+	float t = (1 - p) * mat.transmission;
+	sum = p + d + t;
+	p /= sum;
+	d /= sum;
+	t /= sum;
 	BRDF brdf;
 	brdf.specular = p;
-	brdf.diffuse = 1 - p;
-	brdf.transmission = 0;
+	brdf.diffuse = d;
+	brdf.transmission = t;
 	// Clamp probability to avoid undersampling of less prominent BRDF
 	return brdf;
 }
@@ -306,6 +322,7 @@ struct BrdfData
 	vec3 N; //< Shading normal
 	vec3 H; //< Half vector (microfacet normal)
 	vec3 L; //< Direction to light (or direction of reflecting ray)
+	vec3 Ht; // Transmission angle
 
 	float NdotL;
 	float NdotV;
@@ -424,6 +441,24 @@ float frostbiteDisneyDiffuse(const BrdfData data) {
 	return FDL * FDV * energyFactor;
 }
 
+float Smith_Vt(const BrdfData data) {
+	float NdotL = data.NdotL;
+	float NdotV = data.NdotV;
+	float HtL = dot(data.Ht, data.L);
+	float HtV = dot(data.Ht, data.V);
+	float a_square = data.alphaSquared;
+	float one_minus_a_s = 1 - a_square;
+	float first = (HtL / NdotL) / (abs(NdotL) + sqrt(a_square + one_minus_a_s * NdotL * NdotL));
+	float second = (HtV  / NdotV) / (a_square + sqrt(a_square + one_minus_a_s * NdotV * NdotV));
+	return first * second;
+}
+
+float specular_btdf(const BrdfData data) {
+	float Dt = Microfacet_D(data.alphaSquared, dot(data.N, data.Ht));
+	float Vt = Smith_Vt(data);
+	return Vt * Dt;
+}
+
 vec3 evalFrostbiteDisneyDiffuse(const BrdfData data) {
 	return data.diffuseReflectance * (frostbiteDisneyDiffuse(data) * ONE_OVER_PI * data.NdotL);
 }
@@ -443,6 +478,7 @@ BrdfData prepareBRDFData(vec3 N, vec3 L, vec3 V, MaterialBrdf material) {
 	data.N = N;
 	data.H = normalize(L + V);
 	data.L = L;
+	data.Ht = normalize(V - 2 * dot(N, L) * N + L);
 
 	float NdotL = dot(N, L);
 	float NdotV = dot(N, V);
@@ -525,6 +561,38 @@ vec3 sampleSpecularMicrofacet(vec3 Vlocal, float alpha, float alphaSquared, vec3
 	return Llocal;
 }
 
+// Samples a reflection ray from the rough surface using selected microfacet distribution and sampling method
+// Resulting weight includes multiplication by cosine (NdotL) term
+vec3 sampleSpecularMicrofacetRefract(vec3 Vlocal, float alpha, float alphaSquared, vec3 specularF0, vec2 u, inout vec3 weight, vec3 specularF90, MaterialBrdf material) {
+
+	// Sample a microfacet normal (H) in local space
+	vec3 Hlocal;
+	if (alpha == 0.0f) {
+		// Fast path for zero roughness (perfect reflection), also prevents NaNs appearing due to divisions by zeroes
+		Hlocal = vec3(0.0f, 0.0f, 1.0f);
+	} else {
+		// For non-zero roughness, this calls VNDF sampling for GG-X distribution or Walter's sampling for Beckmann distribution
+		Hlocal = sampleSpecularHalfVector(Vlocal, vec2(alpha, alpha), u);
+	}
+	const float refraction_ratio = material.frontFace ? 1 / material.ior: material.ior;
+	// Reflect view direction to obtain light vector
+	const vec3 Llocal = refract(-Vlocal, Hlocal, refraction_ratio);
+	// Note: HdotL is same as HdotV here
+	// Clamp dot products here to small value to prevent numerical instability. Assume that rays incident from below the hemisphere have been filtered
+	float HdotL = max(0.00001f, min(1.0f, dot(Hlocal, Llocal)));
+	const vec3 Nlocal = vec3(0.0f, 0.0f, 1.0f);
+	float NdotL = max(0.00001f, min(1.0f, dot(Nlocal, Llocal)));
+	float NdotV = max(0.00001f, min(1.0f, dot(Nlocal, Vlocal)));
+	float NdotH = max(0.00001f, min(1.0f, dot(Nlocal, Hlocal)));
+	vec3 F = evalFresnel(specularF0, shadowedF90(specularF90), HdotL);
+
+	// Calculate weight of the sample specific for selected sampling method
+	// (this is microfacet BRDF divided by PDF of sampling method - notice how most terms cancel out)
+	weight = F * specularSampleWeight(alpha, alphaSquared, NdotL, NdotV, HdotL, NdotH);
+	//    weight = vec3(1.);
+	return Llocal;
+}
+
 bool evalIndirectCombinedBRDF(vec2 u, vec3 shadingNormal, vec3 geometryNormal, vec3 V, MaterialBrdf material, const uint brdfType, inout vec3 rayDirection, inout vec3 sampleWeight) {
 	if (dot(shadingNormal, V) <= 0.0f) return false;
 	vec4 qRotationToZ = getRotationToZAxis(shadingNormal);
@@ -537,7 +605,7 @@ bool evalIndirectCombinedBRDF(vec2 u, vec3 shadingNormal, vec3 geometryNormal, v
 		const BrdfData data = prepareBRDFData(Nlocal, rayDirectionLocal, Vlocal, material);
 
 		// Function 'diffuseTerm' is predivided by PDF of sampling the cosine weighted hemisphere
-		sampleWeight = data.diffuseReflectance * diffuseTerm(data);
+		sampleWeight = data.diffuseReflectance * ( 1. - material.transmission) * diffuseTerm(data);
 
 		//        sampleWeight = data.diffuseReflectance * lambertian(data);
 
@@ -553,7 +621,24 @@ bool evalIndirectCombinedBRDF(vec2 u, vec3 shadingNormal, vec3 geometryNormal, v
 	else if (brdfType == SPECULAR_TYPE) {
 		const BrdfData data = prepareBRDFData(Nlocal, vec3(0.0f, 0.0f, 1.0f) /* unused L vector */, Vlocal, material);
 		rayDirectionLocal = sampleSpecular(Vlocal, data.alpha, data.alphaSquared, data.specularF0, u, sampleWeight, data.specularF90);
-		//        sampleWeight = vec3(1.);
+	} else if (brdfType == TRANSMISSION_TYPE) {
+		const float refraction_ratio = material.frontFace ? 1 / material.ior: material.ior;
+		const vec3 refracted = refract(-Vlocal, Nlocal, refraction_ratio);
+		if (refracted == vec3(0.)) {
+			sampleWeight = vec3(0.);
+			return false;
+		}
+		rayDirectionLocal = refracted;
+		const BrdfData data = prepareBRDFData(Nlocal, rayDirectionLocal, Vlocal, material);
+//		sampleWeight = specular_btdf(data);
+		sampleWeight = data.diffuseReflectance * material.transmission ;
+		if (!material.frontFace) {
+			float dis = material.t_diff;
+			vec3 sigma = -log(material.attenuation_color) / dis;
+			vec3 attenuation = exp(-sigma * dis);
+			sampleWeight *= attenuation;
+		}
+//		sampleWeight = vec3(1.);
 	}
 
 	// Prevent tracing direction with no contribution
@@ -563,7 +648,16 @@ bool evalIndirectCombinedBRDF(vec2 u, vec3 shadingNormal, vec3 geometryNormal, v
 	rayDirection = normalize(rotatePoint(invertRotation(qRotationToZ), rayDirectionLocal));
 
 	// Prevent tracing direction "under" the hemisphere (behind the triangle)
-	if (dot(geometryNormal, rayDirection) <= 0.0f) return false;
+	float NdotL = dot(geometryNormal, rayDirection) ;
+//	if (!material.frontFace) {
+//		NdotL = -NdotL;
+//	}
+//	if (NdotL <= 0) return false;
+	if (NdotL <= 0) {
+		if (brdfType != TRANSMISSION_TYPE) {
+			return false;
+		}
+	}
 	return true;
 }
 

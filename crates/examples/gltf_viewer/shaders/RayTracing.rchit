@@ -14,7 +14,7 @@ layout(binding = GEO_BIND, set = 0) readonly buffer PrimInfos { PrimInfo p[]; } 
 layout(binding = MAT_BIND, set = 0) readonly buffer Materials { MaterialRaw m[]; } materials;
 layout(binding = TEXTURE_BIND) uniform sampler2D[] textures;
 layout(binding = PLIGHT_BIND) readonly buffer Lights { Light[] lights; };
-layout(binding = UNIFORM_BIND, set = 0) readonly uniform UniformBufferObjectStruct { UniformBufferObject Camera; };
+layout(binding = UNIFORM_BIND, set = 0) readonly uniform UniformBufferObjectStruct { UniformBufferObject ubo; };
 
 //#include "Scatter.glsl"
 //#include "Vertex.glsl"
@@ -95,6 +95,37 @@ bool sampleLightRIS(inout RngStateType rngState, vec3 hitPosition, vec3 surfaceN
 	}
 }
 
+void getNormal(inout vec3 normal, Vertex v0, Vertex v1, Vertex v2, vec3 bary, vec3 tex_normal) {
+	vec4 tangent0 = v0.tangent;
+	vec4 tangent1 = v1.tangent;
+	vec4 tangent2= v2.tangent;
+	vec3 n0 = v0.normal;
+	vec3 n1 = v1.normal;
+	vec3 n2 = v2.normal;
+	if (
+	length(tangent0) == 0 || tangent0.w == 0 ||
+	length(tangent1) == 0 || tangent1.w == 0 ||
+	length(tangent2) == 0 || tangent2.w == 0
+	) {
+		return;
+	}
+	vec3 tangent = Mix(
+		cross(n0, tangent0.xyz) * tangent0.w,
+		cross(n1, tangent1.xyz) * tangent1.w,
+		cross(n2, tangent2.xyz) * tangent2.w,
+		bary
+	);
+	vec3 normal_mix = Mix(n0, n1, n2, bary);
+	if (length(tex_normal) == 0) {
+		return;
+	}
+	if (tex_normal.z <= 0) {
+		tex_normal.z = sqrt(1 - tex_normal.x * tex_normal.x - tex_normal.y * tex_normal.y);
+	}
+	vec3 b = cross(normal_mix, tangent);
+	mat3 tbn = mat3(normalize(tangent), normalize(b), normalize(normal_mix));
+	normal = tbn * tex_normal;
+}
 
 void main()
 {
@@ -132,7 +163,7 @@ void main()
 
 	Ray.needScatter = false;
 	Ray.hitPoint = pos;
-	uint mapping = Camera.mapping;
+	uint mapping = ubo.mapping;
 	if (mat.unlit) {
 		mapping = ALBEDO;
 	}
@@ -150,28 +181,20 @@ void main()
 
 	vec3 geo_normal = calculate_geo_normal(v0.pos, v1.pos, v2.pos);
 	vec3 normal = Mix(v0.normal, v1.normal, v2.normal, barycentricCoords);
-	if (mat.normal_texture.index >= 0 && false) {
+	if (mat.normal_texture.index >= 0 && ubo.debug == 0) {
 		vec3 normal_t = normalize(texture(textures[mat.normal_texture.index], uvs).xyz * 2. - 1.);
-
-		vec3 t = Mix(v0.tangent, v1.tangent, v2.tangent, barycentricCoords).xyz;
-
-		vec3 b = normal_transform(cross(normal, t));
-		t = normal_transform(t);
-		normal = normal_transform(normal);
-
-		mat3 tbn = mat3(t, b, normal);
-		// Shading normal
-		normal = normalize(tbn * normal_t);
-	} else {
-		normal = normal_transform(normal);
+		getNormal(normal, v0, v1, v2, barycentricCoords, normal_t);
 	}
+	normal = normal_transform(normal);
 
-	origin = offset_ray(origin, normal);
-	const float cos = dot(gl_WorldRayDirectionEXT, normal);
-	const bool frontFace = cos < 0.;
-	const vec3 outwardNormal = frontFace ? normal : -normal;
+//	normal = geo_normal;
+	const vec3 V = -gl_WorldRayDirectionEXT;
+	const float cos = dot(V, geo_normal);
+	const bool frontFace = cos >= 0.;
 	geo_normal = frontFace? geo_normal: -geo_normal;
+	const vec3 outwardNormal = dot(geo_normal, normal) < 0.? -normal: normal;
 
+	origin = offset_ray(origin, geo_normal);
 	vec3 emittance = mat.emissive_factor.rgb;
 	if (mat.emissive_texture.index >= 0.) {
 		emittance *= texture(textures[mat.emissive_texture.index], uvs).rgb;
@@ -238,9 +261,6 @@ void main()
 	if (metallic == 1.0 && roughness == 0.0) {
 		brdfType = SPECULAR_TYPE;
 	}
-//	else if (metallic == 0.) {
-//		brdfType = DIFFUSE_TYPE;
-//	}
 	else {
 		BRDF brdfProbability = getBrdfProbability(matbrdf, -gl_WorldRayDirectionEXT, outwardNormal);
 		float randfloat = rand(rngState);
@@ -268,8 +288,13 @@ void main()
 	Ray.scatterDirection = direction;
 	Ray.hitValue = throughput;
 
-//	Ray.needScatter = false;
-//	Ray.emittance = vec3(hashAndColor(brdfType));
+////	Ray.emittance = vec3(hashAndColor(brdfType));
+	//	Ray.needScatter = false;
+//	if (dot(-gl_WorldRayDirectionEXT, geo_normal) > 0) {
+//		Ray.emittance = vec3(1.);
+//	} else {
+//		Ray.emittance = vec3(0);
+//	}
 //	if (brdfType == SPECULAR_TYPE) {
 //		Ray.emittance = vec3(brdfWeight);
 //	}
@@ -300,7 +325,7 @@ void main()
 //	}
 //	else
 //if (length(emittance) < 0.01 && roughness == 1.) {
-//		const bool isScattered = dot(gl_WorldRayDirectionEXT, normal) < 0.;
+//		const bool isScattered = dot(gl_WorldRayDirectionEXT, outwardNormal) < 0.00;
 //		const vec3 scatter = vec3(normal + RandomInUnitSphere(seed));
 //		Ray.needScatter = isScattered;
 //		Ray.scatterDirection = scatter;

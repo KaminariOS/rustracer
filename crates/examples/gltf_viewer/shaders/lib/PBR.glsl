@@ -594,7 +594,7 @@ vec3 sampleSpecularMicrofacetRefract(vec3 Vlocal, float alpha, float alphaSquare
 }
 
 bool evalIndirectCombinedBRDF(vec2 u, vec3 shadingNormal, vec3 geometryNormal, vec3 V, MaterialBrdf material, const uint brdfType, inout vec3 rayDirection, inout vec3 sampleWeight) {
-	if (dot(shadingNormal, V) <= 0.0f) return false;
+	if (dot(geometryNormal, V) <= 0.0f) return false;
 	vec4 qRotationToZ = getRotationToZAxis(shadingNormal);
 	vec3 Vlocal = rotatePoint(qRotationToZ, V);
 	const vec3 Nlocal = vec3(0.0f, 0.0f, 1.0f);
@@ -605,7 +605,7 @@ bool evalIndirectCombinedBRDF(vec2 u, vec3 shadingNormal, vec3 geometryNormal, v
 		const BrdfData data = prepareBRDFData(Nlocal, rayDirectionLocal, Vlocal, material);
 
 		// Function 'diffuseTerm' is predivided by PDF of sampling the cosine weighted hemisphere
-		sampleWeight = data.diffuseReflectance * ( 1. - material.transmission) * diffuseTerm(data);
+		sampleWeight = data.diffuseReflectance * diffuseTerm(data);
 //		sampleWeight *= (1. - material.transmission);
 		//        sampleWeight = data.diffuseReflectance * lambertian(data);
 
@@ -655,7 +655,7 @@ bool evalIndirectCombinedBRDF(vec2 u, vec3 shadingNormal, vec3 geometryNormal, v
 //		NdotL = -NdotL;
 //	}
 //	if (NdotL <= 0) return false;
-	if (NdotL <= 0) {
+	if (NdotL <= 0.) {
 		if (brdfType != TRANSMISSION_TYPE) {
 			return false;
 		}

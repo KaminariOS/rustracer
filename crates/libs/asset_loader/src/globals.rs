@@ -66,19 +66,19 @@ impl Buffers {
             &globals.materials,
         )?;
 
-        // let dlights_buffer = create_gpu_only_buffer_from_data(
-        //     context,
-        //     vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
-        //         | vk::BufferUsageFlags::STORAGE_BUFFER,
-        //     &globals.d_lights,
-        // )?;
-
-        let dlights_buffer = context.create_buffer(
-            vk::BufferUsageFlags::STORAGE_BUFFER,
-            MemoryLocation::CpuToGpu,
-            size_of_val(&globals.d_lights) as _,
+        let dlights_buffer = create_gpu_only_buffer_from_data(
+            context,
+            vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
+                | vk::BufferUsageFlags::STORAGE_BUFFER,
+            &globals.d_lights,
         )?;
-        dlights_buffer.copy_data_to_buffer(globals.d_lights.as_slice())?;
+
+        // let dlights_buffer = context.create_buffer(
+        //     vk::BufferUsageFlags::STORAGE_BUFFER,
+        //     MemoryLocation::CpuToGpu,
+        //     size_of_val(&globals.d_lights) as _,
+        // )?;
+        // dlights_buffer.copy_data_to_buffer(globals.d_lights.as_slice())?;
 
         let plights_buffer = create_gpu_only_buffer_from_data(
             context,

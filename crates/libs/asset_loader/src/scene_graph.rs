@@ -64,8 +64,8 @@ impl Doc {
 
         if dlights.is_empty() {
             dlights.push(LightRaw {
-                color: [1.; 4],
-                transform: Vec4::new(-1., -2., -3., 4.),
+                color: [0.2; 4],
+                transform: Vec4::new(-1., -0., -1., 4.),
                 intensity: 10.,
                 ..Default::default()
             });

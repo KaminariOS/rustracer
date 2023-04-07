@@ -235,8 +235,8 @@ BRDF getBrdfProbability(MaterialBrdf mat, vec3 V, vec3 shadingNormal) {
 	float Fresnel = saturate(luminance(evalFresnel(vec3(specularF0), shadowedF90(mat.F90), max(0.0f, dot(V, shadingNormal)))));
 
 	// Approximate relative contribution of BRDFs using the Fresnel term
-	float specular = Fresnel;
-	float penetration = diffuseReflectance * (1.0f - Fresnel);
+	float specular = Fresnel * mat.specular_factor;
+	float penetration = diffuseReflectance * (1.0f - mat.specular_factor * Fresnel);
 	float diffuse = penetration * (1. - mat.transmission);  //< If diffuse term is weighted by Fresnel, apply it here as well
 	float transmission = penetration * mat.transmission;
 
@@ -606,7 +606,7 @@ bool evalIndirectCombinedBRDF(vec2 u, vec3 shadingNormal, vec3 geometryNormal, v
 
 		// Function 'diffuseTerm' is predivided by PDF of sampling the cosine weighted hemisphere
 		sampleWeight = data.diffuseReflectance * ( 1. - material.transmission) * diffuseTerm(data);
-
+//		sampleWeight *= (1. - material.transmission);
 		//        sampleWeight = data.diffuseReflectance * lambertian(data);
 
 		//        #if COMBINE_BRDFS_WITH_FRESNEL
@@ -621,6 +621,7 @@ bool evalIndirectCombinedBRDF(vec2 u, vec3 shadingNormal, vec3 geometryNormal, v
 	else if (brdfType == SPECULAR_TYPE) {
 		const BrdfData data = prepareBRDFData(Nlocal, vec3(0.0f, 0.0f, 1.0f) /* unused L vector */, Vlocal, material);
 		rayDirectionLocal = sampleSpecular(Vlocal, data.alpha, data.alphaSquared, data.specularF0, u, sampleWeight, data.specularF90);
+//		sampleWeight *= material.specular_factor;
 	} else if (brdfType == TRANSMISSION_TYPE) {
 		const float refraction_ratio = material.frontFace ? 1 / material.ior: material.ior;
 		const vec3 refracted = refract(-Vlocal, Nlocal, refraction_ratio);
@@ -631,7 +632,8 @@ bool evalIndirectCombinedBRDF(vec2 u, vec3 shadingNormal, vec3 geometryNormal, v
 		rayDirectionLocal = refracted;
 		const BrdfData data = prepareBRDFData(Nlocal, rayDirectionLocal, Vlocal, material);
 //		sampleWeight = specular_btdf(data);
-		sampleWeight = data.diffuseReflectance * material.transmission ;
+		sampleWeight = data.diffuseReflectance * material.transmission;
+//		sampleWeight *= (1. - material.specular_factor);
 		if (!material.frontFace) {
 			float dis = material.t_diff;
 			vec3 sigma = -log(material.attenuation_color) / dis;

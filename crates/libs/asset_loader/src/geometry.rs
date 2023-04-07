@@ -1,4 +1,4 @@
-use crate::{Index, MeshID};
+use crate::{get_name, Index, MeshID, Name};
 use glam::{vec4, Vec2, Vec4, Vec4Swizzles};
 use gltf::mesh::Mode;
 use gltf::{buffer, Semantic};
@@ -17,6 +17,7 @@ pub struct Vertex {
 
 pub struct Mesh {
     pub(crate) index: MeshID,
+    pub name: Name,
     pub(crate) primitives: Vec<Primitive>,
 }
 
@@ -81,10 +82,12 @@ impl Mesh {
     pub(crate) fn new(mesh: gltf::Mesh, builder: &mut GeoBuilder) -> Self {
         let index = mesh.index();
         let mut primitives = vec![];
+        let name = mesh.name();
+        info!("Building mesh {}: {:?} ", index, name);
         for primitive in mesh.primitives().filter(is_primitive_supported) {
             primitives.push(Primitive::from(primitive, builder));
         }
-        Mesh { primitives, index }
+        Mesh { primitives, index, name: get_name!(mesh) }
     }
 }
 
@@ -97,7 +100,6 @@ const DEFAULT_MATERIAL_INDEX: usize = 0;
 impl Primitive {
     fn from(primitive: gltf::Primitive, builder: &mut GeoBuilder) -> Self {
         let geo_id = builder.next_geo_id();
-
         let material = primitive.material();
         let material_index = material.index().unwrap_or(DEFAULT_MATERIAL_INDEX) as u32;
 
@@ -114,6 +116,7 @@ impl Primitive {
                 index_reader.collect()
             } else {
                 // Create index
+                warn!("Creating index...");
                 (0..positions.len() as Index).collect()
             };
 

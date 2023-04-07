@@ -27,7 +27,7 @@ vec3 normal_transform(vec3 normal) {
 	return normalize(vec3(normal * gl_WorldToObjectEXT));
 }
 
-vec3 calculate_geo_normal(vec3 p0, vec3 p1, vec3 p2) {
+vec3 calculate_geo_normal(const vec3 p0, const vec3 p1, const vec3 p2) {
 	vec3 v1 = p2 - p0;
 	vec3 edge21 = p2 - p1;
 	vec3 v0 = p1 - p0;
@@ -150,7 +150,7 @@ void main()
 
 	vec3 geo_normal = calculate_geo_normal(v0.pos, v1.pos, v2.pos);
 	vec3 normal = Mix(v0.normal, v1.normal, v2.normal, barycentricCoords);
-	if (mat.normal_texture.index >= 0) {
+	if (mat.normal_texture.index >= 0 && false) {
 		vec3 normal_t = normalize(texture(textures[mat.normal_texture.index], uvs).xyz * 2. - 1.);
 
 		vec3 t = Mix(v0.tangent, v1.tangent, v2.tangent, barycentricCoords).xyz;
@@ -266,9 +266,6 @@ void main()
 	throughput *= brdfWeight;
 	Ray.hitPoint = origin;
 	Ray.scatterDirection = direction;
-//	if (transmission_factor > 0.) {
-//		throughput *= (1. - transmission_factor);
-//	}
 	Ray.hitValue = throughput;
 
 //	Ray.needScatter = false;

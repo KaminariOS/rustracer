@@ -260,10 +260,10 @@ impl App for GltfViewer {
             }
             self.prev_gui_state = Some(*gui_state);
             self.total_number_of_samples = 0;
-            if old_state.light_intensity != gui_state.light_intensity {
-                self.globals.d_lights[0].intensity = gui_state.light_intensity;
-                self.buffers.dlights_buffer.copy_data_to_buffer(self.globals.d_lights.as_slice()).unwrap();
-            }
+            // if old_state.light_intensity != gui_state.light_intensity {
+            //     self.globals.d_lights[0].intensity = gui_state.light_intensity;
+            //     self.buffers.dlights_buffer.copy_data_to_buffer(self.globals.d_lights.as_slice()).unwrap();
+            // }
         }
 
         if !self.doc.static_scene() && gui_state.animation && self.need_update() {

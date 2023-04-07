@@ -35,6 +35,7 @@ pub enum Scene {
     SpecularTest,
     CornellBoxLucy,
     Cornell,
+    #[default]
     ABeautifulGame,
     Sponza,
     Type59,
@@ -61,7 +62,6 @@ pub enum Scene {
     MilleniumEye,
     VC,
 
-    #[default]
     DragonAttenuation,
     TransmissionTest,
 }

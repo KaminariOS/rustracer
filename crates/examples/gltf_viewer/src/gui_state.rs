@@ -78,6 +78,8 @@ pub enum Scene {
     NormalTangentMirrorTest,
     EnvironmentTest,
     SpecGlossVsMetalRough,
+
+    FerrisCrab,LA_Night,WinterForest,Panocube
 }
 
 impl Scene {

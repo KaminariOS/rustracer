@@ -77,23 +77,6 @@ impl LightRaw {
         self.kind == LightType::DIRECTIONAL as u32
     }
 
-    // pub fn get_angles(&self) -> [f32; 2] {
-    //
-    //     const PI: f32 = std::f32::consts::PI;
-    //     let dir = self.transform.xyz().normalize();
-    //     let theta = self.transform.y.acos();
-    //     let phi = if self.transform.x != 0.{
-    //         (self.transform.y / self.transform.x).atan()
-    //     } else {
-    //         if self.transform.y >= 0. {
-    //             PI * 0.5
-    //         } else {
-    //             - PI * 0.5
-    //         }
-    //     };
-    //     [theta, phi]
-    // }
-
     pub fn update_angles(&mut self, [theta, phi]: [f32; 2]) {
         self.transform[0] = -theta.sin() * phi.sin();
         self.transform[1] = -theta.cos();
@@ -110,9 +93,9 @@ impl Default for LightRaw {
         Self {
             color: Vec4::from_array([1.; 4]),
             transform: Vec4::ONE,
-            kind: LightType::POINT as _,
-            range: 0.0,
-            intensity: 0.,
+            kind: LightType::DIRECTIONAL as _,
+            range: f32::INFINITY,
+            intensity: 1.,
             _padding: 0,
         }
     }

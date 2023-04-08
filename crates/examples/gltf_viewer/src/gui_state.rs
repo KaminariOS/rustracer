@@ -72,11 +72,12 @@ pub enum Scene {
 
     DragonAttenuation,
     TransmissionTest,
-    // DiningRoom,
-    // Dragon,
-    // FantasyBook,
-    // Stormtrooper,
-    // teapot,
+    MetalRoughSpheresNoTextures,
+    MetalRoughSpheres,
+    NormalTangentTest,
+    NormalTangentMirrorTest,
+    EnvironmentTest,
+    SpecGlossVsMetalRough,
 }
 
 impl Scene {

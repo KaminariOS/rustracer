@@ -62,9 +62,9 @@ impl From<Kind> for LightType {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct LightRaw {
-    pub(crate) color: [f32; 4],
+    pub color: [f32; 4],
     pub(crate) transform: Vec4,
     pub kind: u32,
     pub range: f32,

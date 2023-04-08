@@ -1,3 +1,5 @@
+#include "PunctualLight.glsl"
+
 struct UniformBufferObject
 {
 	mat4 ModelView;
@@ -17,7 +19,6 @@ struct UniformBufferObject
 
 	bool antialiasing;
 	uint mapping;
-
 	uint frame_count;
 	uint debug;
 };

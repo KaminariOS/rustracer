@@ -7,7 +7,7 @@ mod image;
 mod material;
 mod scene_graph;
 mod texture;
-mod light;
+pub mod light;
 mod cubumap;
 
 #[cfg(feature = "ash")]

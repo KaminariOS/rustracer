@@ -3,6 +3,7 @@ use gui::imgui::{Condition, Ui};
 use strum::IntoEnumIterator;
 use strum_macros::{AsRefStr, EnumIter, IntoStaticStr};
 use std::convert::AsRef;
+use asset_loader::light::LightRaw;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Gui {
@@ -23,7 +24,7 @@ pub struct Gui {
     pub animation_speed: f32,
     pub antialiasing: bool,
     pub debug: u32,
-    pub light_intensity: f32
+    pub sun: LightRaw,
 }
 
 #[derive(IntoStaticStr, AsRefStr, EnumIter, PartialEq, Clone, Copy, Debug, Default)]
@@ -160,7 +161,7 @@ impl app::Gui for Gui {
             animation_speed: 1.,
             antialiasing: true,
             debug: 0,
-            light_intensity: 1.0,
+            sun: LightRaw::default(),
         })
     }
 
@@ -238,7 +239,7 @@ impl app::Gui for Gui {
                     _ => {false}
                 };
 
-                ui.slider("Virtual light intensity",0., 2.0, &mut self.light_intensity);
+                // ui.slider("Virtual light intensity",0., 2.0, &mut self.light_intensity);
                 // Light control
                 // ui.text_wrapped("Light");
                 ui.separator();
@@ -283,9 +284,9 @@ impl app::Gui for Gui {
                 if ui.radio_button_bool("Anti-aliasing", self.antialiasing) {
                     self.antialiasing = !self.antialiasing;
                 }
-                // ui.color_picker3_config("color", &mut self.light.color)
-                //     .display_rgb(true)
-                //     .build();
+                ui.color_picker3_config("color", &mut [0.; 3])
+                    .display_rgb(true)
+                    .build();
             });
     }
 }

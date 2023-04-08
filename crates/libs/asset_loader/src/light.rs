@@ -1,4 +1,4 @@
-use glam::{Mat4, Vec4, Vec4Swizzles};
+use glam::{Mat4, Vec4};
 use gltf::khr_lights_punctual::Kind;
 use log::{error, info};
 use crate::{a3toa4, get_name, Name};

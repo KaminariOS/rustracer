@@ -7,7 +7,7 @@ use app::vulkan::gpu_allocator::MemoryLocation;
 use app::{App, FrameStats};
 use app::{vulkan::*, BaseApp};
 use std::mem::size_of;
-use std::time::{Duration, Instant};
+use std::time::{Instant};
 
 mod desc_sets;
 mod gui_state;

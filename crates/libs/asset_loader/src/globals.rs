@@ -3,7 +3,7 @@ use crate::material::MaterialRaw;
 use crate::scene_graph::Doc;
 use crate::texture;
 use anyhow::Result;
-use std::mem::{size_of, size_of_val};
+use std::mem::{size_of_val};
 use std::time::Instant;
 use log::info;
 use vulkan::ash::vk;
@@ -73,8 +73,8 @@ impl Buffers {
         //     &globals.d_lights,
         // )?;
 
-        let size_of_slice = size_of_val(globals.d_lights.as_slice());
-        let size = size_of_val(&globals.d_lights);
+        let _size_of_slice = size_of_val(globals.d_lights.as_slice());
+        let _size = size_of_val(&globals.d_lights);
         let dlights_buffer = context.create_buffer(
             vk::BufferUsageFlags::STORAGE_BUFFER,
             MemoryLocation::CpuToGpu,

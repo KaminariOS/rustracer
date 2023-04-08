@@ -312,7 +312,7 @@ impl<'a> From<gltf::Material<'_>> for Material {
         let specular = material.specular().map(SpecularInfo::from);
         let em = material.emissive_factor();
         let unlit = material.unlit();
-        let sg = material.pbr_specular_glossiness().map(SpecularGlossiness::from);
+        let _sg = material.pbr_specular_glossiness().map(SpecularGlossiness::from);
 
         let mut base_color_texture = TextureInfo::new(pbr.base_color_texture());
         if base_color_texture.is_none() {

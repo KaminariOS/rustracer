@@ -6,7 +6,7 @@ use crate::scene_graph::{Doc, Node};
 use anyhow::Result;
 
 use std::mem::{size_of};
-use log::info;
+
 use vulkan::ash::vk;
 use vulkan::ash::vk::Packed24_8;
 

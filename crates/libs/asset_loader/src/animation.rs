@@ -1,7 +1,7 @@
-use glam::{Mat4, Quat, Vec3};
+use glam::{Quat};
 use gltf::animation::{Channel, Interpolation, Sampler};
 use gltf::animation::util::ReadOutputs;
-use crate::{get_name, MeshID, Name, NodeID};
+use crate::{get_name, Name, NodeID};
 use crate::geometry::GeoBuilder;
 
 pub struct Animation {
@@ -74,7 +74,7 @@ impl AnimationChannel {
         }
     }
 
-    pub fn get_transform(&self, mut t: f32) -> PropertyOutput {
+    pub fn get_transform(&self, t: f32) -> PropertyOutput {
         let min = self.input[0];
         let len = self.input.len();
         let max = self.input[len - 1];

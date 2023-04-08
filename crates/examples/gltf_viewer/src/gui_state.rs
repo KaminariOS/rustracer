@@ -25,6 +25,7 @@ pub struct Gui {
     pub antialiasing: bool,
     pub debug: u32,
     pub sun: LightRaw,
+    light_angle: [f32; 2]
 }
 
 #[derive(IntoStaticStr, AsRefStr, EnumIter, PartialEq, Clone, Copy, Debug, Default)]
@@ -36,13 +37,13 @@ pub enum Scene {
     SpecularTest,
     CornellBoxLucy,
     Cornell,
-    #[default]
     ABeautifulGame,
     Sponza,
     Type59,
     DamagedHelmet,
     EmissiveStrengthTest,
     LightsPunctualLamp,
+    #[default]
     Triss,
     EVA,
     Anakin,
@@ -162,6 +163,7 @@ impl app::Gui for Gui {
             antialiasing: true,
             debug: 0,
             sun: LightRaw::default(),
+            light_angle: [1.; 2]
         })
     }
 
@@ -284,9 +286,20 @@ impl app::Gui for Gui {
                 if ui.radio_button_bool("Anti-aliasing", self.antialiasing) {
                     self.antialiasing = !self.antialiasing;
                 }
-                ui.color_picker3_config("color", &mut [0.; 3])
+                ui.slider("light intensity", 0., 2.0, &mut self.sun.intensity);
+                // let [mut theta, mut phi] = self.sun.get_angles();
+                const PI: f32 = std::f32::consts::PI;
+                ui.slider("light theta", 0.0, PI, &mut self.light_angle[0]);
+                ui.slider("light phi", 0., 2. * PI, &mut self.light_angle[1]);
+                self.sun.update_angles(self.light_angle);
+
+                let [r, g, b, _] = self.sun.color.to_array();
+                let mut color = [r, g, b];
+                ui.color_picker3_config("color", &mut color)
                     .display_rgb(true)
                     .build();
+                self.sun.update_color([color[0], color[1], color[2], 0.]);
+
             });
     }
 }

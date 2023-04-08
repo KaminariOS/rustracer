@@ -1,3 +1,5 @@
+extern crate core;
+
 #[cfg(feature = "ash")]
 pub mod acceleration_structures;
 mod animation;

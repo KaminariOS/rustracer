@@ -63,12 +63,14 @@ impl Doc {
         }
 
         if dlights.is_empty() {
-            dlights.push(LightRaw {
-                color: [0.4; 4],
-                transform: Vec4::new(-1., -1., -1., 4.),
-                intensity: 1.,
-                ..Default::default()
-            });
+            for _ in 0..1 {
+                dlights.push(LightRaw {
+                    color: Vec4::from_array([0.4; 4]),
+                    transform: Vec4::new(-1., -1., -1., 4.),
+                    intensity: 1.,
+                    ..Default::default()
+                });
+            }
         }
         [dlights, plights]
     }

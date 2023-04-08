@@ -37,5 +37,8 @@ void main()
 	Ray.hitValue = vec3(0.);
 	Ray.needScatter = false;
 	Ray.emittance = vec3(light_acc);
+	if (lights.length() == 0) {
+		Ray.emittance = vec3(0.);
+	}
 	Ray.t = -1.;
 }

@@ -1,4 +1,4 @@
-use glam::{Mat4, Vec4};
+use glam::{Mat4, Vec4, Vec4Swizzles};
 use gltf::khr_lights_punctual::Kind;
 use log::{error, info};
 use crate::{a3toa4, get_name, Name};
@@ -16,7 +16,7 @@ impl Light {
     pub fn to_raw(&self, transform: Mat4) -> LightRaw {
         let kind = self.kind;
         LightRaw {
-            color: a3toa4(&self.color, 0.),
+            color: Vec4::from_array(a3toa4(&self.color, 0.)),
             transform: kind.get_transform(transform),
             kind:  kind as _,
             range: self.range,
@@ -64,7 +64,7 @@ impl From<Kind> for LightType {
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct LightRaw {
-    pub color: [f32; 4],
+    pub color: Vec4,
     pub(crate) transform: Vec4,
     pub kind: u32,
     pub range: f32,
@@ -76,13 +76,40 @@ impl LightRaw {
     pub fn is_dir(&self) -> bool {
         self.kind == LightType::DIRECTIONAL as u32
     }
+
+    // pub fn get_angles(&self) -> [f32; 2] {
+    //
+    //     const PI: f32 = std::f32::consts::PI;
+    //     let dir = self.transform.xyz().normalize();
+    //     let theta = self.transform.y.acos();
+    //     let phi = if self.transform.x != 0.{
+    //         (self.transform.y / self.transform.x).atan()
+    //     } else {
+    //         if self.transform.y >= 0. {
+    //             PI * 0.5
+    //         } else {
+    //             - PI * 0.5
+    //         }
+    //     };
+    //     [theta, phi]
+    // }
+
+    pub fn update_angles(&mut self, [theta, phi]: [f32; 2]) {
+        self.transform[0] = -theta.sin() * phi.sin();
+        self.transform[1] = -theta.cos();
+        self.transform[2] = -theta.sin() * phi.cos();
+    }
+
+    pub fn update_color(&mut self, color: [f32; 4]) {
+        self.color = Vec4::from_array(color);
+    }
 }
 
 impl Default for LightRaw {
     fn default() -> Self {
         Self {
-            color: [0.; 4],
-            transform: Default::default(),
+            color: Vec4::from_array([1.; 4]),
+            transform: Vec4::ONE,
             kind: LightType::POINT as _,
             range: 0.0,
             intensity: 0.,

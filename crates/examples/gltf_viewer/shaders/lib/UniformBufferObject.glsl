@@ -9,6 +9,8 @@ struct UniformBufferObject
 
 	float Aperture;
 	float FocusDistance;
+	float fovAngle;
+	float orthographic_fov_dis;
 	float HeatmapScale;
 	uint TotalNumberOfSamples;
 

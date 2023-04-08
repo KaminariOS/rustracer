@@ -57,8 +57,7 @@ vec3 offset_ray(const vec3 p, const vec3 n) {
     );
 }
 
-const float tMin = 0.001;
-const float tMax = 10000.0;
+
 
 const uint AS_BIND = 0;
 const uint STORAGE_BIND = 1;

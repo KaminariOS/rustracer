@@ -7,6 +7,7 @@
 #include "lib/Heatmap.glsl"
 #include "lib/Random.glsl"
 #include "lib/RayTracingCommons.glsl"
+#include "lib/Camera.glsl"
 #include "lib/UniformBufferObject.glsl"
 #include "lib/Material.glsl"
 
@@ -39,6 +40,21 @@ bool castShadowRay(vec3 hitPosition, vec3 surfaceNormal, vec3 directionToLight, 
     return Ray.t < 0;
 }
 
+RayInfo pinHoleRay(const vec2 pixelOffset) {
+    vec2 size = gl_LaunchSizeEXT.xy;
+
+    vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
+    vec2 pixel = pixelCenter + pixelOffset;
+    const vec2 uv = (pixel / gl_LaunchSizeEXT.xy) * 2.0 - 1.0;
+    float tanHalfAngle = tan(ubo.fovAngle  / 2.);
+    float aspectScale = size.x;
+    vec3 direction = normalize(
+//        vec3(vec2(pixel.x, -pixel.y) * tanHalfAngle / aspectScale, -1.)
+        vec3(uv, 1.)
+    );
+    return RayInfo(vec3(0.), tMin, direction, tMax);
+}
+
 void main()
 {
     const uint64_t clock = ubo.mapping == HEAT ? clockARB() : 0;
@@ -67,11 +83,12 @@ void main()
     {
         //if (ubo.NumberOfSamples != ubo.TotalNumberOfSamples) break;
         vec2 pixel;
+        vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
         if (ubo.antialiasing) {
             vec2 offset = vec2(rand(rngState), rand(rngState)) - 0.5;
-            pixel = gl_LaunchIDEXT.xy + offset;
+            pixel = pixelCenter + offset;
         } else {
-            pixel = gl_LaunchIDEXT.xy;
+            pixel = pixelCenter;
         }
         const vec2 uv = (pixel / gl_LaunchSizeEXT.xy) * 2.0 - 1.0;
 
@@ -79,6 +96,18 @@ void main()
         vec4 origin = ubo.ModelViewInverse * vec4(offset, 0, 1);
         vec4 target = ubo.ProjectionInverse * (vec4(uv.x, uv.y, 1, 1));
         vec4 direction = ubo.ModelViewInverse * vec4(normalize(target.xyz * ubo.FocusDistance - vec3(offset, 0)), 0);
+        float tFar = tMax;
+        if (ubo.orthographic_fov_dis > 0.)
+         {
+            vec2 new_uv = (1. + ubo.orthographic_fov_dis) * uv;
+            origin = vec4(new_uv.x , -new_uv.y, 0, 1);
+            origin = ubo.ModelViewInverse * origin;
+            direction = vec4(0, 0, -1, 0);
+            direction = ubo.ModelViewInverse * direction;
+            tFar = 10 * tMax;
+        }
+
+
         vec3 throughput = vec3(1);
         Ray.t = 0;
         Ray.volume_dis = 0.;
@@ -88,7 +117,7 @@ void main()
             traceRayEXT(
             Scene, gl_RayFlagsOpaqueEXT, 0xff,
             0 /*sbtRecordOffset*/, 0 /*sbtRecordStride*/, 0 /*missIndex*/,
-            origin.xyz, tMin, direction.xyz, tMax, 0 /*payload*/);
+            origin.xyz, tMin, direction.xyz, tFar, 0 /*payload*/);
 
             const vec3 hitColor = Ray.hitValue;
             const float t = Ray.t;

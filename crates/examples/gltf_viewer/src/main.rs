@@ -156,6 +156,8 @@ impl App for GltfViewer {
             projection_inverse: inverted_proj,
             aperture: gui.aperture,
             focus_distance: gui.focus_distance,
+            fov_angle: 1.0,
+            orthographic_fov_dis: gui.orthographic_fov_dis,
             heatmap_scale: gui.map_scale,
             total_number_of_samples: self.total_number_of_samples,
             number_of_samples,

@@ -25,7 +25,9 @@ pub struct Gui {
     pub antialiasing: bool,
     pub debug: u32,
     pub sun: LightRaw,
-    light_angle: [f32; 2]
+    light_angle: [f32; 2],
+
+    pub orthographic_fov_dis: f32,
 }
 
 #[derive(IntoStaticStr, AsRefStr, EnumIter, PartialEq, Clone, Copy, Debug, Default)]
@@ -43,11 +45,12 @@ pub enum Scene {
     DamagedHelmet,
     EmissiveStrengthTest,
     LightsPunctualLamp,
-    #[default]
+    BoomBoxWithAxes,
     Triss,
     EVA,
     Anakin,
     Ford,
+    #[default]
     Ironman,
     Knight,
     Loba,
@@ -64,8 +67,16 @@ pub enum Scene {
     MilleniumEye,
     VC,
 
+    SunTemple,
+
+
     DragonAttenuation,
     TransmissionTest,
+    // DiningRoom,
+    // Dragon,
+    // FantasyBook,
+    // Stormtrooper,
+    // teapot,
 }
 
 impl Scene {
@@ -163,7 +174,9 @@ impl app::Gui for Gui {
             antialiasing: true,
             debug: 0,
             sun: LightRaw::default(),
-            light_angle: [1.; 2]
+            light_angle: [1.; 2],
+
+            orthographic_fov_dis: 0.0,
         })
     }
 
@@ -197,6 +210,7 @@ impl app::Gui for Gui {
                 ui.slider("scale", -20., 20., &mut self.scale);
                 ui.slider("Apertures", 0., 1., &mut self.aperture);
                 ui.slider("Focus", 0.1, 20., &mut self.focus_distance);
+                ui.slider("Orthographic", 0., 100., &mut self.orthographic_fov_dis);
 
                 let mut selected = self.scene;
                 if let Some(_) = ui.begin_combo("Scene", format!("{}", selected.as_ref())) {

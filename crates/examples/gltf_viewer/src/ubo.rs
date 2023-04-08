@@ -11,6 +11,8 @@ pub struct UniformBufferObject {
 
     pub(crate) aperture: f32,
     pub(crate) focus_distance: f32,
+    pub fov_angle: f32,
+    pub orthographic_fov_dis: f32,
     pub(crate) heatmap_scale: f32,
     pub(crate) total_number_of_samples: u32,
 

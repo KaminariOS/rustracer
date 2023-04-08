@@ -5,11 +5,12 @@ use anyhow::{Result};
 
 const SPV_SEARCH_PATHS: [&str; 2] = ["", "./spv"];
 
-const MODEL_SEARCH_PATHS: [&str; 4] = [
+const MODEL_SEARCH_PATHS: [&str; 5] = [
     "",
     "./assets/models",
     "/home/kosumi/Rusty/glTF-Sample-Models/2.0",
     "../../../assets/models",
+    "/home/kosumi/Rusty/LGL-Tracer-Renderer.github.io/models"
 ];
 
 const SKYBOX_SEARCH_PATHS: [&str; 3] = [

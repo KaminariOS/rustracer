@@ -93,7 +93,7 @@ impl Material {
         !self.normal_texture.is_none()
     }
     pub fn is_opaque(&self) -> bool {
-        self.alpha_mode == gltf::material::AlphaMode::Opaque
+        self.alpha_mode == AlphaMode::Opaque
     }
 }
 
@@ -158,7 +158,7 @@ impl From<&Material> for MaterialRaw {
     fn from(value: &Material) -> Self {
         Self {
             alpha_mode: value.alpha_mode as _,
-            alpha_cutoff: value.alpha_cutoff.unwrap_or_default(),
+            alpha_cutoff: value.alpha_cutoff.unwrap_or(0.5),
             _padding: [0.; 3],
             double_sided: value.double_sided.into(),
             base_color_texture: value.base_color_texture,

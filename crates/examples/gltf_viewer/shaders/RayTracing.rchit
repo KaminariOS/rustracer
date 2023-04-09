@@ -24,7 +24,7 @@ rayPayloadInEXT RayPayload Ray;
 
 
 vec3 normal_transform(vec3 normal) {
-	return normalize(vec3(normal * gl_WorldToObjectEXT));
+	return normalize(vec3(gl_ObjectToWorldEXT * vec4(normal, 0.)));
 }
 
 vec3 calculate_geo_normal(const vec3 p0, const vec3 p1, const vec3 p2) {
@@ -95,6 +95,7 @@ bool sampleLightRIS(inout RngStateType rngState, vec3 hitPosition, vec3 surfaceN
 	}
 }
 
+// https://github.com/KhronosGroup/glTF/issues/1252
 void getNormal(inout vec3 normal, Vertex v0, Vertex v1, Vertex v2, vec3 bary, vec3 tex_normal) {
 	vec4 tangent0 = v0.tangent;
 	vec4 tangent1 = v1.tangent;
@@ -102,28 +103,35 @@ void getNormal(inout vec3 normal, Vertex v0, Vertex v1, Vertex v2, vec3 bary, ve
 	vec3 n0 = v0.normal;
 	vec3 n1 = v1.normal;
 	vec3 n2 = v2.normal;
-	if (
-	length(tangent0) == 0 || tangent0.w == 0 ||
-	length(tangent1) == 0 || tangent1.w == 0 ||
-	length(tangent2) == 0 || tangent2.w == 0
-	) {
-		return;
-	}
-	vec3 tangent = Mix(
-		cross(n0, tangent0.xyz) * tangent0.w,
-		cross(n1, tangent1.xyz) * tangent1.w,
-		cross(n2, tangent2.xyz) * tangent2.w,
-		bary
+//	if (
+//	length(tangent0) == 0 || tangent0.w == 0 ||
+//	length(tangent1) == 0 || tangent1.w == 0 ||
+//	length(tangent2) == 0 || tangent2.w == 0
+//	) {
+//		return;
+//	}
+//	vec3 tangent = Mix(
+//		cross(n0, tangent0.xyz) * tangent0.w,
+//		cross(n1, tangent1.xyz) * tangent1.w,
+//		cross(n2, tangent2.xyz) * tangent2.w,
+//		bary
+//	);
+	vec4 tangent_mix = Mix(
+	tangent0 ,
+	tangent1,
+	tangent2 ,
+	bary
 	);
-	vec3 normal_mix = Mix(n0, n1, n2, bary);
-	if (length(tex_normal) == 0) {
-		return;
-	}
-	if (tex_normal.z <= 0) {
-		tex_normal.z = sqrt(1 - tex_normal.x * tex_normal.x - tex_normal.y * tex_normal.y);
-	}
+	vec3 tangent = normalize(tangent_mix.xyz * tangent_mix.w);
+	vec3 normal_mix = normalize(Mix(n0, n1, n2, bary));
+//	if (length(tex_normal) == 0) {
+//		return;
+//	}
+//	if (tex_normal.z <= 0) {
+//		tex_normal.z = sqrt(1 - tex_normal.x * tex_normal.x - tex_normal.y * tex_normal.y);
+//	}
 	vec3 b = cross(normal_mix, tangent);
-	mat3 tbn = mat3(normalize(tangent), normalize(b), normalize(normal_mix));
+	mat3 tbn = mat3(tangent, normalize(b), normal_mix);
 	normal = tbn * tex_normal;
 }
 
@@ -133,7 +141,7 @@ void main()
 	const MaterialRaw mat = materials.m[primInfo.material_id];
 
 //	Ray.instance_id = gl_InstanceID;
-	float last_t = Ray.t;
+	vec3 last_hit = Ray.hitPoint;
 	Ray.t = gl_HitTEXT;
 	// Fetch vertices
 	const uint vertexOffset = primInfo.v_offset;
@@ -256,7 +264,7 @@ void main()
 	matBuild(matbrdf);
 	matbrdf.attenuation_color = volume_info.attenuation_color;
 	matbrdf.attenuation_distance = volume_info.attenuation_distance;
-	matbrdf.t_diff = gl_HitTEXT - last_t;
+	matbrdf.t_diff = length(origin - last_hit);
 
 	if (metallic == 1.0 && roughness == 0.0) {
 		brdfType = SPECULAR_TYPE;

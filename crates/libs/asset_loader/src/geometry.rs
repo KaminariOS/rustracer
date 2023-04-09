@@ -109,14 +109,27 @@ impl Mesh {
 pub struct Primitive {
     // pub(crate) material: MaterialID,
     pub geometry_id: u32,
+    mapping: HashMap<u32, usize>,
 }
 
 const DEFAULT_MATERIAL_INDEX: usize = 0;
 impl Primitive {
     fn from(primitive: gltf::Primitive, builder: &mut GeoBuilder) -> Self {
+        let mapping: HashMap<_, _> = primitive.mappings().map(|m| {
+            {
+                let variants = m.variants();
+                let material = m.material().index().unwrap_or(DEFAULT_MATERIAL_INDEX);
+                variants.iter().map(move |v| (*v, material))
+            }
+        }).flatten().collect();
+
         let material = primitive.material();
         let material_index = material.index().unwrap_or(DEFAULT_MATERIAL_INDEX) as u32;
         let geo_id = builder.next_geo_id(material_index);
+
+        if !mapping.is_empty() {
+            info!("Geo id {} material variants: {:?}", geo_id, mapping);
+        }
 
         let (vertices, indices): (Vec<Vertex>, Vec<Index>) = {
             let reader = primitive.reader(|buffer| Some(&builder.buffers[buffer.index()]));
@@ -205,6 +218,7 @@ impl Primitive {
         Primitive {
             // material: material_index as usize,
             geometry_id: geo_id,
+            mapping,
         }
     }
 }

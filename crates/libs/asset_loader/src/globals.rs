@@ -10,9 +10,11 @@ use vulkan::ash::vk;
 use vulkan::gpu_allocator::MemoryLocation;
 use vulkan::utils::create_gpu_only_buffer_from_data;
 use vulkan::{Buffer, Context, DescriptorSet, Image, ImageBarrier, ImageView, Sampler, WriteDescriptorSet, WriteDescriptorSetKind};
+use vulkan::ash::vk::SamplerAddressMode;
 use crate::cubumap::SkyBox;
 use crate::image::TexGamma;
 use crate::light::LightRaw;
+use crate::texture::WrapMode;
 
 impl Into<vk::Format> for TexGamma {
     fn into(self) -> vk::Format {
@@ -336,6 +338,16 @@ pub fn create_global(context: &Context, doc: &Doc, skybox: SkyboxResource) -> Re
     })
 }
 
+impl Into<vk::SamplerAddressMode> for WrapMode {
+    fn into(self) -> SamplerAddressMode {
+        match self {
+            WrapMode::ClampToEdge => {vk::SamplerAddressMode::CLAMP_TO_EDGE},
+            WrapMode::MirroredRepeat => {vk::SamplerAddressMode::MIRRORED_REPEAT},
+            WrapMode::Repeat => {vk::SamplerAddressMode::REPEAT}
+        }
+    }
+}
+
 fn map_gltf_sampler<'a>(sampler: &texture::Sampler) -> vk::SamplerCreateInfoBuilder<'a> {
     let mag_filter = match sampler.mag_filter {
         texture::MagFilter::Linear => vk::Filter::LINEAR,
@@ -354,4 +366,6 @@ fn map_gltf_sampler<'a>(sampler: &texture::Sampler) -> vk::SamplerCreateInfoBuil
     vk::SamplerCreateInfo::builder()
         .mag_filter(mag_filter)
         .min_filter(min_filter)
+        .address_mode_u(sampler.wrap_s.into())
+        .address_mode_v(sampler.wrap_t.into())
 }

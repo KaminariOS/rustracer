@@ -18,7 +18,8 @@ pub struct Image {
     pub height: u32,
     pub source: Name,
     pub index: usize,
-    pub gamma: TexGamma
+    pub gamma: TexGamma,
+    format: Format,
 }
 
 
@@ -37,6 +38,7 @@ impl Default for Image {
             source: None,
             index: 0,
             gamma: TexGamma::Srgb,
+            format: Format::R8G8B8A8,
         }
     }
 }
@@ -51,6 +53,8 @@ impl Image {
             Source::View { .. } => None,
             Source::Uri { uri, .. } => Some(uri.to_string()),
         };
+
+        info!("Image:{:?} format: {:?}", self.source, self.format);
     }
 
     pub fn load_image<P: AsRef<Path>>(p: P) -> anyhow::Result<Self> {
@@ -78,6 +82,7 @@ impl Image {
             source,
             index: 0,
             gamma: TexGamma::Srgb,
+            format: Format::R8G8B8A8,
         })
     }
 }
@@ -95,6 +100,7 @@ impl TryFrom<&gltf::image::Data> for Image {
             pixels,
             width,
             height,
+            format: image.format,
             ..Default::default()
         })
     }
@@ -114,7 +120,6 @@ impl<'a> PixelIter<'a> {
         use Format::*;
         let pixels = &image.pixels;
         let format = image.format;
-        info!("Image format: {:?}", format);
         let pixel_size = match format {
             R8 => 1,
             R8G8 => 2,

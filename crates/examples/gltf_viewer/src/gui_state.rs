@@ -50,7 +50,6 @@ pub enum Scene {
     EVA,
     Anakin,
     Ford,
-    #[default]
     Ironman,
     Knight,
     Loba,
@@ -68,17 +67,27 @@ pub enum Scene {
     VC,
 
     SunTemple,
-
-
+    #[default]
     DragonAttenuation,
     TransmissionTest,
     MetalRoughSpheresNoTextures,
     MetalRoughSpheres,
+
     NormalTangentTest,
     NormalTangentMirrorTest,
     EnvironmentTest,
     SpecGlossVsMetalRough,
     AlphaBlendModeTest,
+    // BrainStem,
+    // Fox,
+    NegativeScaleTest,
+    TextureCoordinateTest,
+    TextureLinearInterpolationTest,
+    TextureSettingsTest,
+    ToyCar,
+    AttenuationTest,
+    Earth,
+    // MultiUVTest,
 
     FerrisCrab,LA_Night,WinterForest,Panocube
 }

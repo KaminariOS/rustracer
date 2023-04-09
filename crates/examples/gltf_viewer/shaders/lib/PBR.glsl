@@ -638,7 +638,7 @@ bool evalIndirectCombinedBRDF(vec2 u, vec3 shadingNormal, vec3 geometryNormal, v
 			float dis = material.t_diff;
 			vec3 sigma = log(material.attenuation_color) / material.attenuation_distance;
 			vec3 attenuation = exp(sigma * dis);
-			sampleWeight *= attenuation;
+			sampleWeight *= min(attenuation, vec3(1.));
 		}
 //		sampleWeight = vec3(1.);
 	}

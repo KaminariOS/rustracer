@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::{get_name, Index, MeshID, Name};
+use crate::{a3toa4, get_name, Index, MeshID, Name};
 use glam::{vec4, Vec2, Vec4, Vec4Swizzles};
 use gltf::mesh::Mode;
 use gltf::{buffer, Semantic};
@@ -13,7 +13,8 @@ pub struct Vertex {
     pub normal: Vec4,
     pub tangent: [f32; 4],
     pub color: Vec4,
-    pub uv: Vec2,
+    pub uv0: Vec2,
+    pub uv1: Vec2,
     pub material_index: u32,
 }
 
@@ -140,8 +141,13 @@ impl Primitive {
                 create_geo_normal(&positions, &indices)
             };
 
-            let uvs = reader
+            let uvs0 = reader
                 .read_tex_coords(0)
+                .map(|reader| reader.into_f32().map(Vec2::from).collect::<Vec<_>>())
+                .unwrap_or(vec![Vec2::ZERO; positions.len()])
+                ;
+            let uvs1 = reader
+                .read_tex_coords(1)
                 .map(|reader| reader.into_f32().map(Vec2::from).collect::<Vec<_>>())
                 .unwrap_or(vec![Vec2::ZERO; positions.len()])
                 ;
@@ -152,13 +158,13 @@ impl Primitive {
                 } else {
                     (vec![[1.0, 0.0, 0.0, 0.0]; positions.len()], false)
                 };
-            if !tangents_found && !uvs.is_empty() && builder.normal_textures[material_index as usize] {
+            if !tangents_found && !uvs0.is_empty() && builder.normal_textures[material_index as usize] {
                 info!("Tangents not found but uv found. Generating");
                 mikktspace::generate_tangents(&mut TangentCalcContext {
                     indices: indices.as_slice(),
                     positions: positions.as_slice(),
                     normals: normals.as_slice(),
-                    uvs: uvs.as_slice(),
+                    uvs: uvs0.as_slice(),
                     tangents: tangents.as_mut_slice(),}
                 );
             }
@@ -173,13 +179,14 @@ impl Primitive {
                 .map(|(index, position)| {
                     let normal = normals[index];
                     let color = colors.as_ref().map_or(Vec4::ONE, |colors| colors[index]);
-                    let uv =  uvs[index];
+                    let uv =  uvs0[index];
                     Vertex {
                         position,
                         normal,
                         tangent: tangents[index],
                         color,
-                        uv,
+                        uv0: uv,
+                        uv1: uvs1[index],
                         material_index,
                     }
                 })
@@ -259,5 +266,23 @@ impl<'a> mikktspace::Geometry for TangentCalcContext<'a> {
 
     fn set_tangent_encoded(&mut self, tangent: [f32; 4], face: usize, vert: usize) {
         self.tangents[self.indices[face * 3 + vert] as usize] = tangent;
+    }
+
+    fn set_tangent(
+        &mut self,
+        tangent: [f32; 3],
+        _bi_tangent: [f32; 3],
+        _f_mag_s: f32,
+        _f_mag_t: f32,
+        bi_tangent_preserves_orientation: bool,
+        face: usize,
+        vert: usize,
+    ) {
+        let sign = if bi_tangent_preserves_orientation {
+            -1.0
+        } else {
+            1.0
+        };
+        self.set_tangent_encoded(a3toa4(&tangent, sign), face, vert,);
     }
 }

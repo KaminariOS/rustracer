@@ -23,6 +23,7 @@ fn primitive_to_vk_geometry(
     let index_buffer_addr = buffers.index_buffer.get_device_address();
     let [v_len, i_len] = geo_builder.len[geo_id as usize];
     let [v_offset, i_offset, _mat] = geo_builder.offsets[geo_id as usize];
+    let is_opaque = geo_builder.is_opaque(geo_id);
     assert_eq!(i_len % 3, 0);
     let primitive_count = (i_len / 3) as u32;
     let as_geo_triangles_data = vk::AccelerationStructureGeometryTrianglesDataKHR::builder()
@@ -43,7 +44,7 @@ fn primitive_to_vk_geometry(
 
     let geometry = vk::AccelerationStructureGeometryKHR::builder()
         .geometry_type(vk::GeometryTypeKHR::TRIANGLES)
-        .flags(vk::GeometryFlagsKHR::OPAQUE)
+        .flags(if is_opaque {vk::GeometryFlagsKHR::OPAQUE} else {vk::GeometryFlagsKHR::empty()})
         .geometry(vk::AccelerationStructureGeometryDataKHR {
             triangles: as_geo_triangles_data,
         })

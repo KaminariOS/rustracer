@@ -92,6 +92,9 @@ impl Material {
     pub fn has_normal_texture(&self) -> bool {
         !self.normal_texture.is_none()
     }
+    pub fn is_opaque(&self) -> bool {
+        self.alpha_mode == gltf::material::AlphaMode::Opaque
+    }
 }
 
 pub fn find_linear_textures(materials: &[Material]) -> HashSet<usize> {

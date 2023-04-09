@@ -105,8 +105,7 @@ impl Doc {
         check_indices!(materials);
 
         let mut geo_builder = GeoBuilder::new(buffers,
-                                              materials.iter().map(|m| m.has_normal_texture()).collect()
-        );
+        &materials);
 
         let animations: Vec<_> = doc.animations().map(|a| Animation::new(a, &geo_builder) ).collect();
         check_indices!(animations);

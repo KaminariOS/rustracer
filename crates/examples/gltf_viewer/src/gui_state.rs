@@ -78,6 +78,7 @@ pub enum Scene {
     NormalTangentMirrorTest,
     EnvironmentTest,
     SpecGlossVsMetalRough,
+    AlphaBlendModeTest,
 
     FerrisCrab,LA_Night,WinterForest,Panocube
 }

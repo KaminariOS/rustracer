@@ -15,8 +15,9 @@ pub struct PipelineRes {
     pub(crate) dynamic_dsl: DescriptorSetLayout,
 }
 
-pub fn create_pipeline(context: &Context, model: &VkGlobal) -> Result<PipelineRes> {
+pub fn create_pipeline(context: &Context, model: &VkGlobal, fully_opaque: bool) -> Result<PipelineRes> {
     // descriptor and pipeline layouts
+    let primary_hit_group_flags = vk::ShaderStageFlags::ANY_HIT_KHR | vk::ShaderStageFlags::CLOSEST_HIT_KHR;
     let static_layout_bindings = [
         vk::DescriptorSetLayoutBinding::builder()
             .binding(AS_BIND)
@@ -39,34 +40,34 @@ pub fn create_pipeline(context: &Context, model: &VkGlobal) -> Result<PipelineRe
             .binding(VERTEX_BIND)
             .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
             .descriptor_count(1)
-            .stage_flags(vk::ShaderStageFlags::CLOSEST_HIT_KHR)
+            .stage_flags(primary_hit_group_flags)
             .build(),
         //Index buffer
         vk::DescriptorSetLayoutBinding::builder()
             .binding(INDEX_BIND)
             .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
             .descriptor_count(1)
-            .stage_flags(vk::ShaderStageFlags::CLOSEST_HIT_KHR)
+            .stage_flags(primary_hit_group_flags)
             .build(),
         // Geometry info buffer
         vk::DescriptorSetLayoutBinding::builder()
             .binding(GEO_BIND)
             .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
             .descriptor_count(1)
-            .stage_flags(vk::ShaderStageFlags::CLOSEST_HIT_KHR)
+            .stage_flags(primary_hit_group_flags)
             .build(),
         // Textures
         vk::DescriptorSetLayoutBinding::builder()
             .binding(TEXTURE_BIND)
             .descriptor_type(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
             .descriptor_count(model.textures.len() as _)
-            .stage_flags(vk::ShaderStageFlags::CLOSEST_HIT_KHR)
+            .stage_flags(primary_hit_group_flags)
             .build(),
         vk::DescriptorSetLayoutBinding::builder()
             .binding(MAT_BIND)
             .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
             .descriptor_count(1)
-            .stage_flags(vk::ShaderStageFlags::CLOSEST_HIT_KHR)
+            .stage_flags(primary_hit_group_flags)
             .build(),
         vk::DescriptorSetLayoutBinding::builder()
             .binding(DLIGHT_BIND)
@@ -113,7 +114,9 @@ pub fn create_pipeline(context: &Context, model: &VkGlobal) -> Result<PipelineRe
     let ray_gen = load_spv("RayTracing.rgen.spv");
     let ray_miss = load_spv("RayTracing.rmiss.spv");
     let ray_chit = load_spv("RayTracing.rchit.spv");
-    let shaders_create_info = [
+    let ray_rahit = load_spv("RayTracing.rahit.spv");
+    let shadow_rahit = load_spv("RayTracing.rahit.spv");
+    let mut shaders_create_info = vec![
         RayTracingShaderCreateInfo {
             source: &ray_gen,
             stage: vk::ShaderStageFlags::RAYGEN_KHR,
@@ -134,10 +137,26 @@ pub fn create_pipeline(context: &Context, model: &VkGlobal) -> Result<PipelineRe
             stage: vk::ShaderStageFlags::CLOSEST_HIT_KHR,
             group: RayTracingShaderGroup::ClosestHit,
         },
+
+
+        // RayTracingShaderCreateInfo {
+        //     source: &shadow_rahit,
+        //     stage: vk::ShaderStageFlags::ANY_HIT_KHR,
+        //     group: RayTracingShaderGroup::ShadowAnyHit,
+        // },
     ];
+    if !fully_opaque {
+        shaders_create_info.push(
+            RayTracingShaderCreateInfo {
+                source: &ray_rahit,
+                stage: vk::ShaderStageFlags::ANY_HIT_KHR,
+                group: RayTracingShaderGroup::AnyHit,
+            },
+        );
+    }
 
     let pipeline_create_info = RayTracingPipelineCreateInfo {
-        shaders: &shaders_create_info,
+        shaders: shaders_create_info.as_slice(),
         max_ray_recursion_depth: 2,
     };
 

@@ -1,4 +1,4 @@
-use std::{ffi::CString, sync::Arc};
+use std::{any, ffi::CString, sync::Arc};
 
 use anyhow::Result;
 use ash::vk;
@@ -20,11 +20,14 @@ pub struct RayTracingShaderCreateInfo<'a> {
     pub group: RayTracingShaderGroup,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum RayTracingShaderGroup {
     RayGen,
     Miss,
     ClosestHit,
+    AnyHit,
+    ShadowAnyHit,
+    ShadowMiss,
 }
 
 pub struct RayTracingPipeline {
@@ -48,17 +51,35 @@ impl RayTracingPipeline {
         layout: &PipelineLayout,
         create_info: RayTracingPipelineCreateInfo,
     ) -> Result<Self> {
-        let mut shader_group_info = RayTracingShaderGroupInfo {
-            group_count: create_info.shaders.len() as _,
-            ..Default::default()
-        };
+
 
         let mut modules = vec![];
         let mut stages = vec![];
         let mut groups = vec![];
 
         let entry_point_name = CString::new("main").unwrap();
-
+        let mut anyhit = None;
+        let mut shadow_anyhit = None;
+        create_info.shaders.iter().enumerate()
+            .for_each(|(index, shader)|
+                {
+                    match shader.group {
+                        RayTracingShaderGroup::AnyHit => {
+                            assert!(anyhit.is_none());
+                            anyhit = Some(index);
+                        }
+                        RayTracingShaderGroup::ShadowAnyHit => {
+                            assert!(shadow_anyhit.is_none());
+                            shadow_anyhit = Some(index);
+                        },
+                        _ => {}
+                    }
+                }
+            );
+        let mut shader_group_info = RayTracingShaderGroupInfo {
+            group_count:  create_info.shaders.len() as u32 - if anyhit.is_some() { 1 } else { 0 },
+            ..Default::default()
+        };
         for (shader_index, shader) in create_info.shaders.iter().enumerate() {
             let module = ShaderModule::from_bytes(device.clone(), shader.source)?;
 
@@ -70,28 +91,46 @@ impl RayTracingPipeline {
 
             match shader.group {
                 RayTracingShaderGroup::RayGen => shader_group_info.raygen_shader_count += 1,
-                RayTracingShaderGroup::Miss => shader_group_info.miss_shader_count += 1,
-                RayTracingShaderGroup::ClosestHit => shader_group_info.hit_shader_count += 1,
+                RayTracingShaderGroup::Miss | RayTracingShaderGroup::ShadowMiss => shader_group_info.miss_shader_count += 1,
+                RayTracingShaderGroup::ClosestHit |  RayTracingShaderGroup::ShadowAnyHit =>
+                    shader_group_info.hit_shader_count += 1,
+                _ => {}
             };
+            if shader.group != RayTracingShaderGroup::AnyHit {
+                let mut group = vk::RayTracingShaderGroupCreateInfoKHR::builder()
+                    .ty(vk::RayTracingShaderGroupTypeKHR::GENERAL)
+                    .general_shader(vk::SHADER_UNUSED_KHR)
+                    .closest_hit_shader(vk::SHADER_UNUSED_KHR)
+                    .any_hit_shader(vk::SHADER_UNUSED_KHR)
+                    .intersection_shader(vk::SHADER_UNUSED_KHR);
+                group = match shader.group {
+                    RayTracingShaderGroup::RayGen | RayTracingShaderGroup::Miss
+                    | RayTracingShaderGroup::ShadowMiss
+                    => {
+                        group.general_shader(shader_index as _)
+                    }
+                    RayTracingShaderGroup::ClosestHit
+                    => {
+                        group
+                            .ty(vk::RayTracingShaderGroupTypeKHR::TRIANGLES_HIT_GROUP)
+                            .closest_hit_shader(shader_index as _)
+                            .any_hit_shader(if let Some(anyhit_index) = anyhit {anyhit_index as _}
+                                            else {vk::SHADER_UNUSED_KHR}
+                            )
+                    },
 
-            let mut group = vk::RayTracingShaderGroupCreateInfoKHR::builder()
-                .ty(vk::RayTracingShaderGroupTypeKHR::GENERAL)
-                .general_shader(vk::SHADER_UNUSED_KHR)
-                .closest_hit_shader(vk::SHADER_UNUSED_KHR)
-                .any_hit_shader(vk::SHADER_UNUSED_KHR)
-                .intersection_shader(vk::SHADER_UNUSED_KHR);
-            group = match shader.group {
-                RayTracingShaderGroup::RayGen | RayTracingShaderGroup::Miss => {
-                    group.general_shader(shader_index as _)
-                }
-                RayTracingShaderGroup::ClosestHit => group
-                    .ty(vk::RayTracingShaderGroupTypeKHR::TRIANGLES_HIT_GROUP)
-                    .closest_hit_shader(shader_index as _),
-            };
+                    RayTracingShaderGroup::ShadowAnyHit => group
+                        .ty(vk::RayTracingShaderGroupTypeKHR::TRIANGLES_HIT_GROUP)
+                        .any_hit_shader(shader_index as _),
+                    RayTracingShaderGroup::AnyHit
+                    => {unreachable!()}
+                    // _ => {}
+                };
+                groups.push(group.build());
+            }
 
             modules.push(module);
             stages.push(stage);
-            groups.push(group.build());
         }
 
         let pipe_info = vk::RayTracingPipelineCreateInfoKHR::builder()

@@ -291,6 +291,8 @@ fn create_image_view(context: &Context, i: &crate::image::Image) -> Result<(Imag
 }
 
 pub fn create_global(context: &Context, doc: &Doc, skybox: SkyboxResource) -> Result<VkGlobal> {
+
+    info!("Fully opaque: {}", doc.geo_builder.fully_opaque());
     let mut images = vec![];
     let mut views = vec![];
 

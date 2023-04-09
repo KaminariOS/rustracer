@@ -23,4 +23,6 @@ struct UniformBufferObject
 	uint mapping;
 	uint frame_count;
 	uint debug;
+
+	bool fully_opaque;
 };

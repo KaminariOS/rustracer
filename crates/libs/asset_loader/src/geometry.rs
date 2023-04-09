@@ -1,8 +1,10 @@
+use std::collections::HashMap;
 use crate::{get_name, Index, MeshID, Name};
 use glam::{vec4, Vec2, Vec4, Vec4Swizzles};
 use gltf::mesh::Mode;
 use gltf::{buffer, Semantic};
 use log::{info, warn};
+use crate::material::Material;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
@@ -32,15 +34,26 @@ pub struct GeoBuilder {
     // Vertex len, indices len
     pub len: Vec<[usize; 2]>,
     pub normal_textures: Vec<bool>,
+    pub opaque: Vec<bool>,
+    pub material_id: Vec<usize>,
 }
 
 impl GeoBuilder {
-    pub fn new(buffers: Vec<buffer::Data>, normal_textures: Vec<bool>) -> Self {
+    pub fn new(buffers: Vec<buffer::Data>, materials: &[Material]) -> Self {
         Self {
             buffers,
-            normal_textures,
+            normal_textures: materials.iter().map(|m| m.has_normal_texture()).collect(),
+            opaque: materials.iter().map(|m| m.is_opaque()).collect(),
             ..Default::default()
         }
+    }
+
+    pub fn is_opaque(&self, geo_id: u32) -> bool {
+        self.opaque[self.material_id[geo_id as usize]]
+    }
+
+    pub fn fully_opaque(&self) -> bool {
+        self.opaque.iter().all(|o| *o)
     }
 }
 
@@ -67,9 +80,10 @@ impl PrimInfo {
 }
 
 impl GeoBuilder {
-    fn next_geo_id(&mut self) -> u32 {
+    fn next_geo_id(&mut self, material_id: u32) -> u32 {
         let cur = self.geo_counter;
         self.geo_counter += 1;
+        self.material_id.push(material_id as usize);
         cur
     }
 
@@ -99,9 +113,9 @@ pub struct Primitive {
 const DEFAULT_MATERIAL_INDEX: usize = 0;
 impl Primitive {
     fn from(primitive: gltf::Primitive, builder: &mut GeoBuilder) -> Self {
-        let geo_id = builder.next_geo_id();
         let material = primitive.material();
         let material_index = material.index().unwrap_or(DEFAULT_MATERIAL_INDEX) as u32;
+        let geo_id = builder.next_geo_id(material_index);
 
         let (vertices, indices): (Vec<Vertex>, Vec<Index>) = {
             let reader = primitive.reader(|buffer| Some(&builder.buffers[buffer.index()]));

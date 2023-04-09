@@ -62,6 +62,7 @@ struct GltfViewer {
     globals: VkGlobal,
     clock: Instant,
     last_update: Instant,
+    fully_opaque: bool,
 }
 impl GltfViewer {
     fn new_with_scene(base: &mut BaseApp<Self>, scene: Scene, skybox: Skybox) -> Result<Self> {
@@ -75,6 +76,7 @@ impl GltfViewer {
         let doc = asset_loader::load_file(scene.path())?;
         let skybox = SkyboxResource::new(context, skybox.path())?;
         let globals = create_global(context, &doc, skybox)?;
+        let fully_opaque = doc.geo_builder.fully_opaque();
         let buffers = Buffers::new(context, &doc.geo_builder, &globals)?;
         let (blas, blas_inputs, tlas) = create_as(context, &doc, &buffers, if doc.static_scene() {
             vk::BuildAccelerationStructureFlagsKHR::empty()
@@ -85,7 +87,7 @@ impl GltfViewer {
 
         // let top_as = create_top_as(context, &bottom_as)?;
 
-        let pipeline_res = create_pipeline(context, &globals)?;
+        let pipeline_res = create_pipeline(context, &globals, fully_opaque)?;
 
         let sbt = context.create_shader_binding_table(&pipeline_res.pipeline)?;
 
@@ -119,6 +121,7 @@ impl GltfViewer {
             globals,
             clock: Instant::now(),
             last_update: Instant::now(),
+            fully_opaque,
         })
     }
 }
@@ -168,6 +171,7 @@ impl App for GltfViewer {
             antialiasing: gui.antialiasing.into(),
             frame_count: frame_stats.frame_count,
             debug: gui.debug,
+            fully_opaque: self.doc.geo_builder.fully_opaque().into(),
         };
 
         self.ubo_buffer.copy_data_to_buffer(&[ubo])?;

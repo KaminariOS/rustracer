@@ -112,10 +112,15 @@ void main()
         Ray.t = 0;
         Ray.volume_dis = 0.;
         // Ray scatters are handled in this loop. There are no recursive traceRayEXT() calls in other shaders.
+        uint rayFlags = gl_RayFlagsNoneEXT;
+        if (ubo.fully_opaque) {
+            rayFlags |= gl_RayFlagsOpaqueEXT;
+        }
         for (uint b = 0; b < ubo.NumberOfBounces; b++)
         {
+
             traceRayEXT(
-            Scene, gl_RayFlagsOpaqueEXT, 0xff,
+            Scene, rayFlags, 0xff,
             0 /*sbtRecordOffset*/, 0 /*sbtRecordStride*/, 0 /*missIndex*/,
             origin.xyz, tMin, direction.xyz, tFar, 0 /*payload*/);
 

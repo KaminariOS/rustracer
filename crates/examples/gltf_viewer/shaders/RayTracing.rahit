@@ -21,11 +21,14 @@ const uint BLEND = 3;
 
 // Performs an opacity test in any hit shader for potential hit. Returns true if hit point is transparent and can be ignored
 bool testOpacityAnyHit() {
-
 	// Load material at hit point
 
 	const PrimInfo primInfo = primInfos.p[gl_InstanceCustomIndexEXT];
 	const MaterialRaw mat = materials.m[primInfo.material_id];
+
+	if (mat.alpha_mode == OPAQUE) {
+		return false;
+	}
 
 	const uint vertexOffset = primInfo.v_offset;
 	const uint indexOffset = primInfo.i_offset + (3 * gl_PrimitiveID);
@@ -59,9 +62,7 @@ bool testOpacityAnyHit() {
 		return (opacity < mat.alpha_cutoff);
 	} else {
 		// Alpha blending mode
-		uint seed = Ray.RandomSeed;
-		float u = RandomFloat(seed); // If you want alpha blending, there should be a random u. Semi-transparent things are, however, better rendered using refracted rays with real IoR
-		Ray.RandomSeed = seed;
+		float u = rand(Ray.rngState); // If you want alpha blending, there should be a random u. Semi-transparent things are, however, better rendered using refracted rays with real IoR
 		return (opacity < u);
 	}
 }

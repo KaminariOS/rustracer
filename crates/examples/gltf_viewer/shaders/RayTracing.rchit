@@ -103,7 +103,7 @@ void getNormal(inout vec3 normal_mix, vec4 tangent_mix, vec3 tex_normal) {
 //		cross(n2, tangent2.xyz) * tangent2.w,
 //		bary
 //	);
-	vec3 tangent = normalize((tangent_mix.xyz - dot(tangent_mix.xyz, normal_mix)*normal_mix) * tangent_mix.w);
+	vec3 tangent = normalize((tangent_mix.xyz - dot(tangent_mix.xyz, normal_mix) * normal_mix) );
 //	vec3 tangent = normalize(tangent_mix.xyz * tangent_mix.w);
 //	if (length(tex_normal) == 0) {
 //		return;
@@ -111,8 +111,8 @@ void getNormal(inout vec3 normal_mix, vec4 tangent_mix, vec3 tex_normal) {
 //	if (tex_normal.z <= 0) {
 //		tex_normal.z = sqrt(1 - tex_normal.x * tex_normal.x - tex_normal.y * tex_normal.y);
 //	}
-	vec3 b = cross(normal_mix, tangent);
-	mat3 tbn = mat3(tangent, normalize(b), normal_mix);
+	vec3 b = normalize(cross(normal_mix, tangent) * tangent_mix.w);
+	mat3 tbn = mat3(tangent, b, normal_mix);
 	normal_mix = tbn * tex_normal;
 }
 

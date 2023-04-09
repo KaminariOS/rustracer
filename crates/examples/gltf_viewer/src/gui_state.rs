@@ -68,6 +68,7 @@ pub enum Scene {
 
     SunTemple,
     DragonAttenuation,
+    #[default]
     TransmissionTest,
     MetalRoughSpheresNoTextures,
     MetalRoughSpheres,
@@ -85,7 +86,6 @@ pub enum Scene {
     TextureSettingsTest,
     ToyCar,
     AttenuationTest,
-    #[default]
     Earth,
     // MultiUVTest,
 

@@ -47,6 +47,8 @@ struct Vertex {
 	vec3 normal;
 	vec4 tangent;
 	vec4 color;
+	vec4 weights;
+	uvec4 joints;
 	vec4 uv0And1;
 	uint material_index;
 };

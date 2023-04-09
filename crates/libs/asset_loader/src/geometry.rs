@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use crate::{a3toa4, get_name, Index, MeshID, Name};
-use glam::{vec4, Vec2, Vec4, Vec4Swizzles};
+use glam::{vec4, Vec2, Vec4, Vec4Swizzles, UVec4};
 use gltf::mesh::Mode;
 use gltf::{buffer, Semantic};
 use log::{info, warn};
@@ -14,6 +14,8 @@ pub struct Vertex {
     pub normal: Vec4,
     pub tangent: [f32; 4],
     pub color: Vec4,
+    pub weights: Vec4,
+    pub joints: UVec4,
     pub uv0: Vec2,
     pub uv1: Vec2,
     pub material_index: u32,
@@ -188,6 +190,17 @@ impl Primitive {
                 .read_colors(0)
                 .map(|reader| reader.into_rgba_f32().map(Vec4::from).collect::<Vec<_>>());
 
+            let weights = reader.read_weights(0)
+                .map_or(vec![],
+                        |weights| weights.into_f32().map(Vec4::from).collect());
+            let joints = reader.read_joints(0).map_or(vec![], |joints| {
+                joints
+                    .into_u16()
+                    .map(|[x, y, z, w]| [u32::from(x), u32::from(y), u32::from(z), u32::from(w)])
+                    .map(UVec4::from)
+                    .collect()
+
+            });
             let vertices = positions
                 .into_iter()
                 .enumerate()
@@ -195,11 +208,15 @@ impl Primitive {
                     let normal = normals[index];
                     let color = colors.as_ref().map_or(Vec4::ONE, |colors| colors[index]);
                     let uv =  uvs0[index];
+                    let weights = *weights.get(index).unwrap_or(&Default::default());
+                    let joints = *joints.get(index).unwrap_or(&Default::default());
                     Vertex {
                         position,
                         normal,
                         tangent: tangents[index],
                         color,
+                        weights,
+                        joints,
                         uv0: uv,
                         uv1: uvs1[index],
                         material_index,

@@ -664,7 +664,7 @@ inout float volume_dis
 
 	if (NdotL <= 0.) {
 		if (brdfType != TRANSMISSION_TYPE) {
-			return false;
+//			return false;
 //			rayDirection = normalize(rayDirection - NdotL * geometryNormal);
 		}
 	}

@@ -658,16 +658,7 @@ inout float volume_dis
 
 	// Prevent tracing direction "under" the hemisphere (behind the triangle)
 	float NdotL = dot(geometryNormal, rayDirection) ;
-//	if (!material.frontFace) {
-//		NdotL = -NdotL;
-//	}
 
-	if (NdotL <= 0.) {
-		if (brdfType != TRANSMISSION_TYPE) {
-//			return false;
-//			rayDirection = normalize(rayDirection - NdotL * geometryNormal);
-		}
-	}
 	return true;
 }
 

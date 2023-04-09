@@ -1,7 +1,8 @@
 use std::error::Error;
-use std::process::Command;
+use std::io;
+use std::process::{Command, Output};
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<()> {
     // Tell the build script to only run again if we change our source shaders
     println!("cargo:rerun-if-changed=shaders");
 
@@ -18,12 +19,12 @@ fn main() -> Result<(), Box<dyn Error>> {
                     "../../../spv/{}.spv",
                     entry.file_name().into_string().unwrap()
                 ))
-                .status()
-                .expect(&*format!("Failed to invoke glslc"));
+                .output();
 
-            if !stat.success() {
-                panic!("Failed to compile shader {:?}.", path_str);
-            }
+            handle_program_result(stat);
+            // if !stat.success() {
+            //     panic!("Failed to compile shader {:?}.", path_str);
+            // }
 
             // Support only vertex and fragment shaders currently
             //     let shader_type = in_path.extension().and_then(|ext| {
@@ -54,4 +55,36 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     Ok(())
+}
+
+use io::Result;
+fn handle_program_result(result: Result<Output>) {
+    match result {
+        Ok(output) => {
+            if output.status.success() {
+                println!("Shader compilation succedeed.");
+                print!(
+                    "stdout: {}",
+                    String::from_utf8(output.stdout)
+                        .unwrap_or_else(|_| "Failed to print program stdout".to_string())
+                );
+            } else {
+                eprintln!("Shader compilation failed. Status: {}", output.status);
+                eprint!(
+                    "stdout: {}",
+                    String::from_utf8(output.stdout)
+                        .unwrap_or_else(|_| "Failed to print program stdout".to_string())
+                );
+                eprint!(
+                    "stderr: {}",
+                    String::from_utf8(output.stderr)
+                        .unwrap_or_else(|_| "Failed to print program stderr".to_string())
+                );
+                panic!("Shader compilation failed. Status: {}", output.status);
+            }
+        }
+        Err(error) => {
+            panic!("Failed to compile shader. Cause: {}", error);
+        }
+    }
 }

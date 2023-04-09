@@ -115,7 +115,7 @@ pub fn create_pipeline(context: &Context, model: &VkGlobal, fully_opaque: bool) 
     let ray_miss = load_spv("RayTracing.rmiss.spv");
     let ray_chit = load_spv("RayTracing.rchit.spv");
     let ray_rahit = load_spv("RayTracing.rahit.spv");
-    let shadow_rahit = load_spv("RayTracing.rahit.spv");
+    let _shadow_rahit = load_spv("RayTracing.rahit.spv");
     let mut shaders_create_info = vec![
         RayTracingShaderCreateInfo {
             source: &ray_gen,

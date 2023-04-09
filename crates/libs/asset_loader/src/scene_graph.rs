@@ -4,7 +4,7 @@ use crate::image::{Image, process_images_unified};
 use crate::material::{find_linear_textures, Material, MaterialRaw};
 use crate::texture::{Sampler, Texture};
 use crate::{ MeshID, Name, NodeID, SceneID, check_extensions, check_indices, get_index, get_name};
-use glam::{Mat4, Vec4};
+use glam::{Mat4};
 use gltf::buffer;
 use gltf::image;
 use gltf::{Document};

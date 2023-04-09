@@ -1,4 +1,4 @@
-use std::{any, ffi::CString, sync::Arc};
+use std::{ffi::CString, sync::Arc};
 
 use anyhow::Result;
 use ash::vk;

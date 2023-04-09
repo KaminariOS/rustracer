@@ -27,13 +27,6 @@ vec3 normal_transform(vec3 normal) {
 	return normalize(vec3(gl_ObjectToWorldEXT * vec4(normal, 0.)));
 }
 
-vec3 calculate_geo_normal(const vec3 p0, const vec3 p1, const vec3 p2) {
-	vec3 v1 = p2 - p0;
-	vec3 edge21 = p2 - p1;
-	vec3 v0 = p1 - p0;
-	return normal_transform(cross(v0, v1));
-}
-
 // Samples a random light from the pool of all lights using simplest uniform distirbution
 bool sampleLightUniform(inout RngStateType rngState, vec3 hitPosition, vec3 surfaceNormal, out Light light, out float lightSampleWeight) {
 	uint light_num = lights.length();
@@ -96,13 +89,7 @@ bool sampleLightRIS(inout RngStateType rngState, vec3 hitPosition, vec3 surfaceN
 }
 
 // https://github.com/KhronosGroup/glTF/issues/1252
-void getNormal(inout vec3 normal, Vertex v0, Vertex v1, Vertex v2, vec3 bary, vec3 tex_normal) {
-	vec4 tangent0 = v0.tangent;
-	vec4 tangent1 = v1.tangent;
-	vec4 tangent2= v2.tangent;
-	vec3 n0 = v0.normal;
-	vec3 n1 = v1.normal;
-	vec3 n2 = v2.normal;
+void getNormal(inout vec3 normal_mix, vec4 tangent_mix, vec3 tex_normal) {
 //	if (
 //	length(tangent0) == 0 || tangent0.w == 0 ||
 //	length(tangent1) == 0 || tangent1.w == 0 ||
@@ -116,14 +103,8 @@ void getNormal(inout vec3 normal, Vertex v0, Vertex v1, Vertex v2, vec3 bary, ve
 //		cross(n2, tangent2.xyz) * tangent2.w,
 //		bary
 //	);
-	vec4 tangent_mix = Mix(
-	tangent0 ,
-	tangent1,
-	tangent2 ,
-	bary
-	);
-	vec3 tangent = normalize(tangent_mix.xyz * tangent_mix.w);
-	vec3 normal_mix = normalize(Mix(n0, n1, n2, bary));
+	vec3 tangent = normalize((tangent_mix.xyz - dot(tangent_mix.xyz, normal_mix)*normal_mix) * tangent_mix.w);
+//	vec3 tangent = normalize(tangent_mix.xyz * tangent_mix.w);
 //	if (length(tex_normal) == 0) {
 //		return;
 //	}
@@ -132,7 +113,12 @@ void getNormal(inout vec3 normal, Vertex v0, Vertex v1, Vertex v2, vec3 bary, ve
 //	}
 	vec3 b = cross(normal_mix, tangent);
 	mat3 tbn = mat3(tangent, normalize(b), normal_mix);
-	normal = tbn * tex_normal;
+	normal_mix = tbn * tex_normal;
+}
+
+void zero_raypayload() {
+	Ray.needScatter = false;
+	Ray.emittance = vec3(0);
 }
 
 void main()
@@ -156,17 +142,21 @@ void main()
 	const Vertex v2 = vertices.v[i2];
 
 	// Compute the ray hit point properties.
-	const vec3 barycentricCoords = vec3(1.0 - HitAttributes.x - HitAttributes.y, HitAttributes.x, HitAttributes.y);
-	const vec2 uvs = Mix(v0.uvs, v1.uvs, v2.uvs, barycentricCoords);
-	const vec3 pos = Mix(v0.pos, v1.pos, v2.pos, barycentricCoords);
+	Vertex mix_vertex;
+	vec3 geo_normal = normal_transform(getMixVertexAndGeoNormal(v0, v1, v2, vec2(HitAttributes), mix_vertex));
+	vec3 pos = mix_vertex.pos;
 	vec3 origin = vec3(gl_ObjectToWorldEXT * vec4(pos, 1.0)) ;
 
+	vec4 uv0And1= mix_vertex.uv0And1;
+
 	// Interpolate Color
-	const vec4 vertexColor = Mix(v0.color, v1.color, v2.color, barycentricCoords);
 	const vec4 baseColor = mat.baseColor;
-	vec4 color4 = vertexColor * baseColor;
-	if (mat.baseColorTexture.index >= 0) {
-		color4 *= texture(textures[mat.baseColorTexture.index], uvs);
+	vec4 color4 = mix_vertex.color * baseColor;
+	TextureInfo baseColorTexture = mat.baseColorTexture;
+	if (baseColorTexture.index >= 0) {
+		color4 *= texture(textures[baseColorTexture.index],
+		getUV(uv0And1, baseColorTexture.coord)
+		);
 	}
 	vec3 color = color4.rgb;
 	Ray.needScatter = false;
@@ -187,11 +177,13 @@ void main()
 			return;
 	}
 
-	vec3 geo_normal = calculate_geo_normal(v0.pos, v1.pos, v2.pos);
-	vec3 normal = Mix(v0.normal, v1.normal, v2.normal, barycentricCoords);
-	if (mat.normal_texture.index >= 0 && ubo.debug == 0) {
-		vec3 normal_t = normalize(texture(textures[mat.normal_texture.index], uvs).xyz * 2. - 1.);
-		getNormal(normal, v0, v1, v2, barycentricCoords, normal_t);
+	vec3 normal = mix_vertex.normal;
+	TextureInfo normal_texture = mat.normal_texture;
+	if (normal_texture.index >= 0
+//	&& ubo.debug == 0
+	) {
+		vec3 normal_t = normalize(texture(textures[normal_texture.index], getUV(uv0And1, normal_texture.coord)).xyz * 2. - 1.);
+		getNormal(normal, mix_vertex.tangent, normal_t);
 	}
 	normal = normal_transform(normal);
 
@@ -205,36 +197,44 @@ void main()
 	origin = offset_ray(origin, geo_normal);
 	vec3 emittance = mat.emissive_factor.rgb;
 	if (mat.emissive_texture.index >= 0.) {
-		emittance *= texture(textures[mat.emissive_texture.index], uvs).rgb;
+		emittance *= texture(textures[mat.emissive_texture.index],
+		getUV(uv0And1, mat.emissive_texture.coord)
+		).rgb;
 	}
 
 	const MetallicRoughnessInfo metallicRoughnessInfo = mat.metallicRoughnessInfo;
 	float metallic = metallicRoughnessInfo.metallic_factor;
 	float roughness = metallicRoughnessInfo.roughness_factor;
 	const int mr_index = metallicRoughnessInfo.metallic_roughness_texture.index;
-
-	TransmissionInfo trans_info = mat.transmission_info;
-	float transmission_factor = 0.;
-	if (mat.transmission_info.exist) {
-		transmission_factor = trans_info.transmission_factor;
-		if (trans_info.transmission_texture.index >= 0) {
-			transmission_factor *= texture(textures[trans_info.transmission_texture.index], uvs).r;
-		}
-	}
+	const TextureInfo mr_tex = metallicRoughnessInfo.metallic_roughness_texture;
 	if (mr_index >= 0.) {
-		vec4 metallic_roughness = texture(textures[mr_index], uvs);
+		vec4 metallic_roughness = texture(textures[mr_index], getUV(uv0And1, mr_tex.coord));
 		roughness *= metallic_roughness.g;
 		metallic *= metallic_roughness.b;
+	}
+
+	const TransmissionInfo trans_info = mat.transmission_info;
+	const TextureInfo trans_tex = trans_info.transmission_texture;
+	float transmission_factor = 0.;
+	if (trans_info.exist) {
+		transmission_factor = trans_info.transmission_factor;
+		if (trans_tex.index >= 0) {
+			transmission_factor *= texture(textures[trans_tex.index], getUV(uv0And1, trans_tex.coord)).r;
+		}
 	}
 
 	SpecularInfo spec_info = mat.specular_info;
 	float spec_factor = spec_info.specular_factor;
 	vec3 spec_color_factor = spec_info.specular_color_factor.rgb;
-	if (spec_info.specular_texture.index >= 0) {
-		spec_factor *= texture(textures[spec_info.specular_texture.index], uvs).a;
+	TextureInfo specular_texture = spec_info.specular_texture;
+	if (specular_texture.index >= 0) {
+		spec_factor *= texture(textures[specular_texture.index], getUV(uv0And1, specular_texture.coord)).a;
 	}
-	if (spec_info.specular_color_texture.index >= 0) {
-		spec_color_factor *= texture(textures[spec_info.specular_color_texture.index], uvs).rgb;
+	TextureInfo specular_color_texture = spec_info.specular_color_texture;
+	if (specular_color_texture.index >= 0) {
+		spec_color_factor *= texture(textures[specular_color_texture.index],
+		getUV(uv0And1, specular_color_texture.coord)
+		).rgb;
 	}
 	const float ior = mat.ior;
 
@@ -264,7 +264,8 @@ void main()
 	matBuild(matbrdf);
 	matbrdf.attenuation_color = volume_info.attenuation_color;
 	matbrdf.attenuation_distance = volume_info.attenuation_distance;
-	matbrdf.t_diff = length(origin - last_hit);
+	float displacement = length(origin - last_hit);
+	matbrdf.t_diff = displacement;
 
 	if (metallic == 1.0 && roughness == 0.0) {
 		brdfType = SPECULAR_TYPE;
@@ -276,11 +277,31 @@ void main()
 		if (randfloat < brdfProbability.specular) {
 			brdfType = SPECULAR_TYPE;
 			throughput /= brdfProbability.specular;
+			if (Ray.volume_dis >= 0) {
+				// still in volume
+				Ray.volume_dis += displacement;
+			}
 		} else if (randfloat >= brdfProbability.specular && randfloat <= brdfProbability.specular + brdfProbability.diffuse) {
 			brdfType = DIFFUSE_TYPE;
 			throughput /= brdfProbability.diffuse;
+			if (Ray.volume_dis >= 0) {
+				// still in volume
+				Ray.volume_dis += displacement;
+			}
 		} else {
 			brdfType = TRANSMISSION_TYPE;
+			if (Ray.volume_dis >= 0) {
+				// still in volume
+				Ray.volume_dis += displacement;
+			}
+			else if (frontFace) {
+				// enter volume
+				Ray.volume_dis = 0;
+			}
+			 else {
+				zero_raypayload();
+				return;
+			}
 			throughput /= brdfProbability.transmission;
 		}
 	}
@@ -288,7 +309,14 @@ void main()
 	vec3 brdfWeight;
 	vec2 u = vec2(rand(rngState), rand(rngState));
 	vec3 direction;
-	Ray.needScatter = evalIndirectCombinedBRDF(u, outwardNormal, geo_normal, -gl_WorldRayDirectionEXT, matbrdf, brdfType, direction, brdfWeight);
+	Ray.needScatter = evalIndirectCombinedBRDF(u, outwardNormal, geo_normal,
+	-gl_WorldRayDirectionEXT,
+	matbrdf,
+	brdfType,
+	direction,
+	brdfWeight,
+	Ray.volume_dis
+	);
 
 
 	throughput *= brdfWeight;

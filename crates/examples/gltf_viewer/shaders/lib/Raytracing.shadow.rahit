@@ -42,7 +42,7 @@ bool testOpacityAnyHit() {
 
     // Compute the ray hit point properties.
     const vec3 barycentricCoords = vec3(1.0 - HitAttributes.x - HitAttributes.y, HitAttributes.x, HitAttributes.y);
-    const vec2 uvs = Mix(v0.uvs, v1.uvs, v2.uvs, barycentricCoords);
+    const vec2 uvs = Mix(v0.uv0, v1.uv0, v2.uv0, barycentricCoords);
 
 
     const vec4 vertexColor = Mix(v0.color, v1.color, v2.color, barycentricCoords);

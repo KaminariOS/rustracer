@@ -110,7 +110,7 @@ void main()
 
         vec3 throughput = vec3(1);
         Ray.t = 0;
-        Ray.volume_dis = 0.;
+        Ray.volume_dis = -1.;
         // Ray scatters are handled in this loop. There are no recursive traceRayEXT() calls in other shaders.
         uint rayFlags = gl_RayFlagsNoneEXT;
         if (ubo.fully_opaque) {

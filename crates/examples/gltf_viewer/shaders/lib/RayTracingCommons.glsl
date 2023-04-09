@@ -19,6 +19,22 @@ struct RayPayload
 //	vec2 bary;
 };
 
+
+vec2 Mix(vec2 a, vec2 b, vec2 c, vec3 barycentrics)
+{
+	return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
+}
+
+vec3 Mix(vec3 a, vec3 b, vec3 c, vec3 barycentrics)
+{
+	return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
+}
+
+vec4 Mix(vec4 a, vec4 b, vec4 c, vec3 barycentrics)
+{
+	return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
+}
+
 struct PrimInfo {
     uint v_offset;
     uint i_offset;
@@ -31,9 +47,42 @@ struct Vertex {
 	vec3 normal;
 	vec4 tangent;
 	vec4 color;
-	vec2 uvs;
+	vec4 uv0And1;
 	uint material_index;
 };
+
+vec2 getUV(vec4 uv0And1, uint index) {
+	if (index == 0) {
+		return uv0And1.xy;
+	} else if (index == 1) {
+		return uv0And1.zw;
+	}
+	return vec2(0.);
+}
+
+
+vec3 calculate_geo_normal(const vec3 p0, const vec3 p1, const vec3 p2) {
+	vec3 v1 = p2 - p0;
+	vec3 edge21 = p2 - p1;
+	vec3 v0 = p1 - p0;
+	return cross(v0, v1);
+}
+
+vec3 getMixVertexAndGeoNormal(const Vertex v0,
+const Vertex v1,
+const Vertex v2,
+const vec2 attrs,
+out Vertex mix_v) {
+	const vec3 barycentricCoords = vec3(1.0 - attrs.x - attrs.y, attrs.x, attrs.y);
+
+	mix_v.uv0And1 = Mix(v0.uv0And1, v1.uv0And1, v2.uv0And1, barycentricCoords);
+	mix_v.pos = Mix(v0.pos, v1.pos, v2.pos, barycentricCoords);
+	mix_v.color = Mix(v0.color, v1.color, v2.color, barycentricCoords);
+	mix_v.normal = normalize(Mix(v0.normal, v1.normal, v2.normal, barycentricCoords));
+	mix_v.tangent = normalize(Mix(v0.tangent, v1.tangent, v2.tangent, barycentricCoords));
+	mix_v.material_index = v0.material_index;
+	return calculate_geo_normal(v0.pos, v1.pos, v2.pos);
+}
 
 vec3 bary_to_color(vec2 bary) {
     return vec3(1 - bary[0] - bary[1], bary);
@@ -80,17 +129,4 @@ const uint TRIANGLE = 3;
 const uint DISTANCE = 4;
 const uint ALBEDO = 5;
 
-vec2 Mix(vec2 a, vec2 b, vec2 c, vec3 barycentrics)
-{
-	return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
-}
 
-vec3 Mix(vec3 a, vec3 b, vec3 c, vec3 barycentrics)
-{
-	return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
-}
-
-vec4 Mix(vec4 a, vec4 b, vec4 c, vec3 barycentrics)
-{
-	return a * barycentrics.x + b * barycentrics.y + c * barycentrics.z;
-}

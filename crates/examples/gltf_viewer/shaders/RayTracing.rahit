@@ -44,19 +44,22 @@ bool testOpacityAnyHit() {
 
 
 	// Compute the ray hit point properties.
-	const vec3 barycentricCoords = vec3(1.0 - HitAttributes.x - HitAttributes.y, HitAttributes.x, HitAttributes.y);
-	const vec2 uvs = Mix(v0.uvs, v1.uvs, v2.uvs, barycentricCoords);
+	Vertex mix_vertex;
+	vec3 pos = mix_vertex.pos;
+	vec3 origin = vec3(gl_ObjectToWorldEXT * vec4(pos, 1.0)) ;
 
+	vec4 uv0And1= mix_vertex.uv0And1;
 
-	const vec4 vertexColor = Mix(v0.color, v1.color, v2.color, barycentricCoords);
-	// Also load the opacity texture if available
-	const vec4 baseColor = mat.baseColor * vertexColor;
-	vec4 color = baseColor;
-	if (mat.baseColorTexture.index >= 0) {
-		vec4 tex_color = color * texture(textures[mat.baseColorTexture.index], uvs);
-		color *= tex_color;
+	// Interpolate Color
+	const vec4 baseColor = mat.baseColor;
+	vec4 color4 = mix_vertex.color * baseColor;
+	TextureInfo baseColorTexture = mat.baseColorTexture;
+	if (baseColorTexture.index >= 0) {
+		color4 *= texture(textures[baseColorTexture.index],
+		getUV(uv0And1, baseColorTexture.coord)
+		);
 	}
-	float opacity = color.a;
+	float opacity = color4.a;
 
 	// Decide whether this hit is opaque or not according to chosen alpha testing mode
 	if (mat.alpha_mode == MASK) {

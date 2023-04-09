@@ -593,7 +593,12 @@ vec3 sampleSpecularMicrofacetRefract(vec3 Vlocal, float alpha, float alphaSquare
 	return Llocal;
 }
 
-bool evalIndirectCombinedBRDF(vec2 u, vec3 shadingNormal, vec3 geometryNormal, vec3 V, MaterialBrdf material, const uint brdfType, inout vec3 rayDirection, inout vec3 sampleWeight) {
+bool evalIndirectCombinedBRDF(vec2 u, vec3 shadingNormal, vec3 geometryNormal, vec3 V, MaterialBrdf material,
+const uint brdfType,
+inout vec3 rayDirection,
+inout vec3 sampleWeight,
+inout float volume_dis
+) {
 	if (dot(geometryNormal, V) <= 0.0f) return false;
 	vec4 qRotationToZ = getRotationToZAxis(shadingNormal);
 	vec3 Vlocal = rotatePoint(qRotationToZ, V);
@@ -635,7 +640,9 @@ bool evalIndirectCombinedBRDF(vec2 u, vec3 shadingNormal, vec3 geometryNormal, v
 		sampleWeight = data.diffuseReflectance * material.transmission;
 //		sampleWeight *= (1. - material.specular_factor);
 		if (!material.frontFace) {
-			float dis = material.t_diff;
+//			float dis = material.t_diff;
+			float dis = volume_dis;
+			volume_dis = -1;
 			vec3 sigma = log(material.attenuation_color) / material.attenuation_distance;
 			vec3 attenuation = exp(sigma * dis);
 			sampleWeight *= min(attenuation, vec3(1.));

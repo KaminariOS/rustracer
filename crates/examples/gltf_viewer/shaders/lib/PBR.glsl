@@ -636,8 +636,8 @@ bool evalIndirectCombinedBRDF(vec2 u, vec3 shadingNormal, vec3 geometryNormal, v
 //		sampleWeight *= (1. - material.specular_factor);
 		if (!material.frontFace) {
 			float dis = material.t_diff;
-			vec3 sigma = -log(material.attenuation_color) / dis;
-			vec3 attenuation = exp(-sigma * dis);
+			vec3 sigma = log(material.attenuation_color) / material.attenuation_distance;
+			vec3 attenuation = exp(sigma * dis);
 			sampleWeight *= attenuation;
 		}
 //		sampleWeight = vec3(1.);
@@ -654,10 +654,11 @@ bool evalIndirectCombinedBRDF(vec2 u, vec3 shadingNormal, vec3 geometryNormal, v
 //	if (!material.frontFace) {
 //		NdotL = -NdotL;
 //	}
-//	if (NdotL <= 0) return false;
+
 	if (NdotL <= 0.) {
 		if (brdfType != TRANSMISSION_TYPE) {
 			return false;
+//			rayDirection = normalize(rayDirection - NdotL * geometryNormal);
 		}
 	}
 	return true;

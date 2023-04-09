@@ -290,11 +290,11 @@ impl<'a> From<gltf::Node<'_>> for Node {
 
 pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Doc> {
     let now = Instant::now();
-    info!("Start loading glTF");
+    let name = path.as_ref().to_str().unwrap_or_default().to_string();
     let (document, buffers, gltf_images) =
         gltf::import(resource_manager::load_model(path)).map_err(|e| Error::Load(e.to_string()))?;
 
-    info!("Finish loading glTF, time:{}s", now.elapsed().as_secs());
+    info!("Finish loading glTF {}, time:{}s", name, now.elapsed().as_secs());
     check_extensions(&document);
 
     let mut doc = Doc::new(&document, buffers, gltf_images);

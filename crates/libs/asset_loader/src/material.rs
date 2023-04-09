@@ -2,6 +2,8 @@ use std::collections::{HashSet};
 use crate::{Name, a3toa4, get_name};
 use gltf::material::{AlphaMode, NormalTexture, OcclusionTexture, PbrMetallicRoughness, PbrSpecularGlossiness, Specular, Transmission, Volume};
 use gltf::texture;
+use log::info;
+use crate::geometry::DEFAULT_MATERIAL_INDEX;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -311,10 +313,14 @@ impl Default for SpecularInfo {
 
 impl<'a> From<gltf::Material<'_>> for Material {
     fn from(material: gltf::Material) -> Self {
+        let index= material.index().unwrap_or(DEFAULT_MATERIAL_INDEX);
         let pbr = material.pbr_metallic_roughness();
         let specular = material.specular().map(SpecularInfo::from);
         let em = material.emissive_factor();
         let unlit = material.unlit();
+        if unlit {
+            info!("Unlit material detected: {}", index);
+        }
         let _sg = material.pbr_specular_glossiness().map(SpecularGlossiness::from);
 
         let mut base_color_texture = TextureInfo::new(pbr.base_color_texture());
@@ -343,7 +349,7 @@ impl<'a> From<gltf::Material<'_>> for Material {
             // glTF default
             ior: material.ior().unwrap_or(1.5),
             name: get_name!(material),
-            index: material.index().unwrap_or(0),
+            index,
             material_type: MaterialType::MetallicRoughness,
             transmission: material.transmission().map(TransmissionInfo::from),
             volume_info,

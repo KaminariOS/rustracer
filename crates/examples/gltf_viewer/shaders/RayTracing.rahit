@@ -45,9 +45,7 @@ bool testOpacityAnyHit() {
 
 	// Compute the ray hit point properties.
 	Vertex mix_vertex;
-	vec3 pos = mix_vertex.pos;
-	vec3 origin = vec3(gl_ObjectToWorldEXT * vec4(pos, 1.0)) ;
-
+	getMixVertexAndGeoNormal(v0, v1, v2, vec2(HitAttributes), mix_vertex);
 	vec4 uv0And1= mix_vertex.uv0And1;
 
 	// Interpolate Color
@@ -63,11 +61,12 @@ bool testOpacityAnyHit() {
 
 	// Decide whether this hit is opaque or not according to chosen alpha testing mode
 	if (mat.alpha_mode == MASK) {
+//		When alphaMode is set to MASK the alphaCutoff property specifies the cutoff threshold. If the alpha value is greater than or equal to the alphaCutoff value then it is rendered as fully opaque, otherwise, it is rendered as fully transparent. alphaCutoff value is ignored for other modes.
 		return (opacity < mat.alpha_cutoff);
 	} else {
 		// Alpha blending mode
 		float u = rand(Ray.rngState); // If you want alpha blending, there should be a random u. Semi-transparent things are, however, better rendered using refracted rays with real IoR
-		return (opacity < u);
+		return (opacity <= u);
 	}
 }
 

@@ -112,7 +112,7 @@ pub struct Primitive {
     mapping: HashMap<u32, usize>,
 }
 
-const DEFAULT_MATERIAL_INDEX: usize = 0;
+pub const DEFAULT_MATERIAL_INDEX: usize = 0;
 impl Primitive {
     fn from(primitive: gltf::Primitive, builder: &mut GeoBuilder) -> Self {
         let mapping: HashMap<_, _> = primitive.mappings().map(|m| {

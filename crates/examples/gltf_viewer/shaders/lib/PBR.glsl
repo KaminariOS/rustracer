@@ -149,6 +149,7 @@ struct MaterialBrdf {
 
 	vec3 attenuation_color;
 	float attenuation_distance;
+	bool volume;
 	float t_diff;
 };
 
@@ -243,11 +244,13 @@ BRDF getBrdfProbability(MaterialBrdf mat, vec3 V, vec3 shadingNormal) {
 	// Return probability of selecting specular BRDF over diffuse BRDF
 	float sum = max(0.0001f, (specular + diffuse + transmission));
 	float p = specular / sum ;
-	const float min = 0.1;
-	const float max = 0.9;
-	p = clamp(p, min, max);
-	float d = (1 - p) * (1 - mat.transmission);
-	float t = (1 - p) * mat.transmission;
+	const float min_value = 0.01;
+	const float max_value = 0.9;
+	p = clamp(p, min_value, max_value);
+	float d = diffuse / sum;
+	float t = transmission / sum;
+//	d = min(1., d);
+//	t = clamp(t, min, max);
 	sum = p + d + t;
 	p /= sum;
 	d /= sum;
@@ -628,18 +631,22 @@ inout float volume_dis
 		rayDirectionLocal = sampleSpecular(Vlocal, data.alpha, data.alphaSquared, data.specularF0, u, sampleWeight, data.specularF90);
 //		sampleWeight *= material.specular_factor;
 	} else if (brdfType == TRANSMISSION_TYPE) {
-		const float refraction_ratio = material.frontFace ? 1 / material.ior: material.ior;
-		const vec3 refracted = refract(-Vlocal, Nlocal, refraction_ratio);
-		if (refracted == vec3(0.)) {
-			sampleWeight = vec3(0.);
-			return false;
+		if (material.volume) {
+			const float refraction_ratio = material.frontFace ? 1 / material.ior: material.ior;
+			const vec3 refracted = refract(-Vlocal, Nlocal, refraction_ratio);
+			if (refracted == vec3(0.)) {
+				sampleWeight = vec3(0.);
+				return false;
+			}
+			rayDirectionLocal = refracted;
+		} else {
+			rayDirectionLocal = -Vlocal;
 		}
-		rayDirectionLocal = refracted;
 		const BrdfData data = prepareBRDFData(Nlocal, rayDirectionLocal, Vlocal, material);
 //		sampleWeight = specular_btdf(data);
 		sampleWeight = data.diffuseReflectance * material.transmission;
 //		sampleWeight *= (1. - material.specular_factor);
-		if (!material.frontFace) {
+		if (!material.frontFace && material.volume) {
 //			float dis = material.t_diff;
 			float dis = volume_dis;
 			volume_dis = -1;

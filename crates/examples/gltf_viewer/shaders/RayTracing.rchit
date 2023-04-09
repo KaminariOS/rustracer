@@ -220,6 +220,7 @@ void main()
 		transmission_factor = trans_info.transmission_factor;
 		if (trans_tex.index >= 0) {
 			transmission_factor *= texture(textures[trans_tex.index], getUV(uv0And1, trans_tex.coord)).r;
+//			transmission_factor = clamp(transmission_factor, 0.0, 0.7) ;
 		}
 	}
 
@@ -264,6 +265,7 @@ void main()
 	matBuild(matbrdf);
 	matbrdf.attenuation_color = volume_info.attenuation_color;
 	matbrdf.attenuation_distance = volume_info.attenuation_distance;
+	matbrdf.volume = volume_info.exists;
 	float displacement = length(origin - last_hit);
 	matbrdf.t_diff = displacement;
 
@@ -284,23 +286,29 @@ void main()
 		} else if (randfloat >= brdfProbability.specular && randfloat <= brdfProbability.specular + brdfProbability.diffuse) {
 			brdfType = DIFFUSE_TYPE;
 			throughput /= brdfProbability.diffuse;
+			if (volume_info.exists) {
+
+			}
 			if (Ray.volume_dis >= 0) {
 				// still in volume
 				Ray.volume_dis += displacement;
 			}
 		} else {
 			brdfType = TRANSMISSION_TYPE;
-			if (Ray.volume_dis >= 0) {
-				// still in volume
-				Ray.volume_dis += displacement;
-			}
-			else if (frontFace) {
-				// enter volume
-				Ray.volume_dis = 0;
-			}
-			 else {
-				zero_raypayload();
-				return;
+			if (volume_info.exists) {
+				if (Ray.volume_dis >= 0) {
+					// still in volume
+					Ray.volume_dis += displacement;
+				}
+				else if (frontFace) {
+					// enter volume
+					Ray.volume_dis = 0;
+				}
+				else {
+					// enter the volume by alpha testing
+					//				zero_raypayload();
+					//				return;
+				}
 			}
 			throughput /= brdfProbability.transmission;
 		}

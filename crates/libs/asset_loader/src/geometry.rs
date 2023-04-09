@@ -4,6 +4,7 @@ use glam::{vec4, Vec2, Vec4, Vec4Swizzles};
 use gltf::mesh::Mode;
 use gltf::{buffer, Semantic};
 use log::{info, warn};
+use crate::aabb::{Aabb, get_aabb};
 use crate::material::Material;
 
 #[repr(C)]
@@ -110,6 +111,7 @@ pub struct Primitive {
     // pub(crate) material: MaterialID,
     pub geometry_id: u32,
     mapping: HashMap<u32, usize>,
+    aabb: Aabb,
 }
 
 pub const DEFAULT_MATERIAL_INDEX: usize = 0;
@@ -219,6 +221,7 @@ impl Primitive {
             // material: material_index as usize,
             geometry_id: geo_id,
             mapping,
+            aabb: get_aabb(&primitive.bounding_box())
         }
     }
 }

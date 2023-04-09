@@ -11,6 +11,7 @@ mod scene_graph;
 mod texture;
 pub mod light;
 mod cubumap;
+mod aabb;
 
 #[cfg(feature = "ash")]
 pub mod globals;

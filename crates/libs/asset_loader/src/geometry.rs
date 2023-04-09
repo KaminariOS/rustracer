@@ -207,10 +207,11 @@ impl Primitive {
 fn create_geo_normal(position: &[Vec4], indices: &[u32]) -> Vec<Vec4> {
     warn!("Creating normals");
     let mut normals = vec![Vec4::default(); indices.len()];
-    for i in 0..indices.len() {
-        let i0 = indices[i + 0] as usize;
-        let i1 = indices[i + 1] as usize;
-        let i2 = indices[i + 2] as usize;
+    assert_eq!(indices.len() % 3, 0);
+    for i in 0..indices.len() / 3 {
+        let i0 = indices[3 * i + 0] as usize;
+        let i1 = indices[3 * i + 1] as usize;
+        let i2 = indices[3 * i + 2] as usize;
         let p0 = position[i0];
         let p1 = position[i1];
         let p2 = position[i2];

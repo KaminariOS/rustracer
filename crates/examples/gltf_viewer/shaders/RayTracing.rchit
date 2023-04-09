@@ -162,13 +162,13 @@ void main()
 	vec3 origin = vec3(gl_ObjectToWorldEXT * vec4(pos, 1.0)) ;
 
 	// Interpolate Color
-	const vec3 vertexColor = Mix(v0.color, v1.color, v2.color, barycentricCoords);
-	const vec3 baseColor = mat.baseColor.rgb;
-	vec3 color = vertexColor * baseColor;
+	const vec4 vertexColor = Mix(v0.color, v1.color, v2.color, barycentricCoords);
+	const vec4 baseColor = mat.baseColor;
+	vec4 color4 = vertexColor * baseColor;
 	if (mat.baseColorTexture.index >= 0) {
-		color = color * texture(textures[mat.baseColorTexture.index], uvs).rgb;
+		color4 *= texture(textures[mat.baseColorTexture.index], uvs);
 	}
-
+	vec3 color = color4.rgb;
 	Ray.needScatter = false;
 	Ray.hitPoint = pos;
 	uint mapping = ubo.mapping;

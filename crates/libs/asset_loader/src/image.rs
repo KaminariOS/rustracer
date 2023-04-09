@@ -88,8 +88,8 @@ impl TryFrom<&gltf::image::Data> for Image {
     fn try_from(image: &gltf::image::Data) -> Result<Self> {
         let width = image.width;
         let height = image.height;
-
-        let pixels = PixelIter::new(image)?.flatten().collect::<Vec<_>>();
+        let pixel_count = width * height;
+        let pixels = PixelIter::new(image, pixel_count as _)?.flatten().collect::<Vec<_>>();
 
         Ok(Self {
             pixels,
@@ -106,13 +106,15 @@ pub(crate) struct PixelIter<'a> {
     format: Format,
     pixel_size: usize,
     position: usize,
+    pixel_count: usize,
 }
 
 impl<'a> PixelIter<'a> {
-    pub(crate) fn new(image: &'a gltf::image::Data) -> Result<Self> {
+    pub(crate) fn new(image: &'a gltf::image::Data, pixel_count: usize) -> Result<Self> {
         use Format::*;
         let pixels = &image.pixels;
         let format = image.format;
+        info!("Image format: {:?}", format);
         let pixel_size = match format {
             R8 => 1,
             R8G8 => 2,
@@ -126,6 +128,7 @@ impl<'a> PixelIter<'a> {
             format,
             pixel_size,
             position: 0,
+            pixel_count,
         })
     }
 }
@@ -134,39 +137,38 @@ impl<'a> Iterator for PixelIter<'a> {
     type Item = [u8; 4];
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.position == self.pixels.len() {
+        if self.position == self.pixel_count {
             return None;
         }
-
+        let pixels = self.pixels;
+        let index = self.position;
+        use Format::*;
         let pixel = match self.format {
-            Format::R8 => {
-                let r = self.pixels[self.position];
-                Some([r, 0, 0, u8::MAX])
-            }
-            Format::R8G8 => {
-                let r = self.pixels[self.position];
-                let g = self.pixels[self.position + 1];
-                Some([r, g, 0, u8::MAX])
-            }
-            Format::R8G8B8 => {
-                let r = self.pixels[self.position];
-                let g = self.pixels[self.position + 1];
-                let b = self.pixels[self.position + 2];
-                Some([r, g, b, u8::MAX])
-            }
-            Format::R8G8B8A8 => {
-                let r = self.pixels[self.position];
-                let g = self.pixels[self.position + 1];
-                let b = self.pixels[self.position + 2];
-                let a = self.pixels[self.position + 3];
-                Some([r, g, b, a])
-            }
+                   R8 => [pixels[index], pixels[index], pixels[index], u8::MAX],
+        // actually luma8 with alpha
+        R8G8 => [
+            pixels[index * 2],
+            pixels[index * 2],
+            pixels[index * 2],
+            pixels[index * 2 + 1],
+        ],
+        R8G8B8 => [
+            pixels[index * 3],
+            pixels[index * 3 + 1],
+            pixels[index * 3 + 2],
+            std::u8::MAX,
+        ],
+        R8G8B8A8 => [
+            pixels[index * 4],
+            pixels[index * 4 + 1],
+            pixels[index * 4 + 2],
+            pixels[index * 4 + 3],
+        ],
             _ => unreachable!("Self::new already checks"),
         };
 
-        self.position += self.pixel_size;
-
-        pixel
+        self.position += 1;
+        Some(pixel)
     }
 }
 

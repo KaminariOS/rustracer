@@ -45,9 +45,9 @@ bool testOpacityAnyHit() {
     const vec2 uvs = Mix(v0.uvs, v1.uvs, v2.uvs, barycentricCoords);
 
 
-    const vec3 vertexColor = Mix(v0.color, v1.color, v2.color, barycentricCoords);
+    const vec4 vertexColor = Mix(v0.color, v1.color, v2.color, barycentricCoords);
     // Also load the opacity texture if available
-    const vec4 baseColor = mat.baseColor;
+    const vec4 baseColor = mat.baseColor * vertexColor;
     vec4 color = baseColor;
     if (mat.baseColorTexture.index >= 0) {
         color = color * texture(textures[mat.baseColorTexture.index], uvs);

@@ -30,7 +30,7 @@ struct Vertex {
 	vec3 pos;
 	vec3 normal;
 	vec4 tangent;
-	vec3 color;
+	vec4 color;
 	vec2 uvs;
 	uint material_index;
 };

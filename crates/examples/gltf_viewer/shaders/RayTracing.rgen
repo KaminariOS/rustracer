@@ -10,6 +10,7 @@
 #include "lib/Camera.glsl"
 #include "lib/UniformBufferObject.glsl"
 #include "lib/Material.glsl"
+#include "lib/Tonemapping.glsl"
 
 #define MIN_BOUNCES 3
 
@@ -138,7 +139,19 @@ void main()
     radiance = accumulatedColor / ubo.TotalNumberOfSamples;
 
     // Apply raytracing-in-one-weekend gamma correction.
-    radiance = sqrt(radiance);
+    uint tone_mapping_mode = ubo.tone_mapping_mode;
+    vec3 color;
+    if (tone_mapping_mode == TONE_MAP_MODE_DEFAULT) {
+        color = defaultToneMap(radiance);
+    } else if (tone_mapping_mode == TONE_MAP_MODE_UNCHARTED) {
+        color = toneMapUncharted(radiance);
+    } else if (tone_mapping_mode == TONE_MAP_MODE_HEJL_RICHARD) {
+        color = toneMapHejlRichard(radiance);
+    } else if (tone_mapping_mode == TONE_MAP_MODE_ACES) {
+        color = toneMapACES(radiance);
+    } else {
+        color = LINEARtoSRGB(radiance);
+    }
 
     switch (ubo.mapping)
     {
@@ -146,14 +159,14 @@ void main()
             const uint64_t deltaTime = clockARB() - clock;
             const float heatmapScale = 1000000.0f * ubo.HeatmapScale * ubo.HeatmapScale;
             const float deltaTimeScaled = clamp(float(deltaTime) / heatmapScale, 0.0f, 1.0f);
-            radiance = heatmap(deltaTimeScaled);
+            color = heatmap(deltaTimeScaled);
             break;
         case DISTANCE:
-            radiance = vec3(min((ubo.HeatmapScale - max(Ray.t, tMin)) / ubo.HeatmapScale, 1));
+            color = vec3(min((ubo.HeatmapScale - max(Ray.t, tMin)) / ubo.HeatmapScale, 1));
             break;
         case RENDER:
             break;
     }
     imageStore(AccumulationImage, ivec2(gl_LaunchIDEXT.xy), vec4(accumulatedColor, 0));
-    imageStore(OutputImage, ivec2(gl_LaunchIDEXT.xy), vec4(radiance, 0));
+    imageStore(OutputImage, ivec2(gl_LaunchIDEXT.xy), vec4(color, 1.));
 }

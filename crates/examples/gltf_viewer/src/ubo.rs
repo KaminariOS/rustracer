@@ -28,4 +28,5 @@ pub struct UniformBufferObject {
 
     pub fully_opaque: u32,
     pub exposure: f32,
+    pub tone_mapping_mode: u32,
 }

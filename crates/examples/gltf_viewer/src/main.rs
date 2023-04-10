@@ -174,6 +174,7 @@ impl App for GltfViewer {
             debug: gui.debug,
             fully_opaque: self.doc.geo_builder.fully_opaque().into(),
             exposure: gui.exposure,
+            tone_mapping_mode: gui.selected_tone_map_mode as _,
         };
 
         self.ubo_buffer.copy_data_to_buffer(&[ubo])?;

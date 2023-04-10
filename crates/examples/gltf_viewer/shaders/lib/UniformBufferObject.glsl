@@ -26,4 +26,5 @@ struct UniformBufferObject
 
 	bool fully_opaque;
 	float exposure;
+	uint tone_mapping_mode;
 };

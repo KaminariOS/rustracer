@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use app::anyhow::Result;
 use gui::imgui::{Condition, Ui};
 use strum::IntoEnumIterator;
@@ -30,6 +31,7 @@ pub struct Gui {
     pub orthographic_fov_dis: f32,
     pub point_light_radius: f32,
     pub exposure: f32,
+    pub selected_tone_map_mode: usize,
 }
 
 #[derive(IntoStaticStr, AsRefStr, EnumIter, PartialEq, Clone, Copy, Debug, Default)]
@@ -39,7 +41,6 @@ pub enum Scene {
     // UnlitTest,
     // VertexColorTest,
     SpecularTest,
-    #[default]
     CornellBoxLucy,
     Cornell,
     ABeautifulGame,
@@ -72,6 +73,7 @@ pub enum Scene {
 
     SunTemple,
     DragonAttenuation,
+    #[default]
     TransmissionTest,
     MetalRoughSpheresNoTextures,
     MetalRoughSpheres,
@@ -105,6 +107,35 @@ impl Scene {
         }
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ToneMapMode {
+    Default = 0,
+    Uncharted,
+    HejlRichard,
+    Aces,
+    None,
+}
+
+impl ToneMapMode {
+    pub fn all() -> [ToneMapMode; 5] {
+        use ToneMapMode::*;
+        [Default, Uncharted, HejlRichard, Aces, None]
+    }
+
+    pub fn from_value(value: usize) -> Option<Self> {
+        use ToneMapMode::*;
+        match value {
+            0 => Some(Default),
+            1 => Some(Uncharted),
+            2 => Some(HejlRichard),
+            3 => Some(Aces),
+            4 => Some(None),
+            _ => Option::None,
+        }
+    }
+}
+
 
 #[derive(Default, Debug, AsRefStr, IntoStaticStr, EnumIter, Copy, Clone, PartialEq)]
 pub enum Skybox {
@@ -199,6 +230,7 @@ impl app::Gui for Gui {
             point_light_radius: 10.0,
             orthographic_fov_dis: 0.0,
             exposure: 5.0,
+            selected_tone_map_mode: 0,
         })
     }
 
@@ -255,7 +287,13 @@ impl app::Gui for Gui {
                 }
 
                 ui.separator();
-
+                let tone_map_mode_changed = ui.combo(
+                    "Tone Map mode",
+                    &mut self.selected_tone_map_mode,
+                    &ToneMapMode::all(),
+                    |mode| Cow::Owned(format!("{:?}", mode)),
+                );
+                ui.separator();
                 let mut selected = self.mapping;
                 if let Some(_) = ui.begin_combo("Mapping", format!("{}", selected.as_ref())) {
                     for cur in Mapping::iter() {

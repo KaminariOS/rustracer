@@ -22,7 +22,6 @@ layout(binding = UNIFORM_BIND, set = 0) readonly uniform UniformBufferObjectStru
 hitAttributeEXT vec2 HitAttributes;
 rayPayloadInEXT RayPayload Ray;
 
-
 vec3 normal_transform(vec3 normal) {
 	return normalize(vec3(gl_ObjectToWorldEXT * vec4(normal, 0.)));
 }
@@ -256,7 +255,7 @@ void main()
 	matbrdf.baseColor = color;
 	matbrdf.metallic = metallic;
 	matbrdf.roughness = roughness;
-	matbrdf.ior = ior;
+	matbrdf.ior = volume_info.exists? ior: 1.;
 	matbrdf.transmission = transmission_factor;
 	matbrdf.specular_factor = spec_factor;
 	matbrdf.specular_color_factor = spec_color_factor;

@@ -87,16 +87,17 @@ float Schlick(const float cosine, const float refractionIndex)
 #define specularPdf sampleBeckmannWalterReflectionPdf
 #endif
 
-#if DIFFUSE_BRDF == LAMBERTIAN
-#define evalDiffuse evalLambertian
-#define diffuseTerm lambertian
+#define DIFFUSE_BRDF FROSTBITE
+//#if DIFFUSE_BRDF == LAMBERTIAN
+//#define evalDiffuse evalLambertian
+//#define diffuseTerm lambertian
 //#elif DIFFUSE_BRDF == OREN_NAYAR
 //#define evalDiffuse evalOrenNayar
 //#define diffuseTerm orenNayar
 //#elif DIFFUSE_BRDF == DISNEY
 //#define evalDiffuse evalDisneyDiffuse
 //#define diffuseTerm disneyDiffuse
-#elif DIFFUSE_BRDF == FROSTBITE
+#if DIFFUSE_BRDF == FROSTBITE
 #define evalDiffuse evalFrostbiteDisneyDiffuse
 #define diffuseTerm frostbiteDisneyDiffuse
 //#else
@@ -517,13 +518,13 @@ BrdfData prepareBRDFData(vec3 N, vec3 L, vec3 V, MaterialBrdf material) {
 //    Lambert
 // -------------------------------------------------------------------------
 
-float lambertian(const BrdfData data) {
-	return 1.0f;
-}
-
-vec3 evalLambertian(const BrdfData data) {
-	return data.diffuseReflectance * (ONE_OVER_PI * data.NdotL);
-}
+//float lambertian(const BrdfData data) {
+//	return 1.0f;
+//}
+//
+//vec3 evalLambertian(const BrdfData data) {
+//	return data.diffuseReflectance * (ONE_OVER_PI * data.NdotL);
+//}
 
 // Returns the quaternion with inverted rotation
 vec4 invertRotation(vec4 q)
@@ -596,7 +597,8 @@ vec3 sampleSpecularMicrofacetRefract(vec3 Vlocal, float alpha, float alphaSquare
 	return Llocal;
 }
 
-bool evalIndirectCombinedBRDF(vec2 u, vec3 shadingNormal, vec3 geometryNormal, vec3 V, MaterialBrdf material,
+bool evalIndirectCombinedBRDF(vec2 u, vec3 shadingNormal, vec3 geometryNormal, vec3 V,
+MaterialBrdf material,
 const uint brdfType,
 inout vec3 rayDirection,
 inout vec3 sampleWeight,
@@ -610,7 +612,8 @@ inout float volume_dis
 	vec3 rayDirectionLocal = vec3(0.0f, 0.0f, 0.0f);
 	if (brdfType == DIFFUSE_TYPE) {
 		rayDirectionLocal = sampleHemisphere(u);
-		const BrdfData data = prepareBRDFData(Nlocal, rayDirectionLocal, Vlocal, material);
+		const BrdfData data =
+		prepareBRDFData(Nlocal, rayDirectionLocal, Vlocal, material);
 
 		// Function 'diffuseTerm' is predivided by PDF of sampling the cosine weighted hemisphere
 		sampleWeight = data.diffuseReflectance * diffuseTerm(data);
@@ -629,6 +632,9 @@ inout float volume_dis
 	else if (brdfType == SPECULAR_TYPE) {
 		const BrdfData data = prepareBRDFData(Nlocal, vec3(0.0f, 0.0f, 1.0f) /* unused L vector */, Vlocal, material);
 		rayDirectionLocal = sampleSpecular(Vlocal, data.alpha, data.alphaSquared, data.specularF0, u, sampleWeight, data.specularF90);
+//		rayDirectionLocal = reflect(-Vlocal, Nlocal);
+//		vec3 F = evalFresnel(material.F0, shadowedF90(material.F90), dot(rayDirectionLocal, Nlocal));
+//		sampleWeight = F;
 //		sampleWeight *= material.specular_factor;
 	} else if (brdfType == TRANSMISSION_TYPE) {
 		if (material.volume) {
@@ -668,5 +674,44 @@ inout float volume_dis
 
 	return true;
 }
+
+
+const int E_DIFFUSE = 0x00001;
+const int E_DELTA = 0x00002;
+const int E_REFLECTION = 0x00004;
+const int E_TRANSMISSION = 0x00008;
+const int E_COATING = 0x00010;
+const int E_STRAIGHT = 0x00020;
+const int E_OPAQUE_DIELECTRIC = 0x00040;
+const int E_TRANSPARENT_DIELECTRIC = 0x00080;
+const int E_METAL = 0x00100;
+
+vec3 eval_pbr(const in MaterialBrdf material, vec3 V, vec3 L, vec3 shadingNormal) {
+	vec3 H = normalize(V + L);
+	vec4 qRotationToZ = getRotationToZAxis(shadingNormal);
+	vec3 Vlocal = rotatePoint(qRotationToZ, V);
+	vec3 Llocal = rotatePoint(qRotationToZ, L);
+	const vec3 Nlocal = vec3(0.0f, 0.0f, 1.0f);
+	// diffuse
+	// opaque diecletric
+	// metal
+	// transparen dielectric
+
+	return vec3(1.);
+}
+
+float eval_pdf(const in BrdfData data) {
+	return 0.;
+}
+
+void select_bsdf(inout BrdfData data, inout RngStateType rng_state) {
+
+}
+
+vec3 sample_pbr(inout BrdfData data, inout float bsdf_over_pdf, out float pdf) {
+	return vec3(1.);
+}
+
+//void select_bsdf()
 
 #endif

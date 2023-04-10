@@ -42,6 +42,7 @@ pub enum Scene {
     ABeautifulGame,
     Sponza,
     Type59,
+    #[default]
     DamagedHelmet,
     EmissiveStrengthTest,
     LightsPunctualLamp,
@@ -68,7 +69,6 @@ pub enum Scene {
 
     SunTemple,
     DragonAttenuation,
-    #[default]
     TransmissionTest,
     MetalRoughSpheresNoTextures,
     MetalRoughSpheres,

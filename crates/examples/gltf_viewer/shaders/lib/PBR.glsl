@@ -341,11 +341,11 @@ BRDF getBrdfProbability(MaterialBrdf mat, vec3 V, vec3 shadingNormal) {
 	// Return probability of selecting specular BRDF over diffuse BRDF
 	float sum = max(0.0001f, (specular + diffuse + transmission));
 	float p = specular / sum ;
-	const float min_value = 0.01;
-	const float max_value = 0.9;
-	p = clamp(p, min_value, max_value);
-	float d = diffuse / sum;
-	float t = transmission / sum;
+	const float min = 0.1;
+	const float max = 0.9;
+	p = clamp(p, min, max);
+	float d = (1 - p) * (1 - mat.transmission);
+	float t = (1 - p) * mat.transmission;
 //	d = min(1., d);
 //	t = clamp(t, min, max);
 	sum = p + d + t;

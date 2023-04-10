@@ -182,8 +182,8 @@ impl app::Gui for Gui {
             ray_tracing: true,
             acc: true,
             map_scale: 1.0,
-            max_number_of_samples: 200,
-            sky: !false,
+            max_number_of_samples: 5000,
+            sky: false,
             scene: Default::default(),
             scale: 1.,
             mapping: Default::default(),
@@ -198,7 +198,7 @@ impl app::Gui for Gui {
             point_light_intensity: 2.0,
             point_light_radius: 10.0,
             orthographic_fov_dis: 0.0,
-            exposure: 1.0,
+            exposure: 5.0,
         })
     }
 

@@ -166,7 +166,7 @@ impl App for GltfViewer {
             total_number_of_samples: self.total_number_of_samples,
             number_of_samples,
             number_of_bounces: gui.get_bounce(),
-            random_seed: frame_stats.frame_count,
+            random_seed: 3,
             has_sky: gui.sky.into(),
             mapping: gui.mapping as _,
             antialiasing: gui.antialiasing.into(),

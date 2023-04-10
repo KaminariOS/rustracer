@@ -92,8 +92,8 @@ impl Buffers {
         plights_buffer.copy_data_to_buffer(globals.p_lights.as_slice())?;
         info!("Buffers: {}s", now.elapsed().as_secs());
         // println!("v_b: {:#02x}, i_b: {:#02x}, g_b: {:#02x}, m_b: {:#02x}", vertex_buffer.as_raw(), index_buffer.as_raw(), geo_buffer.as_raw(), material_buffer.as_raw());
-        let src_stage = vk::PipelineStageFlags2::TRANSFER | vk::PipelineStageFlags2::ALL_COMMANDS;
-        let ray_tracing_dst = vk::PipelineStageFlags2::ALL_COMMANDS;
+        let _src_stage = vk::PipelineStageFlags2::TRANSFER | vk::PipelineStageFlags2::ALL_COMMANDS;
+        let _ray_tracing_dst = vk::PipelineStageFlags2::ALL_COMMANDS;
         // let as_build = vk::PipelineStageFlags2::ALL_COMMANDS;
         // let src_access = vk::AccessFlags2::TRANSFER_WRITE;
         // let des_access= vk::AccessFlags2::MEMORY_READ | vk::AccessFlags2::HOST_WRITE | vk::AccessFlags2::SHADER_STORAGE_READ | vk::AccessFlags2::HOST_READ;

@@ -287,7 +287,7 @@ impl app::Gui for Gui {
                 }
 
                 ui.separator();
-                let tone_map_mode_changed = ui.combo(
+                let _tone_map_mode_changed = ui.combo(
                     "Tone Map mode",
                     &mut self.selected_tone_map_mode,
                     &ToneMapMode::all(),

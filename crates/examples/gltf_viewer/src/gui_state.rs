@@ -40,7 +40,6 @@ pub enum Scene {
     SpecularTest,
     CornellBoxLucy,
     Cornell,
-    #[default]
     ABeautifulGame,
     Sponza,
     Type59,
@@ -49,6 +48,7 @@ pub enum Scene {
     EmissiveStrengthTest,
     LightsPunctualLamp,
     BoomBoxWithAxes,
+    #[default]
     Triss,
     EVA,
     Anakin,
@@ -174,14 +174,14 @@ impl Gui {
 impl app::Gui for Gui {
     fn new() -> Result<Self> {
         Ok(Gui {
-            aperture: 0.01,
+            aperture: 0.0,
             focus_distance: 10.0,
             number_of_samples: 3,
             number_of_bounces: 5,
             ray_tracing: true,
             acc: true,
             map_scale: 1.0,
-            max_number_of_samples: 100,
+            max_number_of_samples: 200,
             sky: !false,
             scene: Default::default(),
             scale: 1.,
@@ -232,9 +232,11 @@ impl app::Gui for Gui {
                 ui.slider("Focus", 0.1, 20., &mut self.focus_distance);
                 ui.slider("Orthographic", 0., 100., &mut self.orthographic_fov_dis);
 
+                let mut scenes: Vec<_> = Scene::iter().collect();
+                scenes.sort_by_key(|k| k.as_ref().to_string());
                 let mut selected = self.scene;
                 if let Some(_) = ui.begin_combo("Scene", format!("{}", selected.as_ref())) {
-                    for cur in Scene::iter() {
+                    for cur in scenes {
                         if selected == cur {
                             // Auto-scroll to selected item
                             ui.set_item_default_focus();

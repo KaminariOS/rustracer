@@ -45,7 +45,7 @@ void main()
     // Initialise separate random seeds for the pixel and the rays.
     // - pixel: we want the same random seed for each pixel to get a homogeneous anti-aliasing.
     // - ray: we want a noisy random seed, different for each pixel.
-    uint pixelRandomSeed = ubo.RandomSeed;
+    uint pixelRandomSeed = ubo.frame_count;
     Ray.RandomSeed = InitRandomSeed(InitRandomSeed(gl_LaunchIDEXT.x, gl_LaunchIDEXT.y), uint(pixelRandomSeed));
     RngStateType rngState = initRNG(uvec2(gl_LaunchIDEXT), uvec2(gl_LaunchSizeEXT.xy), uint(pixelRandomSeed));
 //    switch (ubo.debug) {

@@ -15,6 +15,7 @@ struct RayPayload
 	vec3 emittance;
 	RngStateType rngState;
 	float volume_dis;
+	bool shadowRay;
 //	uint instance_id;
 //	vec2 bary;
 };
@@ -130,5 +131,7 @@ const uint INSTANCE = 2;
 const uint TRIANGLE = 3;
 const uint DISTANCE = 4;
 const uint ALBEDO = 5;
+const uint METALLIC = 6;
+const uint ROUGHNESS = 7;
 
 

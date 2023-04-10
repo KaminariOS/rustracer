@@ -44,6 +44,7 @@ pub enum Scene {
     Type59,
     #[default]
     DamagedHelmet,
+    MosquitoInAmber,
     EmissiveStrengthTest,
     LightsPunctualLamp,
     BoomBoxWithAxes,
@@ -134,6 +135,8 @@ pub enum Mapping {
     TRIANGLE = 3,
     DISTANCE = 4,
     ALBEDO = 5,
+    METALLIC = 6,
+    ROUGHNESS = 7,
 }
 
 impl Gui {

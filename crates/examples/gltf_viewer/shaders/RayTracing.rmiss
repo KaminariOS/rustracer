@@ -13,6 +13,10 @@ layout(location = 0) rayPayloadInEXT RayPayload Ray;
 
 void main()
 {
+	if (Ray.shadowRay) {
+		Ray.t = -1;
+		return;
+	}
 	vec3 light_acc = vec3(0.);
 	if (Ray.t != 0) {
 		for(int i = 0; i < lights.length(); i++) {

@@ -21,24 +21,7 @@ layout(binding = UNIFORM_BIND, set = 0) readonly uniform UniformBufferObjectStru
 layout(location = 0) rayPayloadEXT RayPayload Ray;
 
 
-// Casts a shadow ray and returns true if light is unoccluded
-// Note that we use dedicated hit group with simpler shaders for shadow rays
-bool castShadowRay(vec3 hitPosition, vec3 surfaceNormal, vec3 directionToLight, float tMax)
-{
-    vec3 origin = offset_ray(hitPosition, surfaceNormal);
-    vec3 direction = directionToLight;
 
-//    ShadowHitInfo payload;
-//    payload.hasHit = true; //< Initialize hit flag to true, it will be set to false on a miss
-    float tMin = 0.1;
-
-    // Trace the ray
-    traceRayEXT(
-    Scene, gl_RayFlagsOpaqueEXT | gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsSkipClosestHitShaderEXT, 0xff,
-    SHADOW_RAY_INDEX /*sbtRecordOffset*/, 0 /*sbtRecordStride*/, 0 /*missIndex*/,
-    origin.xyz, tMin, direction.xyz, tMax, 0 /*payload*/);
-    return Ray.t < 0;
-}
 
 RayInfo pinHoleRay(const vec2 pixelOffset) {
     vec2 size = gl_LaunchSizeEXT.xy;
@@ -111,6 +94,7 @@ void main()
         vec3 throughput = vec3(1);
         Ray.t = 0;
         Ray.volume_dis = -1.;
+        Ray.shadowRay = false;
         // Ray scatters are handled in this loop. There are no recursive traceRayEXT() calls in other shaders.
         uint rayFlags = gl_RayFlagsNoneEXT;
         if (ubo.fully_opaque) {

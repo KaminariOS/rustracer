@@ -107,6 +107,7 @@ dependencies = [
  "interpolation",
  "log",
  "mikktspace",
+ "rand",
  "rayon",
  "resource_manager",
  "strum",

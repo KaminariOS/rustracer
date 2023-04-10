@@ -82,6 +82,25 @@ impl LightRaw {
         self.transform[1] = -theta.cos();
         self.transform[2] = -theta.sin() * phi.cos();
     }
+    
+    pub fn random_light() -> Self {
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+        let mut get_random = || Vec4::from_array([
+            rng.gen::<f32>(),
+            rng.gen::<f32>(),
+            rng.gen::<f32>(),
+            rng.gen::<f32>(),
+        ]);
+        Self {
+            color: get_random(),
+            transform: (get_random() * 2. - 1.) * 50.,
+            kind: LightType::POINT as _,
+            range: f32::INFINITY,
+            intensity: 2.0,
+            _padding: 0,
+        }
+    }
 
     pub fn update_color(&mut self, color: [f32; 4]) {
         self.color = Vec4::from_array(color);

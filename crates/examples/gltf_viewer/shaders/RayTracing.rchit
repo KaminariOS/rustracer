@@ -8,6 +8,7 @@
 #include "lib/PBR.glsl"
 #include "lib/UniformBufferObject.glsl"
 
+layout(binding = AS_BIND, set = 0) uniform accelerationStructureEXT Scene;
 layout(binding = VERTEX_BIND, set = 0) readonly buffer Vertices { Vertex v[]; } vertices;
 layout(binding = INDEX_BIND, set = 0) readonly buffer Indices { uint i[]; } indices;
 layout(binding = GEO_BIND, set = 0) readonly buffer PrimInfos { PrimInfo p[]; } primInfos;
@@ -22,8 +23,37 @@ layout(binding = UNIFORM_BIND, set = 0) readonly uniform UniformBufferObjectStru
 hitAttributeEXT vec2 HitAttributes;
 rayPayloadInEXT RayPayload Ray;
 
+layout(location = 0) rayPayloadEXT RayPayload shadowRay;
+
 vec3 normal_transform(vec3 normal) {
 	return normalize(vec3(gl_ObjectToWorldEXT * vec4(normal, 0.)));
+}
+
+
+// Casts a shadow ray and returns true if light is unoccluded
+// Note that we use dedicated hit group with simpler shaders for shadow rays
+bool castShadowRay(vec3 hitPosition, vec3 surfaceNormal, vec3 directionToLight, float tMax)
+{
+//	vec3 origin = offset_ray(hitPosition, surfaceNormal);
+	vec3 origin = hitPosition;
+	vec3 direction = directionToLight;
+
+	//    ShadowHitInfo payload;
+	//    payload.hasHit = true; //< Initialize hit flag to true, it will be set to false on a miss
+	float tMin = 0.1;
+	shadowRay.shadowRay = true;
+	uint flags = gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsSkipClosestHitShaderEXT;
+	if (ubo.fully_opaque) {
+		flags |= gl_RayFlagsOpaqueEXT;
+	}
+	// Trace the ray
+	traceRayEXT(
+	Scene,  flags, 0xff,
+//	SHADOW_RAY_INDEX
+	0
+	/*sbtRecordOffset*/, 0 /*sbtRecordStride*/, 0 /*missIndex*/,
+	origin.xyz, tMin, direction.xyz, tMax, 0 /*payload*/);
+	return shadowRay.t < 0;
 }
 
 // Samples a random light from the pool of all lights using simplest uniform distirbution
@@ -57,16 +87,16 @@ bool sampleLightRIS(inout RngStateType rngState, vec3 hitPosition, vec3 surfaceN
 		if (sampleLightUniform(rngState, hitPosition, surfaceNormal, candidate, candidateWeight)) {
 
 			vec3	lightVector = candidate.transform.xyz - hitPosition;
-			float lightDistance = length(lightVector);;
+			float lightDistance = length(lightVector);
 
 			// Ignore backfacing light
 			vec3 L = normalize(lightVector);
 			if (dot(surfaceNormal, L) < 0.00001f) continue;
 
-			#if SHADOW_RAY_IN_RIS
-			// Casting a shadow ray for all candidates here is expensive, but can significantly decrease noise
-			if (!castShadowRay(hitPosition, surfaceNormal, L, lightDistance)) continue;
-			#endif
+//			#if SHADOW_RAY_IN_RIS
+//			// Casting a shadow ray for all candidates here is expensive, but can significantly decrease noise
+//			if (!castShadowRay(hitPosition, surfaceNormal, L, lightDistance)) continue;
+//			#endif
 
 			float candidatePdfG = luminance(getLightIntensityAtPoint(candidate, length(lightVector)));
 			const float candidateRISWeight = candidatePdfG * candidateWeight;
@@ -87,29 +117,8 @@ bool sampleLightRIS(inout RngStateType rngState, vec3 hitPosition, vec3 surfaceN
 	}
 }
 
-// https://github.com/KhronosGroup/glTF/issues/1252
 void getNormal(inout vec3 normal_mix, vec4 tangent_mix, vec3 tex_normal) {
-//	if (
-//	length(tangent0) == 0 || tangent0.w == 0 ||
-//	length(tangent1) == 0 || tangent1.w == 0 ||
-//	length(tangent2) == 0 || tangent2.w == 0
-//	) {
-//		return;
-//	}
-//	vec3 tangent = Mix(
-//		cross(n0, tangent0.xyz) * tangent0.w,
-//		cross(n1, tangent1.xyz) * tangent1.w,
-//		cross(n2, tangent2.xyz) * tangent2.w,
-//		bary
-//	);
 	vec3 tangent = normalize((tangent_mix.xyz - dot(tangent_mix.xyz, normal_mix) * normal_mix) );
-//	vec3 tangent = normalize(tangent_mix.xyz * tangent_mix.w);
-//	if (length(tex_normal) == 0) {
-//		return;
-//	}
-//	if (tex_normal.z <= 0) {
-//		tex_normal.z = sqrt(1 - tex_normal.x * tex_normal.x - tex_normal.y * tex_normal.y);
-//	}
 	vec3 b = normalize(cross(normal_mix, tangent) * tangent_mix.w);
 	mat3 tbn = mat3(tangent, b, normal_mix);
 	normal_mix = tbn * tex_normal;
@@ -160,21 +169,6 @@ void main()
 	vec3 color = color4.rgb;
 	Ray.needScatter = false;
 	Ray.hitPoint = pos;
-	uint mapping = ubo.mapping;
-	if (mat.unlit) {
-		mapping = ALBEDO;
-	}
-	switch (mapping) {
-		case ALBEDO:
-			Ray.emittance = color;
-			return;
-		case TRIANGLE:
-			Ray.emittance = bary_to_color(HitAttributes);
-			return;
-		case INSTANCE:
-			Ray.emittance = hashAndColor(gl_InstanceID);
-			return;
-	}
 
 	vec3 normal = mix_vertex.normal;
 	TextureInfo normal_texture = mat.normal_texture;
@@ -194,6 +188,8 @@ void main()
 	const vec3 outwardNormal = dot(geo_normal, normal) < 0.? -normal: normal;
 
 	origin = offset_ray(origin, geo_normal);
+
+
 	vec3 emittance = mat.emissive_factor.rgb;
 	if (mat.emissive_texture.index >= 0.) {
 		emittance *= texture(textures[mat.emissive_texture.index],
@@ -210,6 +206,29 @@ void main()
 		vec4 metallic_roughness = texture(textures[mr_index], getUV(uv0And1, mr_tex.coord));
 		roughness *= metallic_roughness.g;
 		metallic *= metallic_roughness.b;
+	}
+//	metallic = 1.;
+//	roughness = 0.;
+	uint mapping = ubo.mapping;
+	if (mat.unlit) {
+		mapping = ALBEDO;
+	}
+	switch (mapping) {
+		case ALBEDO:
+		Ray.emittance = color;
+		return;
+		case TRIANGLE:
+		Ray.emittance = bary_to_color(HitAttributes);
+		return;
+		case INSTANCE:
+		Ray.emittance = hashAndColor(gl_InstanceID);
+		return;
+		case METALLIC:
+		Ray.emittance = vec3(metallic);
+		return;
+		case ROUGHNESS:
+		Ray.emittance = vec3(roughness);
+		return;
 	}
 
 	const TransmissionInfo trans_info = mat.transmission_info;
@@ -250,7 +269,6 @@ void main()
 	uint brdfType;
 
 	vec3 throughput = color;
-
 	MaterialBrdf matbrdf;
 	matbrdf.baseColor = color;
 	matbrdf.metallic = metallic;
@@ -267,6 +285,23 @@ void main()
 	matbrdf.volume = volume_info.exists;
 	float displacement = length(origin - last_hit);
 	matbrdf.t_diff = displacement;
+
+	if (lights.length() == 0) {
+
+	}
+	Light light;
+	float light_weight;
+	if (sampleLightRIS(rngState, origin, geo_normal, light, light_weight)) {
+//		zero_raypayload();
+//		return;
+		vec3 light_vec = light.transform.xyz - origin;
+		float light_distance = length(light_vec);
+		light_vec = normalize(light_vec);
+		if (castShadowRay(origin, geo_normal, light_vec, light_distance)) {
+			Ray.emittance += evalCombinedBRDF(outwardNormal, light_vec, V, matbrdf) *
+			light_weight * light.intensity * light.color.rgb;
+		}
+	}
 
 	if (metallic == 1.0 && roughness == 0.0) {
 		brdfType = SPECULAR_TYPE;

@@ -59,7 +59,9 @@ impl Doc {
         };
         self.traverse_root_nodes(&mut f);
         if plights.is_empty() {
-            plights.push(Default::default());
+            for _ in 0..10 {
+                plights.push(LightRaw::random_light());
+            }
         }
 
         if dlights.is_empty() {

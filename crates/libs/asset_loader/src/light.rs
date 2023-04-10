@@ -93,7 +93,7 @@ impl LightRaw {
             rng.gen::<f32>(),
         ]);
         Self {
-            color: get_random(),
+            color: Vec4::ONE,
             transform: (get_random() - 0.5) * 2. * distance,
             kind: LightType::POINT as _,
             range: f32::INFINITY,

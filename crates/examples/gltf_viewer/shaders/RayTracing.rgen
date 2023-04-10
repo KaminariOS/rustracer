@@ -21,23 +21,6 @@ layout(binding = UNIFORM_BIND, set = 0) readonly uniform UniformBufferObjectStru
 layout(location = 0) rayPayloadEXT RayPayload Ray;
 
 
-
-
-RayInfo pinHoleRay(const vec2 pixelOffset) {
-    vec2 size = gl_LaunchSizeEXT.xy;
-
-    vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
-    vec2 pixel = pixelCenter + pixelOffset;
-    const vec2 uv = (pixel / gl_LaunchSizeEXT.xy) * 2.0 - 1.0;
-    float tanHalfAngle = tan(ubo.fovAngle  / 2.);
-    float aspectScale = size.x;
-    vec3 direction = normalize(
-//        vec3(vec2(pixel.x, -pixel.y) * tanHalfAngle / aspectScale, -1.)
-        vec3(uv, 1.)
-    );
-    return RayInfo(vec3(0.), tMin, direction, tMax);
-}
-
 void main()
 {
     const uint64_t clock = ubo.mapping == HEAT ? clockARB() : 0;
@@ -46,14 +29,14 @@ void main()
     // - pixel: we want the same random seed for each pixel to get a homogeneous anti-aliasing.
     // - ray: we want a noisy random seed, different for each pixel.
     uint pixelRandomSeed = ubo.RandomSeed;
-    Ray.RandomSeed = InitRandomSeed(InitRandomSeed(gl_LaunchIDEXT.x, gl_LaunchIDEXT.y), uint(pixelRandomSeed));
+    Ray.RandomSeed = InitRandomSeed(InitRandomSeed(gl_LaunchIDEXT.x, gl_LaunchIDEXT.y), uint(clockARB()));
     RngStateType rngState = initRNG(uvec2(gl_LaunchIDEXT), uvec2(gl_LaunchSizeEXT.xy), uint(pixelRandomSeed));
 //    switch (ubo.debug) {
 //        case 0:
 //            Ray.rngState = initRNG(uvec2(gl_LaunchIDEXT), uvec2(gl_LaunchSizeEXT.xy), uint(clockARB()));
 //            break;
 //        case 1:
-            Ray.rngState = initRNG(uvec2(gl_LaunchIDEXT), uvec2(gl_LaunchSizeEXT.xy), uint(ubo.frame_count));
+    Ray.rngState = initRNG(uvec2(gl_LaunchIDEXT), uvec2(gl_LaunchSizeEXT.xy), uint(clockARB()));
 //            break;
 //        case 2:
 //            Ray.rngState = initRNG(uvec2(gl_LaunchIDEXT), uvec2(gl_LaunchSizeEXT.xy), uint(ubo.TotalNumberOfSamples));

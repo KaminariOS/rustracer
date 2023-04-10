@@ -210,12 +210,24 @@ void main()
 		roughness *= metallic_roughness.g;
 		metallic *= metallic_roughness.b;
 	}
+
+	const TransmissionInfo trans_info = mat.transmission_info;
+	const TextureInfo trans_tex = trans_info.transmission_texture;
+	float transmission_factor = 0.;
+	if (trans_info.exist) {
+		transmission_factor = trans_info.transmission_factor;
+		if (trans_tex.index >= 0) {
+			transmission_factor *= texture(textures[trans_tex.index], getUV(uv0And1, trans_tex.coord)).r;
+			//			transmission_factor = clamp(transmission_factor, 0.0, 0.7) ;
+		}
+	}
 //	metallic = 1.;
 //	roughness = 0.;
 	uint mapping = ubo.mapping;
 	if (mat.unlit) {
 		mapping = ALBEDO;
 	}
+	// Should move the debug code to another rchit laster
 	switch (mapping) {
 		case ALBEDO:
 		Ray.emittance = color;
@@ -232,18 +244,18 @@ void main()
 		case ROUGHNESS:
 		Ray.emittance = vec3(roughness);
 		return;
+		case NORMAL:
+		Ray.emittance = (outwardNormal + 1) / 2;
+		return;
+		case TANGENT:
+		Ray.emittance = (normalize(mix_vertex.tangent.xyz) + 1) / 2;
+		return;
+		case TRANSMISSION:
+		Ray.emittance = vec3(transmission_factor);
+		return;
 	}
 
-	const TransmissionInfo trans_info = mat.transmission_info;
-	const TextureInfo trans_tex = trans_info.transmission_texture;
-	float transmission_factor = 0.;
-	if (trans_info.exist) {
-		transmission_factor = trans_info.transmission_factor;
-		if (trans_tex.index >= 0) {
-			transmission_factor *= texture(textures[trans_tex.index], getUV(uv0And1, trans_tex.coord)).r;
-//			transmission_factor = clamp(transmission_factor, 0.0, 0.7) ;
-		}
-	}
+
 
 	SpecularInfo spec_info = mat.specular_info;
 	float spec_factor = spec_info.specular_factor;
@@ -384,6 +396,7 @@ void main()
 //	else {
 //		Ray.emittance = vec3(0.);
 //	}
+
 	if (ubo.debug == 1) {
 		if (matbrdf.transmission > 0.) {
 

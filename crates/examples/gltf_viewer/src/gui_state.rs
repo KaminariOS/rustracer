@@ -171,6 +171,9 @@ pub enum Mapping {
     ALBEDO = 5,
     METALLIC = 6,
     ROUGHNESS = 7,
+    NORMAL = 8,
+    TANGENT = 9,
+    TRANSMISSION = 10,
 }
 
 impl Gui {

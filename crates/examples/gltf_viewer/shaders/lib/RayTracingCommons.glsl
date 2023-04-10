@@ -133,5 +133,8 @@ const uint DISTANCE = 4;
 const uint ALBEDO = 5;
 const uint METALLIC = 6;
 const uint ROUGHNESS = 7;
+const uint NORMAL = 8;
+const uint TANGENT = 9;
+const uint TRANSMISSION = 10;
 
 

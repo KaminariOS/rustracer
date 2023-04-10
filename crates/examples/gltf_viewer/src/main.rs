@@ -173,6 +173,7 @@ impl App for GltfViewer {
             frame_count: frame_stats.frame_count,
             debug: gui.debug,
             fully_opaque: self.doc.geo_builder.fully_opaque().into(),
+            exposure: gui.exposure,
         };
 
         self.ubo_buffer.copy_data_to_buffer(&[ubo])?;

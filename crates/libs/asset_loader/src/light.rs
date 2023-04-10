@@ -97,7 +97,7 @@ impl LightRaw {
             transform: (get_random() - 0.5) * 2. * distance,
             kind: LightType::POINT as _,
             range: f32::INFINITY,
-            intensity: 2.0,
+            intensity: 0.0,
             _padding: 0,
         }
     }
@@ -119,7 +119,7 @@ impl Default for LightRaw {
             transform: Vec4::ONE,
             kind: LightType::DIRECTIONAL as _,
             range: f32::INFINITY,
-            intensity: 1.,
+            intensity: 0.,
             _padding: 0,
         }
     }

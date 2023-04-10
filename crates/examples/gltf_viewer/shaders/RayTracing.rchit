@@ -266,7 +266,7 @@ void main()
 	uint seed = Ray.RandomSeed;
 	RngStateType rngState = Ray.rngState;
 
-	Ray.emittance = emittance * 1.0;
+	Ray.emittance = emittance * ubo.exposure;
 	Ray.needScatter = false;
 	Ray.hitValue = vec3(1.);
 	uint brdfType;

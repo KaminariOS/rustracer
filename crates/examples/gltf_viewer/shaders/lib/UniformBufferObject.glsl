@@ -25,4 +25,5 @@ struct UniformBufferObject
 	uint debug;
 
 	bool fully_opaque;
+	float exposure;
 };

@@ -29,6 +29,7 @@ pub struct Gui {
     pub point_light_intensity: f32,
     pub orthographic_fov_dis: f32,
     pub point_light_radius: f32,
+    pub exposure: f32,
 }
 
 #[derive(IntoStaticStr, AsRefStr, EnumIter, PartialEq, Clone, Copy, Debug, Default)]
@@ -38,6 +39,7 @@ pub enum Scene {
     // UnlitTest,
     // VertexColorTest,
     SpecularTest,
+    #[default]
     CornellBoxLucy,
     Cornell,
     ABeautifulGame,
@@ -48,7 +50,6 @@ pub enum Scene {
     EmissiveStrengthTest,
     LightsPunctualLamp,
     BoomBoxWithAxes,
-    #[default]
     Triss,
     EVA,
     Anakin,
@@ -197,6 +198,7 @@ impl app::Gui for Gui {
             point_light_intensity: 2.0,
             point_light_radius: 10.0,
             orthographic_fov_dis: 0.0,
+            exposure: 1.0,
         })
     }
 
@@ -231,6 +233,7 @@ impl app::Gui for Gui {
                 ui.slider("Apertures", 0., 1., &mut self.aperture);
                 ui.slider("Focus", 0.1, 20., &mut self.focus_distance);
                 ui.slider("Orthographic", 0., 100., &mut self.orthographic_fov_dis);
+                ui.slider("Exposure", 0.1, 10., &mut self.exposure);
 
                 let mut scenes: Vec<_> = Scene::iter().collect();
                 scenes.sort_by_key(|k| k.as_ref().to_string());

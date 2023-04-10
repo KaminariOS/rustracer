@@ -26,5 +26,6 @@ pub struct UniformBufferObject {
     pub frame_count: u32,
     pub debug: u32,
 
-    pub fully_opaque: bool,
+    pub fully_opaque: u32,
+    pub exposure: f32,
 }

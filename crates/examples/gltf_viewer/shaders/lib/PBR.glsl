@@ -120,8 +120,8 @@ float Schlick(const float cosine, const float refractionIndex)
 #define specularSampleWeight specularSampleWeightGGXVNDF
 #define specularPdf sampleGGXVNDFReflectionPdf
 #else
-#define specularSampleWeight specularSampleWeightBeckmannWalter
-#define specularPdf sampleBeckmannWalterReflectionPdf
+//#define specularSampleWeight specularSampleWeightBeckmannWalter
+//#define specularPdf sampleBeckmannWalterReflectionPdf
 #endif
 
 #define DIFFUSE_BRDF FROSTBITE
@@ -561,7 +561,7 @@ BrdfData prepareBRDFData(vec3 N, vec3 L, vec3 V, MaterialBrdf material) {
 	data.alphaSquared = data.alpha * data.alpha;
 
 	// Pre-calculate some more BRDF terms
-	data.F = evalFresnel(data.specularF0, shadowedF90(material.F90), data.LdotH);
+	data.F = evalFresnel(data.specularF0, shadowedF90(material.F90), data.VdotH);
 
 	return data;
 }
@@ -621,7 +621,6 @@ vec3 sampleSpecularMicrofacet(vec3 Vlocal, float alpha, float alphaSquared, vec3
 // Samples a reflection ray from the rough surface using selected microfacet distribution and sampling method
 // Resulting weight includes multiplication by cosine (NdotL) term
 vec3 sampleSpecularMicrofacetRefract(vec3 Vlocal, float alpha, float alphaSquared, vec3 specularF0, vec2 u, inout vec3 weight, vec3 specularF90, MaterialBrdf material) {
-
 	// Sample a microfacet normal (H) in local space
 	vec3 Hlocal;
 	if (alpha == 0.0f) {
@@ -672,7 +671,7 @@ inout float volume_dis
 		prepareBRDFData(Nlocal, rayDirectionLocal, Vlocal, material);
 
 		// Function 'diffuseTerm' is predivided by PDF of sampling the cosine weighted hemisphere
-		sampleWeight = data.diffuseReflectance * diffuseTerm(data);
+		sampleWeight = (1 - material.specular_factor * data.F) * data.diffuseReflectance * diffuseTerm(data);
 //		sampleWeight *= (1. - material.transmission);
 		//        sampleWeight = data.diffuseReflectance * lambertian(data);
 
@@ -687,7 +686,7 @@ inout float volume_dis
 	}
 	else if (brdfType == SPECULAR_TYPE) {
 		const BrdfData data = prepareBRDFData(Nlocal, vec3(0.0f, 0.0f, 1.0f) /* unused L vector */, Vlocal, material);
-		rayDirectionLocal = sampleSpecular(Vlocal, data.alpha, data.alphaSquared, data.specularF0, u, sampleWeight, data.specularF90);
+		rayDirectionLocal = material.specular_factor * sampleSpecular(Vlocal, data.alpha, data.alphaSquared, data.specularF0, u, sampleWeight, data.specularF90);
 //		rayDirectionLocal = reflect(-Vlocal, Nlocal);
 //		vec3 F = evalFresnel(material.F0, shadowedF90(material.F90), dot(rayDirectionLocal, Nlocal));
 //		sampleWeight = F;
@@ -705,9 +704,13 @@ inout float volume_dis
 			rayDirectionLocal = -Vlocal;
 		}
 		const BrdfData data = prepareBRDFData(Nlocal, rayDirectionLocal, Vlocal, material);
-//		sampleWeight = specular_btdf(data);
-		sampleWeight = data.diffuseReflectance * material.transmission;
-//		sampleWeight *= (1. - material.specular_factor);
+		float NdotL = dot(geometryNormal, rayDirection) ;
+		sampleWeight = max(vec3(0),
+		data.diffuseReflectance
+		* material.transmission
+//		* specular_btdf(data)
+		)
+		;
 		if (!material.frontFace && material.volume) {
 //			float dis = material.t_diff;
 			float dis = volume_dis;

@@ -248,7 +248,7 @@ void main()
 		Ray.emittance = (outwardNormal + 1) / 2;
 		return;
 		case TANGENT:
-		Ray.emittance = (normalize(mix_vertex.tangent.xyz) + 1) / 2;
+		Ray.emittance = (normal_transform(mix_vertex.tangent.xyz) + 1) / 2;
 		return;
 		case TRANSMISSION:
 		Ray.emittance = vec3(transmission_factor);

@@ -26,8 +26,9 @@ pub struct Gui {
     pub debug: u32,
     pub sun: LightRaw,
     light_angle: [f32; 2],
-
+    pub point_light_intensity: f32,
     pub orthographic_fov_dis: f32,
+    pub point_light_radius: f32,
 }
 
 #[derive(IntoStaticStr, AsRefStr, EnumIter, PartialEq, Clone, Copy, Debug, Default)]
@@ -39,10 +40,10 @@ pub enum Scene {
     SpecularTest,
     CornellBoxLucy,
     Cornell,
+    #[default]
     ABeautifulGame,
     Sponza,
     Type59,
-    #[default]
     DamagedHelmet,
     MosquitoInAmber,
     EmissiveStrengthTest,
@@ -88,6 +89,7 @@ pub enum Scene {
     ToyCar,
     AttenuationTest,
     Earth,
+
     // MultiUVTest,
 
     FerrisCrab,LA_Night,WinterForest,Panocube
@@ -192,13 +194,15 @@ impl app::Gui for Gui {
             sun: LightRaw::default(),
             light_angle: [1.; 2],
 
+            point_light_intensity: 2.0,
+            point_light_radius: 10.0,
             orthographic_fov_dis: 0.0,
         })
     }
 
     fn build(&mut self, ui: &Ui) {
         ui.window("Vulkan RT")
-            .size([400.0, 400.0], Condition::FirstUseEver)
+            .size([400.0, 600.0], Condition::FirstUseEver)
             .bg_alpha(0.5)
             .build(|| {
                 // RT controls
@@ -323,12 +327,14 @@ impl app::Gui for Gui {
                 ui.slider("light phi", 0., 2. * PI, &mut self.light_angle[1]);
                 self.sun.update_angles(self.light_angle);
 
-                let [r, g, b, _] = self.sun.color.to_array();
-                let mut color = [r, g, b];
-                ui.color_picker3_config("color", &mut color)
-                    .display_rgb(true)
-                    .build();
-                self.sun.update_color([color[0], color[1], color[2], 0.]);
+                ui.slider("Point light intensity", 0., 2. , &mut self.point_light_intensity);
+                ui.slider("Point light distance", 1., 100. , &mut self.point_light_radius);
+                // let [r, g, b, _] = self.sun.color.to_array();
+                // let mut color = [r, g, b];
+                // ui.color_picker3_config("color", &mut color)
+                //     .display_rgb(true)
+                //     .build();
+                // self.sun.update_color([color[0], color[1], color[2], 0.]);
 
             });
     }

@@ -1,4 +1,4 @@
-use glam::{Mat4, Vec4};
+use glam::{Mat4, Vec4, Vec4Swizzles};
 use gltf::khr_lights_punctual::Kind;
 use log::{error, info};
 use crate::{a3toa4, get_name, Name};
@@ -83,7 +83,7 @@ impl LightRaw {
         self.transform[2] = -theta.sin() * phi.cos();
     }
     
-    pub fn random_light() -> Self {
+    pub fn random_light(distance: f32) -> Self {
         use rand::Rng;
         let mut rng = rand::thread_rng();
         let mut get_random = || Vec4::from_array([
@@ -94,12 +94,17 @@ impl LightRaw {
         ]);
         Self {
             color: get_random(),
-            transform: (get_random() * 2. - 1.) * 50.,
+            transform: (get_random() - 0.5) * 2. * distance,
             kind: LightType::POINT as _,
             range: f32::INFINITY,
             intensity: 2.0,
             _padding: 0,
         }
+    }
+
+    pub fn update_distance(&mut self, dis: f32) {
+        let new_vec = self.transform.xyz().normalize() * dis;
+        self.transform = Vec4::from_array(a3toa4(&new_vec.to_array(), 1.));
     }
 
     pub fn update_color(&mut self, color: [f32; 4]) {

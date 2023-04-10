@@ -42,6 +42,7 @@ bool castShadowRay(vec3 hitPosition, vec3 surfaceNormal, vec3 directionToLight, 
 	//    payload.hasHit = true; //< Initialize hit flag to true, it will be set to false on a miss
 	float tMin = 0.1;
 	shadowRay.shadowRay = true;
+	shadowRay.t = 1.;
 	uint flags = gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsSkipClosestHitShaderEXT;
 	if (ubo.fully_opaque) {
 		flags |= gl_RayFlagsOpaqueEXT;
@@ -81,7 +82,9 @@ bool sampleLightRIS(inout RngStateType rngState, vec3 hitPosition, vec3 surfaceN
 	float samplePdfG = 0.0f;
 	uint candidates_num = min(light_num, RIS_CANDIDATES_LIGHTS);
 	for (int i = 0; i < candidates_num; i++) {
-
+		if (luminance(lights[i].color.rgb * lights[i].intensity) < 0.1) {
+			continue;
+		}
 		float candidateWeight;
 		Light candidate;
 		if (sampleLightUniform(rngState, hitPosition, surfaceNormal, candidate, candidateWeight)) {
@@ -286,9 +289,6 @@ void main()
 	float displacement = length(origin - last_hit);
 	matbrdf.t_diff = displacement;
 
-	if (lights.length() == 0) {
-
-	}
 	Light light;
 	float light_weight;
 	if (sampleLightRIS(rngState, origin, geo_normal, light, light_weight)) {

@@ -18,6 +18,7 @@ use crate::gui_state::{Scene, Skybox};
 use asset_loader::acceleration_structures::{BlasInput, create_as, create_top_as, TopAS};
 use asset_loader::globals::{create_global, Buffers, VkGlobal, SkyboxResource};
 use asset_loader::Doc;
+use asset_loader::light::LightRaw;
 use desc_sets::*;
 use gui_state::Gui;
 use pipeline_res::*;
@@ -268,6 +269,16 @@ impl App for GltfViewer {
             if old_state.sun != gui_state.sun {
                 self.globals.d_lights[0] = gui_state.sun;
                 self.buffers.dlights_buffer.copy_data_to_buffer(self.globals.d_lights.as_slice()).unwrap();
+            }
+            if old_state.point_light_intensity != gui_state.point_light_intensity ||
+                gui_state.point_light_radius != old_state.point_light_radius
+            {
+                self.globals.p_lights.iter_mut().for_each(|x| {
+                    let mut new_light = LightRaw::random_light(gui_state.point_light_radius);
+                    new_light.intensity = gui_state.point_light_intensity;
+                    *x = new_light;
+                });
+                self.buffers.plights_buffer.copy_data_to_buffer(self.globals.p_lights.as_slice()).unwrap();
             }
         }
 

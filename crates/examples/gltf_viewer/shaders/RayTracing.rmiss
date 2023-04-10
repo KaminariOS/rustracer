@@ -21,7 +21,7 @@ void main()
 	if (Ray.t != 0) {
 		for(int i = 0; i < lights.length(); i++) {
 			Light li = lights[i];
-			float cos = dot(normalize(li.transform.xyz), gl_WorldRayDirectionEXT);
+			float cos = dot(normalize(li.transform.xyz), normalize(gl_WorldRayDirectionEXT));
 			if (cos < 0.) {
 				light_acc += -cos * li.color.xyz * li.intensity;
 			}

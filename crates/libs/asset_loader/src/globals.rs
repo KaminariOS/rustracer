@@ -84,12 +84,12 @@ impl Buffers {
         )?;
         dlights_buffer.copy_data_to_buffer(globals.d_lights.as_slice())?;
 
-        let plights_buffer = create_gpu_only_buffer_from_data(
-            context,
+        let plights_buffer = context.create_buffer(
             vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
                 | vk::BufferUsageFlags::STORAGE_BUFFER,
-            &globals.p_lights,
-        )?;
+            MemoryLocation::CpuToGpu,
+            size_of_val(globals.p_lights.as_slice()) as _)?;
+        plights_buffer.copy_data_to_buffer(globals.p_lights.as_slice())?;
         info!("Buffers: {}s", now.elapsed().as_secs());
         // println!("v_b: {:#02x}, i_b: {:#02x}, g_b: {:#02x}, m_b: {:#02x}", vertex_buffer.as_raw(), index_buffer.as_raw(), geo_buffer.as_raw(), material_buffer.as_raw());
         // let src_stage = vk::PipelineStageFlags2::TRANSFER | vk::PipelineStageFlags2::ALL_COMMANDS;
@@ -156,7 +156,7 @@ pub struct VkGlobal {
     pub prim_info: Vec<PrimInfo>,
     materials: Vec<MaterialRaw>,
     pub d_lights: Vec<LightRaw>,
-    p_lights: Vec<LightRaw>,
+    pub p_lights: Vec<LightRaw>,
     pub skybox: SkyboxResource
 }
 

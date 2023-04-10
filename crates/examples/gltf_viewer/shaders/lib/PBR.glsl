@@ -658,6 +658,9 @@ inout vec3 sampleWeight,
 inout float volume_dis
 ) {
 	if (dot(geometryNormal, V) < 0.0f) return false;
+	if (dot(shadingNormal, V) <= 0.) {
+		shadingNormal = geometryNormal;
+	}
 	vec4 qRotationToZ = getRotationToZAxis(shadingNormal);
 	vec3 Vlocal = rotatePoint(qRotationToZ, V);
 	const vec3 Nlocal = vec3(0.0f, 0.0f, 1.0f);

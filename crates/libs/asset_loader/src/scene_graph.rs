@@ -59,8 +59,8 @@ impl Doc {
         };
         self.traverse_root_nodes(&mut f);
         if plights.is_empty() {
-            for _ in 0..10 {
-                plights.push(LightRaw::random_light());
+            for _ in 0..5 {
+                plights.push(LightRaw::random_light(10.));
             }
         }
 

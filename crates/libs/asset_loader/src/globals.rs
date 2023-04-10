@@ -8,7 +8,7 @@ use std::time::Instant;
 use log::info;
 use vulkan::ash::vk;
 use vulkan::gpu_allocator::MemoryLocation;
-use vulkan::utils::create_gpu_only_buffer_from_data;
+use vulkan::utils::{create_gpu_only_as_buffer_from_data, create_gpu_only_buffer_from_data};
 use vulkan::{Buffer, Context, DescriptorSet, Image, ImageBarrier, ImageView, Sampler, WriteDescriptorSet, WriteDescriptorSetKind};
 use vulkan::ash::vk::SamplerAddressMode;
 use crate::cubumap::SkyBox;
@@ -39,7 +39,7 @@ impl Buffers {
         let vertices = geo_builder.vertices.as_slice();
         let indices = geo_builder.indices.as_slice();
         let now = Instant::now();
-        let vertex_buffer = create_gpu_only_buffer_from_data(
+        let vertex_buffer = create_gpu_only_as_buffer_from_data(
             context,
             vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
                 | vk::BufferUsageFlags::ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_KHR
@@ -47,7 +47,7 @@ impl Buffers {
             vertices,
         )?;
 
-        let index_buffer = create_gpu_only_buffer_from_data(
+        let index_buffer = create_gpu_only_as_buffer_from_data(
             context,
             vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
                 | vk::BufferUsageFlags::ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_KHR
@@ -92,8 +92,8 @@ impl Buffers {
         plights_buffer.copy_data_to_buffer(globals.p_lights.as_slice())?;
         info!("Buffers: {}s", now.elapsed().as_secs());
         // println!("v_b: {:#02x}, i_b: {:#02x}, g_b: {:#02x}, m_b: {:#02x}", vertex_buffer.as_raw(), index_buffer.as_raw(), geo_buffer.as_raw(), material_buffer.as_raw());
-        // let src_stage = vk::PipelineStageFlags2::TRANSFER | vk::PipelineStageFlags2::ALL_COMMANDS;
-        // let ray_tracing_dst = vk::PipelineStageFlags2::ALL_COMMANDS;
+        let src_stage = vk::PipelineStageFlags2::TRANSFER | vk::PipelineStageFlags2::ALL_COMMANDS;
+        let ray_tracing_dst = vk::PipelineStageFlags2::ALL_COMMANDS;
         // let as_build = vk::PipelineStageFlags2::ALL_COMMANDS;
         // let src_access = vk::AccessFlags2::TRANSFER_WRITE;
         // let des_access= vk::AccessFlags2::MEMORY_READ | vk::AccessFlags2::HOST_WRITE | vk::AccessFlags2::SHADER_STORAGE_READ | vk::AccessFlags2::HOST_READ;

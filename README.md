@@ -7,35 +7,34 @@ I stole the PBR shaders from the [referencePT](https://github.com/boksajak/refer
 ## Features
 * [x] Loading arbitrary glTF 2.0 models
   * [*] Full node hierarchy
-    * [] Camera
-    * [] Mesh
+    * [ ] Camera
+    * [ ] Mesh
       * [x] Geometry normal generation
-      * 
       * [x] Two tex coords
       * [x] Mikktspace tangent generation
     * 
   * [x] Full PBR material support
     * [x] Metallic-Roughness workflow
-    * [] Specular-Glossiness workflow
+    * [ ] Specular-Glossiness workflow
   * [x] Animations
     * [x] Articulated (translate, rotate, scale)
-    * [] Skinned
-    * [] Morph targets
+    * [ ] Skinned
+    * [ ] Morph targets
   * [x] Extensions
       * [x] "KHR_materials_ior",
-      *[] "KHR_materials_pbrSpecularGlossiness",
+      *[ ] "KHR_materials_pbrSpecularGlossiness",
       *[x] "KHR_materials_transmission",
-        * [] importance sampling and BTDF 
-      *[] "KHR_materials_variants",
-        * [] GUI support
+        * [ ] importance sampling and BTDF 
+      *[ ] "KHR_materials_variants",
+        * [ ] GUI support
       *[x] "KHR_materials_volume",
-      * [] "KHR_materials_specular",
-      *[] "KHR_texture_transform",
+      * [ ] "KHR_materials_specular",
+      *[ ] "KHR_texture_transform",
       *[x] "KHR_materials_unlit",
       *[x] "KHR_lights_punctual",
   *[x] Performance
     * [x] Rayon-accelerated texture loading
-    * [] Async acceleration structure building 
+    * [ ] Async acceleration structure building 
     
 ## Building
 ### Prerequisites

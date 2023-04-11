@@ -145,7 +145,7 @@ impl App for GltfViewer {
 
         let proj = base.camera.projection_matrix();
         let inverted_proj = proj.try_inverse().expect("Should be invertible");
-        let number_of_samples = gui.get_number_of_samples(self.total_number_of_samples);
+        let number_of_samples = gui.get_number_of_samples(self.total_number_of_samples, frame_stats.frame_time);
         // println!("nums {} total: {}", number_of_samples, self.total_number_of_samples);
         if !gui.acc() {
             self.total_number_of_samples = 0;

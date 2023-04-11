@@ -4,13 +4,18 @@ use gui::imgui::{Condition, Ui};
 use strum::IntoEnumIterator;
 use strum_macros::{AsRefStr, EnumIter, IntoStaticStr};
 use std::convert::AsRef;
+use std::time::Duration;
 use asset_loader::light::LightRaw;
+
+const FPS: f32 = 40.;
+const BUDGET: f32 = 1. / FPS;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Gui {
     pub aperture: f32,
     pub focus_distance: f32,
     pub number_of_samples: u32,
+    pub dynamic_samples: bool,
     pub number_of_bounces: u32,
     pub ray_tracing: bool,
     pub acc: bool,
@@ -186,12 +191,21 @@ impl Gui {
         self.mapping != Mapping::RENDER && self.mapping != Mapping::HEAT
     }
 
-    pub fn get_number_of_samples(&self, total_number_of_samples: u32) -> u32 {
+    pub fn get_number_of_samples(&mut self, total_number_of_samples: u32, frame_time: Duration) -> u32 {
+        if self.dynamic_samples {
+
+            if frame_time.as_secs_f32() >= BUDGET && self.number_of_samples > 1 {
+                self.number_of_samples -= 1;
+            } else {
+                self.number_of_samples += 1;
+            }
+        }
         if self.max_number_of_samples <= total_number_of_samples {
             0
         } else {
             (self.max_number_of_samples - total_number_of_samples).min(self.number_of_samples)
         }
+
     }
 
     pub fn acc(&self) -> bool {
@@ -213,6 +227,7 @@ impl app::Gui for Gui {
             aperture: 0.0,
             focus_distance: 10.0,
             number_of_samples: 3,
+            dynamic_samples: false,
             number_of_bounces: 5,
             ray_tracing: true,
             acc: true,
@@ -250,6 +265,9 @@ impl app::Gui for Gui {
                 ui.input_int("Number of samples", &mut number_of_samples)
                     .build();
                 self.number_of_samples = number_of_samples.abs() as _;
+                if ui.radio_button_bool("Dynamic sampling(target: 40fps)", self.dynamic_samples) {
+                    self.dynamic_samples = !self.dynamic_samples;
+                }
 
                 let mut max_number_of_samples = self.max_number_of_samples as _;
                 ui.input_int("Max Number of samples", &mut max_number_of_samples)

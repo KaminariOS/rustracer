@@ -135,7 +135,6 @@ void main()
 
     radiance = accumulatedColor / ubo.TotalNumberOfSamples;
 
-    // Apply raytracing-in-one-weekend gamma correction.
     uint tone_mapping_mode = ubo.tone_mapping_mode;
     vec3 color;
     if (tone_mapping_mode == TONE_MAP_MODE_DEFAULT) {

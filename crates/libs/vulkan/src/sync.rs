@@ -64,6 +64,13 @@ impl Fence {
 
         Ok(())
     }
+
+    pub fn null(device: &Arc<Device>) -> Self {
+        Self {
+            device: device.clone(),
+            inner: vk::Fence::null(),
+        }
+    }
 }
 
 impl Context {

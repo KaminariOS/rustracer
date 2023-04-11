@@ -11,7 +11,7 @@ use vulkan::ash::vk;
 use vulkan::ash::vk::Packed24_8;
 
 use vulkan::utils::create_gpu_only_buffer_from_data;
-use vulkan::{AccelerationStructure, Buffer, Context};
+use vulkan::{AccelerationStructure, Buffer, Context, Fence};
 
 fn primitive_to_vk_geometry(
     _context: &Context,
@@ -80,21 +80,54 @@ pub fn create_as(
         .map(|p| primitive_to_vk_geometry(context, &buffers, &doc.geo_builder, p.geometry_id))
         .collect();
     blas_inputs.sort_by_key(|b| b.geo_id);
+    let cmd_buffer = context.command_pool.allocate_command_buffer(vk::CommandBufferLevel::PRIMARY)?;
+    cmd_buffer.begin(Some(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT))?;
 
     let blases: Vec<_> = blas_inputs
         .iter()
         .map(|b| {
             context
-                .create_bottom_level_acceleration_structure(
+                .create_bottom_level_acceleration_structure_batch(
                     &b.geometries,
                     &b.build_range_infos,
                     &b.max_primitives,
                     // vk::BuildAccelerationStructureFlagsKHR::ALLOW_UPDATE,
                     vk::BuildAccelerationStructureFlagsKHR::empty(),
+                    &cmd_buffer
                 )
                 .unwrap()
         })
         .collect();
+
+    let pipleline_mb = vk::MemoryBarrier::builder()
+        .src_access_mask(vk::AccessFlags::ACCELERATION_STRUCTURE_WRITE_KHR)
+        .dst_access_mask(vk::AccessFlags::ACCELERATION_STRUCTURE_READ_KHR)
+        .build();
+    unsafe {
+        context.device.inner.cmd_pipeline_barrier2(cmd_buffer.inner,
+                                                   &vk::DependencyInfo::builder().memory_barriers(
+                                                       &[
+                                                           vk::MemoryBarrier2::builder()
+                                                               .src_access_mask(vk::AccessFlags2::ACCELERATION_STRUCTURE_WRITE_KHR)
+                                                               .dst_access_mask(vk::AccessFlags2::ACCELERATION_STRUCTURE_READ_KHR)
+                                                               .src_stage_mask(vk::PipelineStageFlags2::ACCELERATION_STRUCTURE_BUILD_KHR)
+                                                               .dst_stage_mask(vk::PipelineStageFlags2::ACCELERATION_STRUCTURE_BUILD_KHR)
+                                                               .build()
+                                                       ]
+                                                   ).build()
+        );
+    }
+    // End recording
+    cmd_buffer.end()?;
+
+    // Submit and wait
+    let fence = context.create_fence(None)?;
+    // let fence = Fence::null(&context.device);
+    context.graphics_queue
+        .submit(&cmd_buffer, None, None, &fence)?;
+    fence.wait(None)?;
+    // Free
+    context.command_pool.free_command_buffer(&cmd_buffer)?;
     let tlas = create_top_as(context, doc, &blases, flags)?;
 
     Ok((blases, blas_inputs, tlas))

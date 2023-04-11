@@ -2,6 +2,27 @@
 #extension GL_EXT_nonuniform_qualifier : require
 #extension GL_GOOGLE_include_directive : require
 #extension GL_EXT_ray_tracing : require
+// https://developer.nvidia.com/blog/best-practices-for-using-nvidia-rtx-ray-tracing-updated/
+// Any-hit shader
+//
+//Prefer unified and simplified any-hit shaders.
+// An any-hit shader is potentially executed a lot during ray traversal,
+// and it interrupts the hardware intersection search.
+// The cost of any-hit shaders can have a significant effect on overall performance.
+// I recommend having a unified and simplified any-hit shader in a ray-tracing pass.
+// Also, the full register capacity of the GPU is not available for any-hit shaders, as part of it is consumed by the driver for storing the ray state.
+//
+//Optimize access to material data.
+// In any-hit shaders, optimal access to material data is often crucial.
+// A series of dependent memory accesses is a common pattern.
+// Load vertex indices, vertex data, and sample textures.
+// When possible, removing indirections from that path is beneficial.
+//
+//When blending, remember the undefined order of hits.
+// Hits along ray are discovered and the corresponding any-hit shader invocations happen in undefined order.
+// This means that the blending technique must be order-independent.
+// It also means that to exclude hits beyond the closest opaque hit, ray distance must be limited properly.
+// Additionally, you may need to flag the blended geometries with NO_DUPLICATE_ANYHIT_INVOCATION to ensure the correct results. For more information, see Chapter 9 in Ray Tracing Gems.
 
 #include "lib/Random.glsl"
 #include "lib/RayTracingCommons.glsl"

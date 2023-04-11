@@ -137,6 +137,10 @@ impl RayTracingPipeline {
             .layout(layout.inner)
             .stages(&stages)
             .groups(&groups)
+            // https://developer.nvidia.com/blog/best-practices-for-using-nvidia-rtx-ray-tracing-updated/
+            // Use SKIP_PROCEDURAL_PRIMITIVES, SKIP_AABBS, and SKIP_TRIANGLES whenever possible. These pipeline state flags allow simple but potentially effective optimizations in state compilation.
+            // If the rayTraversalPrimitiveCulling feature is not enabled, flags must not include VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR.
+            // .flags(vk::PipelineCreateFlags::RAY_TRACING_SKIP_AABBS_KHR)
             .max_pipeline_ray_recursion_depth(2);
 
         let inner = unsafe {

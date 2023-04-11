@@ -79,11 +79,10 @@ impl GltfViewer {
         let globals = create_global(context, &doc, skybox)?;
         let fully_opaque = doc.geo_builder.fully_opaque();
         let buffers = Buffers::new(context, &doc.geo_builder, &globals)?;
-        let (blas, blas_inputs, tlas) = create_as(context, &doc, &buffers, if doc.static_scene() {
-            vk::BuildAccelerationStructureFlagsKHR::empty()
-        } else {
-            vk::BuildAccelerationStructureFlagsKHR::ALLOW_UPDATE
-        })?;
+
+        let (blas, blas_inputs, tlas) = create_as(context, &doc, &buffers,
+                                                  vk::BuildAccelerationStructureFlagsKHR::empty()
+        )?;
         // let bottom_as = create_bottom_as(context, &model)?;
 
         // let top_as = create_top_as(context, &bottom_as)?;
@@ -288,7 +287,7 @@ impl App for GltfViewer {
             self.last_update = Instant::now();
             let t = self.clock.elapsed().as_secs_f32() * gui_state.animation_speed;
             self.doc.animate(t);
-            let tlas = create_top_as(&base.context, &self.doc, &self._bottom_as, vk::BuildAccelerationStructureFlagsKHR::ALLOW_UPDATE).unwrap();
+            let tlas = create_top_as(&base.context, &self.doc, &self._bottom_as, vk::BuildAccelerationStructureFlagsKHR::PREFER_FAST_TRACE).unwrap();
             self.update_tlas(tlas);
         }
     }

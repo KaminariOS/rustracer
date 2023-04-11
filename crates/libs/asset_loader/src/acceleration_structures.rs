@@ -64,7 +64,8 @@ fn primitive_to_vk_geometry(
         geo_id: geo_id as _,
     }
 }
-
+// https://developer.nvidia.com/blog/best-practices-for-using-nvidia-rtx-ray-tracing-updated/
+// For TLAS, consider the PREFER_FAST_TRACE flag and perform only rebuilds. Often, this results in best overall performance. The rationale is that making the TLAS as high quality as possible regardless of the movement occurring in the scene is important and doesn’t cost too much.
 pub fn create_as(
     context: &Context,
     doc: &Doc,

@@ -41,6 +41,8 @@ pub enum Scene {
     // UnlitTest,
     // VertexColorTest,
     SpecularTest,
+
+    #[default]
     CornellBoxLucy,
     Cornell,
     ABeautifulGame,
@@ -73,7 +75,6 @@ pub enum Scene {
 
     SunTemple,
     DragonAttenuation,
-    #[default]
     TransmissionTest,
     MetalRoughSpheresNoTextures,
     MetalRoughSpheres,

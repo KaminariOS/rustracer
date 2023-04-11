@@ -32,7 +32,10 @@ struct SpecularInfo {
     bool exist;
     vec2 _padding;
 };
-
+// https://developer.nvidia.com/blog/best-practices-for-using-nvidia-rtx-ray-tracing-updated/
+// Use a separate hit shader for each material model(for example: metal?). Reducing code and data divergence within hit shaders is helpful, especially with incoherent rays. In particular, avoid übershaders that manually switch between material models. Implementing each required material model in a separate hit shader gives the system the best possibilities to manage divergent hit shading.
+//
+//When the material model allows a unified shader without much divergence, you can consider using a common hit shader for geometries with various materials.
 struct MaterialRaw {
     uint alpha_mode;
 	float alpha_cutoff;

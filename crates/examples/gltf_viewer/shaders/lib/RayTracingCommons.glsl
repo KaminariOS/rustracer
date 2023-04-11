@@ -4,6 +4,10 @@
 #define SHADOW_RAY_INDEX 1
 #define SHADOW_RAY_IN_RIS 0
 
+// ALLOW_UPDATE
+// Consider writing a safe default value to unused payload fields.
+// When some shader doesn’t use all fields in the payload, which are required by other shaders, it can be beneficial to still write a safe default value to the unused fields.
+// This allows the compiler to discard the unused input value and use the payload register for other purposes before writing to it.
 struct RayPayload
 {
 	vec3 hitValue;

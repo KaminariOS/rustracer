@@ -26,12 +26,12 @@ I stole the PBR shaders from the [referencePT](https://github.com/boksajak/refer
         * [ ] importance sampling and BTDF 
       * [ ] "KHR_materials_variants",
         * [ ] GUI support
-      *[x] "KHR_materials_volume",
+      * [x] "KHR_materials_volume",
       * [ ] "KHR_materials_specular",
-      *[ ] "KHR_texture_transform",
-      *[x] "KHR_materials_unlit",
-      *[x] "KHR_lights_punctual",
-*[x] Performance
+      * [ ] "KHR_texture_transform",
+      * [x] "KHR_materials_unlit",
+      * [x] "KHR_lights_punctual",
+* [x] Performance
   * [x] Rayon-accelerated texture loading
   * [ ] Async acceleration structure building 
     

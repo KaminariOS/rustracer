@@ -13,6 +13,7 @@ mod desc_sets;
 mod gui_state;
 mod pipeline_res;
 mod ubo;
+mod loader;
 
 use crate::gui_state::{Scene, Skybox};
 use asset_loader::acceleration_structures::{BlasInput, create_as, create_top_as, TopAS};

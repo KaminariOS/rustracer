@@ -10,8 +10,11 @@ I stole the PBR shaders from the [referencePT](https://github.com/boksajak/refer
     * [ ] Camera
     * [ ] Mesh
       * [x] Geometry normal generation
-      * [x] Two tex coords
+      * [x] Two sets of texture coords
       * [x] Mikktspace tangent generation
+      * [x] Normal mapping
+      
+  * [x] Alpha blending and testing
   * [x] Full PBR material support
     * [x] Metallic-Roughness workflow
     * [ ] Specular-Glossiness workflow
@@ -34,6 +37,10 @@ I stole the PBR shaders from the [referencePT](https://github.com/boksajak/refer
 * [x] Performance
   * [x] Rayon-accelerated texture loading
   * [ ] Async acceleration structure building 
+
+* [x] Extras
+  * [x] Skybox
+  * [ ] Skydome(hdr)
     
 ## Building
 ### Prerequisites
@@ -43,7 +50,7 @@ I stole the PBR shaders from the [referencePT](https://github.com/boksajak/refer
 
 Thanks to the amazing Rust package manager Cargo, building and running is almost as simple as a one-liner: `cargo run`. 
 
-However, some external C libraries like Vulkan SDK may be missing on you system. 
+However, some external C libraries like Vulkan SDK may be missing on your system. 
 - To install those libraries automatically,
   - Install [Nix](https://nixos.org/download.html) package manager(Linux only) and [direnv](https://direnv.net). 
   - `cd` into the project directory and `direnv allow`.
@@ -52,7 +59,7 @@ However, some external C libraries like Vulkan SDK may be missing on you system.
   - Look into the list in [flake.nix](flake.nix).
   
 ## Assets
-A pointer to glTf models: [glTF sample models](https://github.com/KhronosGroup/glTF-Sample-Models).
+A pointer to glTF models: [glTF sample models](https://github.com/KhronosGroup/glTF-Sample-Models).
 
 ## References
 - [boksajak/referencePT](https://github.com/boksajak/referencePT)

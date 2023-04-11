@@ -265,7 +265,7 @@ impl app::Gui for Gui {
                 ui.input_int("Number of samples", &mut number_of_samples)
                     .build();
                 self.number_of_samples = number_of_samples.abs() as _;
-                if ui.radio_button_bool("Dynamic sampling(target: 40fps)", self.dynamic_samples) {
+                if ui.radio_button_bool(format!("Dynamic sampling(target: {}fps)", FPS as u32), self.dynamic_samples) {
                     self.dynamic_samples = !self.dynamic_samples;
                 }
 

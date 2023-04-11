@@ -13,7 +13,7 @@ edition = "2021"
 opt-level = 3
 
 [workspace.dependencies]
-winit = "0.27.5"
+winit = {version="0.27.5"}
 nalgebra = "*"
 ash = {version = "0.37.2", features = ["linked", "debug"]}
 memoffset = "0.8.0"
@@ -41,8 +41,8 @@ anyhow = "*"
 pretty_env_logger = "0.4.0"
 gpu-allocator = { version = "0.22", default-features = false, features = ["vulkan"] }
 
-imgui = "0.10.0"
-imgui-winit-support = "0.10.0"
+imgui = "0.11.0"
+imgui-winit-support = "0.11.0"
 imgui-rs-vulkan-renderer = { version = "1.6", features = ["gpu-allocator", "dynamic-rendering"] }
 
 thiserror = "1.0"

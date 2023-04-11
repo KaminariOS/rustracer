@@ -217,9 +217,9 @@ checksum = "75476fe966a8af7c0ceae2a3e514afa87d4451741fcdfab8bfaa07ad301842ec"
 
 [[package]]
 name = "cmake"
-version = "0.1.49"
+version = "0.1.50"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "db34956e100b30725f2eb215f90d4871051239535632f84fea3bc92722c66b7c"
+checksum = "a31c789563b815f77f4250caee12365734369f942439b7defd71e18a48197130"
 dependencies = [
  "cc",
 ]
@@ -757,9 +757,9 @@ dependencies = [
 
 [[package]]
 name = "imgui"
-version = "0.10.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2cea19ca90247d9c994663a9f68edd9792b26ad0af390ceb8b43e881c90121bc"
+checksum = "122d677d0efcd64ca15f12907beaf46b26bbd2cdc855ee5b227f29cf50f75bb5"
 dependencies = [
  "bitflags",
  "cfg-if",
@@ -770,9 +770,9 @@ dependencies = [
 
 [[package]]
 name = "imgui-rs-vulkan-renderer"
-version = "1.8.0"
+version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "65fc0eb5a818882b28e5e5541db30e4fe34d3fc6412cfd6ca64398c3124b6ed2"
+checksum = "8c5a8928a37a1cb899683b38311d8816af5b44b962a0e54e461bfa665e4ddba4"
 dependencies = [
  "ash 0.37.2+1.3.238",
  "gpu-allocator",
@@ -784,9 +784,9 @@ dependencies = [
 
 [[package]]
 name = "imgui-sys"
-version = "0.10.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "612ceabf43b8c293b165f987539018b3fe6e30dd8af0c890dee1461c75250adb"
+checksum = "d785272a57cb8058a53a1e6f376f48e2ec4f40fbc6a9bb197dabf7b6b59c03bf"
 dependencies = [
  "cc",
  "cfg-if",
@@ -796,9 +796,9 @@ dependencies = [
 
 [[package]]
 name = "imgui-winit-support"
-version = "0.10.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5fde5f2092b5852a838ef13eb5dfbd58c18aa8754bbea45cffabd53efb584f3a"
+checksum = "edae4bfce64634fa013aec131f5d5f1c80df8aa0bddc0e0a9845ad57036b6987"
 dependencies = [
  "imgui",
  "winit",

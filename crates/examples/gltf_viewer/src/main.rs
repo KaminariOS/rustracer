@@ -78,6 +78,7 @@ impl GltfViewer {
         let skybox = SkyboxResource::new(context, skybox.path())?;
         let globals = create_global(context, &doc, skybox)?;
         let fully_opaque = doc.geo_builder.fully_opaque();
+
         let buffers = Buffers::new(context, &doc.geo_builder, &globals)?;
 
         let (blas, blas_inputs, tlas) = create_as(context, &doc, &buffers,
@@ -257,7 +258,6 @@ impl App for GltfViewer {
 
         if let Some(old_state) = self.prev_gui_state.filter(|x| x != gui_state) {
             if old_state.scene != gui_state.scene {
-                base.wait_for_gpu().unwrap();
                 *self = Self::new_with_scene(base, gui_state.scene, gui_state.skybox).unwrap();
             }
             if old_state.skybox != gui_state.skybox {

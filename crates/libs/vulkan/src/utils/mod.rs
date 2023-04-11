@@ -6,7 +6,7 @@ pub mod platforms;
 
 use gpu_allocator::MemoryLocation;
 
-use crate::{Buffer, BufferBarrier, Context};
+use crate::{Buffer, BufferBarrier, CommandBuffer, Context};
 
 pub fn compute_aligned_size(size: u32, alignment: u32) -> u32 {
     (size + (alignment - 1)) & !(alignment - 1)
@@ -43,6 +43,31 @@ pub fn create_gpu_only_buffer_from_data<T: Copy>(
     Ok(buffer)
 }
 
+
+pub fn create_gpu_only_buffer_from_data_batch<T: Copy>(
+    context: &Context,
+    usage: vk::BufferUsageFlags,
+    data: &[T],
+    cmd_buffer: &CommandBuffer
+) -> Result<(Buffer, Buffer)> {
+    let size = size_of_val(data) as _;
+    let staging_buffer = context.create_buffer(
+        vk::BufferUsageFlags::TRANSFER_SRC,
+        MemoryLocation::CpuToGpu,
+        size,
+    )?;
+    staging_buffer.copy_data_to_buffer(data)?;
+
+    let buffer = context.create_buffer(
+        usage | vk::BufferUsageFlags::TRANSFER_DST,
+        MemoryLocation::GpuOnly,
+        size,
+    )?;
+
+    cmd_buffer.copy_buffer(&staging_buffer, &buffer);
+
+    Ok((buffer, staging_buffer))
+}
 
 pub fn create_gpu_only_as_buffer_from_data<T: Copy>(
     context: &Context,

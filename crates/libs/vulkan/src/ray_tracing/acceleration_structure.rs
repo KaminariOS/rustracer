@@ -101,7 +101,7 @@ impl AccelerationStructure {
         max_primitive_counts: &[u32],
         flags: vk::BuildAccelerationStructureFlagsKHR,
         cmd_buffer: &CommandBuffer
-    ) -> Result<Self> {
+    ) -> Result<(Self, Buffer)> {
         let build_geo_info = vk::AccelerationStructureBuildGeometryInfoKHR::builder()
             .ty(level)
             .flags(vk::BuildAccelerationStructureFlagsKHR::PREFER_FAST_TRACE | flags)
@@ -161,12 +161,13 @@ impl AccelerationStructure {
                 .get_acceleration_structure_device_address(&address_info)
         };
 
-        Ok(Self {
+        Ok((Self {
             ray_tracing,
             inner,
             _buffer: buffer,
             address,
-        })
+        }, scratch_buffer
+        ))
     }
 }
 
@@ -200,19 +201,20 @@ impl Context {
         max_primitive_counts: &[u32],
         flags: vk::BuildAccelerationStructureFlagsKHR,
         command: &CommandBuffer,
-    ) -> Result<AccelerationStructure> {
+    ) -> Result<(AccelerationStructure, Buffer)> {
         let ray_tracing = self.ray_tracing.clone().expect(
             "Cannot call Context::create_bottom_level_acceleration_structure when ray tracing is not enabled",
         );
 
-        AccelerationStructure::new(
+        AccelerationStructure::new_cmd(
             self,
             ray_tracing,
             vk::AccelerationStructureTypeKHR::BOTTOM_LEVEL,
             as_geometry,
             as_ranges,
             max_primitive_counts,
-            flags
+            flags,
+            command
         )
     }
 
@@ -235,6 +237,31 @@ impl Context {
             as_ranges,
             max_primitive_counts,
             flags,
+        )
+    }
+
+
+    pub fn create_top_level_acceleration_structure_batch(
+        &self,
+        as_geometry: &[vk::AccelerationStructureGeometryKHR],
+        as_ranges: &[vk::AccelerationStructureBuildRangeInfoKHR],
+        max_primitive_counts: &[u32],
+        flags: vk::BuildAccelerationStructureFlagsKHR,
+        cmd_buffer: &CommandBuffer
+    ) -> Result<(AccelerationStructure, Buffer)> {
+        let ray_tracing = self.ray_tracing.clone().expect(
+            "Cannot call Context::create_top_level_acceleration_structure when ray tracing is not enabled",
+        );
+
+        AccelerationStructure::new_cmd(
+            self,
+            ray_tracing,
+            vk::AccelerationStructureTypeKHR::TOP_LEVEL,
+            as_geometry,
+            as_ranges,
+            max_primitive_counts,
+            flags,
+            cmd_buffer
         )
     }
 }

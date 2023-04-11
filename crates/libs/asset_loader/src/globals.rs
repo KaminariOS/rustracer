@@ -8,8 +8,8 @@ use std::time::Instant;
 use log::info;
 use vulkan::ash::vk;
 use vulkan::gpu_allocator::MemoryLocation;
-use vulkan::utils::{create_gpu_only_as_buffer_from_data, create_gpu_only_buffer_from_data};
-use vulkan::{Buffer, Context, DescriptorSet, Image, ImageBarrier, ImageView, Sampler, WriteDescriptorSet, WriteDescriptorSetKind};
+use vulkan::utils::{create_gpu_only_as_buffer_from_data, create_gpu_only_buffer_from_data, create_gpu_only_buffer_from_data_batch};
+use vulkan::{Buffer, CommandBuffer, Context, DescriptorSet, Fence, Image, ImageBarrier, ImageView, Sampler, WriteDescriptorSet, WriteDescriptorSetKind};
 use vulkan::ash::vk::SamplerAddressMode;
 use crate::cubumap::SkyBox;
 use crate::image::TexGamma;
@@ -39,41 +39,54 @@ impl Buffers {
         let vertices = geo_builder.vertices.as_slice();
         let indices = geo_builder.indices.as_slice();
         let now = Instant::now();
-        let vertex_buffer = create_gpu_only_as_buffer_from_data(
+        let cmd_buffer = context.command_pool.allocate_command_buffer(vk::CommandBufferLevel::PRIMARY)?;
+        cmd_buffer.begin(Some(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT))?;
+
+        let (vertex_buffer, _v) = create_gpu_only_buffer_from_data_batch(
             context,
             vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
                 | vk::BufferUsageFlags::ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_KHR
                 | vk::BufferUsageFlags::STORAGE_BUFFER,
             vertices,
+            &cmd_buffer
         )?;
 
-        let index_buffer = create_gpu_only_as_buffer_from_data(
+        let (index_buffer, _i) = create_gpu_only_buffer_from_data_batch(
             context,
             vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
                 | vk::BufferUsageFlags::ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_KHR
                 | vk::BufferUsageFlags::STORAGE_BUFFER,
             indices,
+            &cmd_buffer
         )?;
-        let geo_buffer = create_gpu_only_buffer_from_data(
+        let (geo_buffer, _g) = create_gpu_only_buffer_from_data_batch(
             context,
             vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
                 | vk::BufferUsageFlags::STORAGE_BUFFER,
             &globals.prim_info,
+            &cmd_buffer
         )?;
 
-        let material_buffer = create_gpu_only_buffer_from_data(
+        let (material_buffer, _s) = create_gpu_only_buffer_from_data_batch(
+
             context,
             vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
                 | vk::BufferUsageFlags::STORAGE_BUFFER,
             &globals.materials,
+            &cmd_buffer
         )?;
 
-        // let dlights_buffer = create_gpu_only_buffer_from_data(
-        //     context,
-        //     vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
-        //         | vk::BufferUsageFlags::STORAGE_BUFFER,
-        //     &globals.d_lights,
-        // )?;
+        // End recording
+        cmd_buffer.end()?;
+
+        // Submit and wait
+        let fence = context.create_fence(None)?;
+        // let fence = Fence::null(&context.device);
+        context.graphics_queue
+            .submit(&cmd_buffer, None, None, &fence)?;
+        fence.wait(None)?;
+        // Free
+        context.command_pool.free_command_buffer(&cmd_buffer)?;
 
         let _size_of_slice = size_of_val(globals.d_lights.as_slice());
         let _size = size_of_val(&globals.d_lights);

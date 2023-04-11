@@ -120,11 +120,8 @@ void main()
 
             throughput *= hitColor;
             // Trace missed, or end of trace.
-            if (t < 0 )
-            {
-                break;
-            }
-            if (!isScattered) {
+
+            if (!isScattered || t < 0) {
                 break;
             }
             // Trace hit.

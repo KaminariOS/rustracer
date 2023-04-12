@@ -41,7 +41,6 @@ pub struct Gui {
 
 #[derive(IntoStaticStr, AsRefStr, EnumIter, PartialEq, Clone, Copy, Debug, Default)]
 pub enum Scene {
-
     #[default]
     ZeroDay,
     TransmissionRoughnessTest,

@@ -41,6 +41,9 @@ pub struct Gui {
 
 #[derive(IntoStaticStr, AsRefStr, EnumIter, PartialEq, Clone, Copy, Debug, Default)]
 pub enum Scene {
+
+    #[default]
+    ZeroDay,
     TransmissionRoughnessTest,
     // Passed tests
     // UnlitTest,
@@ -48,7 +51,9 @@ pub enum Scene {
     SpecularTest,
 
     Bathroom,
+
     BistroExt,
+
     Emerald,
     BistroInterior,
     CornellBoxLucy,
@@ -56,11 +61,13 @@ pub enum Scene {
     ABeautifulGame,
     Sponza,
     Type59,
+
     DamagedHelmet,
     MosquitoInAmber,
     EmissiveStrengthTest,
     LightsPunctualLamp,
     BoomBoxWithAxes,
+
     Triss,
     EVA,
     Anakin,
@@ -73,7 +80,6 @@ pub enum Scene {
     SparkLence,
     Apollo,
     CyberSamurai,
-    #[default]
     Apex,
     Ra,
     BlueEye,

@@ -79,7 +79,7 @@ However, some external C libraries like Vulkan SDK may be missing on your system
   - Look into the list in [flake.nix](flake.nix).
   
 ## Assets
-A pointer to glTF models: 
+Pointers to glTF models: 
 - [glTF sample models](https://github.com/KhronosGroup/glTF-Sample-Models).
 - [A ton of glTF models](https://sketchfab.com/search?features=downloadable&type=models)
 - [Open Research Content Archive](https://developer.nvidia.com/orca) can be converted to glTF with Blender.

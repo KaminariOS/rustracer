@@ -1,6 +1,6 @@
 # [Rustracer](https://github.com/KaminariOS/rustracer)
 
-A glTF 2.0 renderer based on Vulkan ray-tracing, written in Rust.
+A PBR [glTF 2.0](https://www.khronos.org/gltf) renderer based on Vulkan ray-tracing, written in Rust.
 
 ## Naming
 My project and I are not affiliated with the Rust Foundation. I name it `rustracer` only because I love Rust and ray tracing.

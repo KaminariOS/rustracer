@@ -219,7 +219,7 @@ pub fn create_top_as(
             &vk::DependencyInfo::builder()
                 .memory_barriers(&[vk::MemoryBarrier2::builder()
                     .src_access_mask(vk::AccessFlags2::TRANSFER_WRITE)
-                    .dst_access_mask(vk::AccessFlags2::ACCELERATION_STRUCTURE_WRITE_KHR)
+                    .dst_access_mask(vk::AccessFlags2::ACCELERATION_STRUCTURE_READ_KHR)
                     .src_stage_mask(vk::PipelineStageFlags2::TRANSFER)
                     .dst_stage_mask(vk::PipelineStageFlags2::ACCELERATION_STRUCTURE_BUILD_KHR)
                     .build()])

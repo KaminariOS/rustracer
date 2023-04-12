@@ -75,7 +75,9 @@ I stole the PBR shaders from the [referencePT](https://github.com/boksajak/refer
 
 Thanks to the superior Rust package manager `Cargo`, building and running can be as brainless as a one-liner: `cargo run`. 
 
-However, some external C libraries like Vulkan SDK may be missing on your system. 
+However, some external C libraries like Vulkan SDK may be missing on your system(those libraries are necessary for basically any Vulkan or non-trivial graphics programming project, regardless of whatever programming language used). 
+
+
 - To install those libraries automatically,
   - Install [Nix](https://nixos.org/download.html) package manager(Linux only) and [direnv](https://direnv.net). 
   - `cd` into the project directory and `direnv allow`.

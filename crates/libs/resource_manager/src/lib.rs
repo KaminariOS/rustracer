@@ -1,7 +1,7 @@
+use anyhow::Result;
+use std::fs::DirEntry;
 use std::path::PathBuf;
 use std::{fs, path::Path};
-use std::fs::DirEntry;
-use anyhow::{Result};
 
 const SPV_SEARCH_PATHS: [&str; 2] = ["", "./spv"];
 
@@ -10,17 +10,12 @@ const MODEL_SEARCH_PATHS: [&str; 5] = [
     "./assets/models",
     "/home/kosumi/Rusty/glTF-Sample-Models/2.0",
     "../../../assets/models",
-    "/home/kosumi/Rusty/LGL-Tracer-Renderer.github.io/models"
+    "/home/kosumi/Rusty/LGL-Tracer-Renderer.github.io/models",
 ];
 
-const SKYBOX_SEARCH_PATHS: [&str; 3] = [
-    "",
-    "./assets/skyboxs",
-    "../../../assets/skyboxs",
-];
+const SKYBOX_SEARCH_PATHS: [&str; 3] = ["", "./assets/skyboxs", "../../../assets/skyboxs"];
 
 pub fn load_spv<P: AsRef<Path>>(path: P) -> Vec<u8> {
-
     let mut res = None;
 
     for pre in SPV_SEARCH_PATHS {
@@ -39,8 +34,13 @@ pub fn load_spv<P: AsRef<Path>>(path: P) -> Vec<u8> {
 
 fn find_gltf(search: &PathBuf) -> Option<PathBuf> {
     for entry in fs::read_dir(search).ok()?.filter_map(|e| e.ok()) {
-        if entry.file_name().to_str().filter(|name| name.ends_with(".gltf") || name.ends_with(".glb")).is_some() {
-            return Some(entry.path())
+        if entry
+            .file_name()
+            .to_str()
+            .filter(|name| name.ends_with(".gltf") || name.ends_with(".glb"))
+            .is_some()
+        {
+            return Some(entry.path());
         }
     }
     None
@@ -59,12 +59,11 @@ pub fn load_model<P: AsRef<Path>>(path: P) -> PathBuf {
             }
             if path.exists() && path.is_file() {
                 res = Some(path);
-            }
-            else if let Some(p) = find_gltf(&path) {
+            } else if let Some(p) = find_gltf(&path) {
                 res = Some(p);
             }
             if res.is_some() {
-                break
+                break;
             }
         }
     }
@@ -75,7 +74,6 @@ pub fn load_model<P: AsRef<Path>>(path: P) -> PathBuf {
     ))
 }
 
-
 pub fn load_cubemap<P: AsRef<Path>>(path: P) -> Result<Vec<DirEntry>> {
     let test_fun = |p: &Path| p.exists() && p.is_dir();
     let mut abs_path = PathBuf::new();
@@ -83,17 +81,21 @@ pub fn load_cubemap<P: AsRef<Path>>(path: P) -> Result<Vec<DirEntry>> {
         let search = Path::new(pre).join(&path);
         if test_fun(&search) {
             abs_path = search;
-            break
+            break;
         }
-    };
-    let res: Vec<_> = fs::read_dir(abs_path)?.filter_map(|f| f.ok())
-            .filter(|dir| {
-                let filename = dir.file_name();
-                filename.to_str().filter(|s| s.ends_with(".png") || s.ends_with(".jpg")).is_some()
-            })
-            .collect();
+    }
+    let res: Vec<_> = fs::read_dir(abs_path)?
+        .filter_map(|f| f.ok())
+        .filter(|dir| {
+            let filename = dir.file_name();
+            filename
+                .to_str()
+                .filter(|s| s.ends_with(".png") || s.ends_with(".jpg"))
+                .is_some()
+        })
+        .collect();
     assert_eq!(res.len(), 6);
-    return Ok(res)
+    return Ok(res);
 }
 
 // pub fn select_gltf<P: AsRef<Path>>(path: P) -> Option<PathBuf> {

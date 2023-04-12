@@ -105,8 +105,7 @@ impl Image {
             .tiling(vk::ImageTiling::OPTIMAL)
             .usage(usage)
             .initial_layout(vk::ImageLayout::UNDEFINED)
-            .flags(vk::ImageCreateFlags::CUBE_COMPATIBLE)
-            ;
+            .flags(vk::ImageCreateFlags::CUBE_COMPATIBLE);
 
         let inner = unsafe { device.inner.create_image(&image_info, None)? };
         let requirements = unsafe { device.inner.get_image_memory_requirements(inner) };
@@ -135,7 +134,6 @@ impl Image {
             is_swapchain: false,
         })
     }
-
 
     pub(crate) fn from_swapchain_image(
         device: Arc<Device>,

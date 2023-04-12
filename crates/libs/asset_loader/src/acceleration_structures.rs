@@ -5,14 +5,14 @@ use crate::scene_graph::{Doc, Node};
 
 use anyhow::Result;
 
-use std::mem::{size_of};
-use std::time::Instant;
 use log::info;
+use std::mem::size_of;
+use std::time::Instant;
 
 use vulkan::ash::vk;
 use vulkan::ash::vk::Packed24_8;
 
-use vulkan::utils::{create_gpu_only_buffer_from_data_batch};
+use vulkan::utils::create_gpu_only_buffer_from_data_batch;
 use vulkan::{AccelerationStructure, Buffer, Context};
 
 fn primitive_to_vk_geometry(
@@ -46,7 +46,11 @@ fn primitive_to_vk_geometry(
 
     let geometry = vk::AccelerationStructureGeometryKHR::builder()
         .geometry_type(vk::GeometryTypeKHR::TRIANGLES)
-        .flags(if is_opaque {vk::GeometryFlagsKHR::OPAQUE} else {vk::GeometryFlagsKHR::empty()})
+        .flags(if is_opaque {
+            vk::GeometryFlagsKHR::OPAQUE
+        } else {
+            vk::GeometryFlagsKHR::empty()
+        })
         .geometry(vk::AccelerationStructureGeometryDataKHR {
             triangles: as_geo_triangles_data,
         })
@@ -83,10 +87,12 @@ pub fn create_as(
         .map(|p| primitive_to_vk_geometry(context, &buffers, &doc.geo_builder, p.geometry_id))
         .collect();
     blas_inputs.sort_by_key(|b| b.geo_id);
-    let cmd_buffer = context.command_pool.allocate_command_buffer(vk::CommandBufferLevel::PRIMARY)?;
+    let cmd_buffer = context
+        .command_pool
+        .allocate_command_buffer(vk::CommandBufferLevel::PRIMARY)?;
     cmd_buffer.begin(Some(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT))?;
 
-    let (blases, _s) : (Vec<_>, Vec<_>) = blas_inputs
+    let (blases, _s): (Vec<_>, Vec<_>) = blas_inputs
         .iter()
         .map(|b| {
             context
@@ -96,24 +102,23 @@ pub fn create_as(
                     &b.max_primitives,
                     // vk::BuildAccelerationStructureFlagsKHR::ALLOW_UPDATE,
                     vk::BuildAccelerationStructureFlagsKHR::empty(),
-                    &cmd_buffer
+                    &cmd_buffer,
                 )
                 .unwrap()
-        }).unzip()
-        ;
+        })
+        .unzip();
 
     unsafe {
-        context.device.inner.cmd_pipeline_barrier2(cmd_buffer.inner,
-                                                   &vk::DependencyInfo::builder().memory_barriers(
-                                                       &[
-                                                           vk::MemoryBarrier2::builder()
-                                                               .src_access_mask(vk::AccessFlags2::ACCELERATION_STRUCTURE_WRITE_KHR)
-                                                               .dst_access_mask(vk::AccessFlags2::ACCELERATION_STRUCTURE_READ_KHR)
-                                                               .src_stage_mask(vk::PipelineStageFlags2::ACCELERATION_STRUCTURE_BUILD_KHR)
-                                                               .dst_stage_mask(vk::PipelineStageFlags2::ACCELERATION_STRUCTURE_BUILD_KHR)
-                                                               .build()
-                                                       ]
-                                                   ).build()
+        context.device.inner.cmd_pipeline_barrier2(
+            cmd_buffer.inner,
+            &vk::DependencyInfo::builder()
+                .memory_barriers(&[vk::MemoryBarrier2::builder()
+                    .src_access_mask(vk::AccessFlags2::ACCELERATION_STRUCTURE_WRITE_KHR)
+                    .dst_access_mask(vk::AccessFlags2::ACCELERATION_STRUCTURE_READ_KHR)
+                    .src_stage_mask(vk::PipelineStageFlags2::ACCELERATION_STRUCTURE_BUILD_KHR)
+                    .dst_stage_mask(vk::PipelineStageFlags2::ACCELERATION_STRUCTURE_BUILD_KHR)
+                    .build()])
+                .build(),
         );
     }
     // End recording
@@ -122,13 +127,17 @@ pub fn create_as(
     // Submit and wait
     let fence = context.create_fence(None)?;
     // let fence = Fence::null(&context.device);
-    context.graphics_queue
+    context
+        .graphics_queue
         .submit(&cmd_buffer, None, None, &fence)?;
     fence.wait(None)?;
     // Free
     context.command_pool.free_command_buffer(&cmd_buffer)?;
     let tlas = create_top_as(context, doc, &blases, flags)?;
-    info!("Finish building acceleration structure: {}s", time.elapsed().as_secs());
+    info!(
+        "Finish building acceleration structure: {}s",
+        time.elapsed().as_secs()
+    );
     Ok((blases, tlas))
 }
 
@@ -170,7 +179,9 @@ pub fn create_top_as(
     };
     doc.traverse_root_nodes(&mut f);
 
-    let cmd_buffer = context.command_pool.allocate_command_buffer(vk::CommandBufferLevel::PRIMARY)?;
+    let cmd_buffer = context
+        .command_pool
+        .allocate_command_buffer(vk::CommandBufferLevel::PRIMARY)?;
     cmd_buffer.begin(Some(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT))?;
 
     let (instance_buffer, _i) = create_gpu_only_buffer_from_data_batch(
@@ -178,7 +189,7 @@ pub fn create_top_as(
         vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
             | vk::BufferUsageFlags::ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_KHR,
         &ins,
-    &cmd_buffer
+        &cmd_buffer,
     )?;
     let instance_buffer_addr = instance_buffer.get_device_address();
 
@@ -203,17 +214,16 @@ pub fn create_top_as(
         .build();
 
     unsafe {
-        context.device.inner.cmd_pipeline_barrier2(cmd_buffer.inner,
-                                                   &vk::DependencyInfo::builder().memory_barriers(
-                                                       &[
-                                                           vk::MemoryBarrier2::builder()
-                                                               .src_access_mask(vk::AccessFlags2::TRANSFER_WRITE)
-                                                               .dst_access_mask(vk::AccessFlags2::ACCELERATION_STRUCTURE_WRITE_KHR)
-                                                               .src_stage_mask(vk::PipelineStageFlags2::TRANSFER)
-                                                               .dst_stage_mask(vk::PipelineStageFlags2::ACCELERATION_STRUCTURE_BUILD_KHR)
-                                                               .build()
-                                                       ]
-                                                   ).build()
+        context.device.inner.cmd_pipeline_barrier2(
+            cmd_buffer.inner,
+            &vk::DependencyInfo::builder()
+                .memory_barriers(&[vk::MemoryBarrier2::builder()
+                    .src_access_mask(vk::AccessFlags2::TRANSFER_WRITE)
+                    .dst_access_mask(vk::AccessFlags2::ACCELERATION_STRUCTURE_WRITE_KHR)
+                    .src_stage_mask(vk::PipelineStageFlags2::TRANSFER)
+                    .dst_stage_mask(vk::PipelineStageFlags2::ACCELERATION_STRUCTURE_BUILD_KHR)
+                    .build()])
+                .build(),
         );
     }
     let (inner, _s) = context.create_top_level_acceleration_structure_batch(
@@ -221,7 +231,7 @@ pub fn create_top_as(
         &[as_ranges],
         &[ins.len() as u32],
         flags,
-        &cmd_buffer
+        &cmd_buffer,
     )?;
     // End recording
     cmd_buffer.end()?;
@@ -229,7 +239,8 @@ pub fn create_top_as(
     // Submit and wait
     let fence = context.create_fence(None)?;
     // let fence = Fence::null(&context.device);
-    context.graphics_queue
+    context
+        .graphics_queue
         .submit(&cmd_buffer, None, None, &fence)?;
     fence.wait(None)?;
     // // Free

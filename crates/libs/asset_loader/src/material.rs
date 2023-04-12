@@ -1,9 +1,12 @@
-use std::collections::{HashSet};
-use crate::{Name, a3toa4, get_name};
-use gltf::material::{AlphaMode, NormalTexture, OcclusionTexture, PbrMetallicRoughness, PbrSpecularGlossiness, Specular, Transmission, Volume};
+use crate::geometry::DEFAULT_MATERIAL_INDEX;
+use crate::{a3toa4, get_name, Name};
+use gltf::material::{
+    AlphaMode, NormalTexture, OcclusionTexture, PbrMetallicRoughness, PbrSpecularGlossiness,
+    Specular, Transmission, Volume,
+};
 use gltf::texture;
 use log::info;
-use crate::geometry::DEFAULT_MATERIAL_INDEX;
+use std::collections::HashSet;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -104,22 +107,32 @@ pub fn find_linear_textures(materials: &[Material]) -> HashSet<usize> {
     // Textures containing color data (baseColorTexture, emissiveTexture) are sRGB.
     // All other textures are linear. Like other resources, textures should be reused when possible.
     let mut set: HashSet<_> = HashSet::new();
-        materials.iter().for_each(|m|{
+    materials.iter().for_each(|m| {
         if m.normal_texture.is_some() {
             set.insert(m.normal_texture.texture_index as usize);
         }
-        if m.metallic_roughness_info.metallic_roughness_texture.is_some() {
-            set.insert(m.metallic_roughness_info.metallic_roughness_texture.texture_index as usize);
+        if m.metallic_roughness_info
+            .metallic_roughness_texture
+            .is_some()
+        {
+            set.insert(
+                m.metallic_roughness_info
+                    .metallic_roughness_texture
+                    .texture_index as usize,
+            );
         }
-        if let Some(tr) = m.transmission
+        if let Some(tr) = m
+            .transmission
             .filter(|t| t.transmission_texture.is_some())
             .map(|t| t.transmission_texture.texture_index)
         {
             set.insert(tr as _);
         }
-        if let Some(sp) = m.specular_info
+        if let Some(sp) = m
+            .specular_info
             .filter(|s| s.specular_texture.is_some())
-            .map(|s| s.specular_texture.texture_index) {
+            .map(|s| s.specular_texture.texture_index)
+        {
             set.insert(sp as _);
         }
     });
@@ -242,7 +255,7 @@ impl From<PbrMetallicRoughness<'_>> for MetallicRoughnessInfo {
 pub struct TransmissionInfo {
     transmission_texture: TextureInfo,
     transmission_factor: f32,
-    exist: u32
+    exist: u32,
 }
 
 impl From<Transmission<'_>> for TransmissionInfo {
@@ -269,7 +282,7 @@ impl<'a> From<PbrSpecularGlossiness<'_>> for SpecularGlossiness {
             glossiness_factor: pbr.glossiness_factor(),
             specular_factor: pbr.specular_factor(),
             diffuse_texture: TextureInfo::new(pbr.diffuse_texture()),
-            specular_glossiness_texture: TextureInfo::new(pbr.specular_glossiness_texture())
+            specular_glossiness_texture: TextureInfo::new(pbr.specular_glossiness_texture()),
         }
     }
 }
@@ -313,7 +326,7 @@ impl Default for SpecularInfo {
 
 impl<'a> From<gltf::Material<'_>> for Material {
     fn from(material: gltf::Material) -> Self {
-        let index= material.index().unwrap_or(DEFAULT_MATERIAL_INDEX);
+        let index = material.index().unwrap_or(DEFAULT_MATERIAL_INDEX);
         let pbr = material.pbr_metallic_roughness();
         let specular = material.specular().map(SpecularInfo::from);
         let em = material.emissive_factor();
@@ -321,7 +334,9 @@ impl<'a> From<gltf::Material<'_>> for Material {
         if unlit {
             info!("Unlit material detected: {}", index);
         }
-        let _sg = material.pbr_specular_glossiness().map(SpecularGlossiness::from);
+        let _sg = material
+            .pbr_specular_glossiness()
+            .map(SpecularGlossiness::from);
 
         let mut base_color_texture = TextureInfo::new(pbr.base_color_texture());
         if base_color_texture.is_none() {

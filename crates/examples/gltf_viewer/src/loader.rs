@@ -10,9 +10,7 @@
 //! Users have to call `load` to load a new model and `get_model` to retrieve
 //! the loaded model.
 
-use log::{info};
-
-
+use log::info;
 
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
@@ -20,9 +18,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 use std::thread::JoinHandle;
 
-use asset_loader::{Doc, load_file};
-
-
+use asset_loader::{load_file, Doc};
 
 enum Message {
     Load(String),
@@ -54,11 +50,7 @@ impl Loader {
                                 model_sender.send(pre_loaded_model).unwrap();
                             }
                             Err(error) => {
-                                log::error!(
-                                    "Failed to load {}. Cause: {:?}",
-                                    path,
-                                    error
-                                );
+                                log::error!("Failed to load {}. Cause: {:?}", path, error);
                             }
                         }
                     }
@@ -117,7 +109,3 @@ impl Drop for Loader {
         info!("Loader dropped");
     }
 }
-
-
-
-

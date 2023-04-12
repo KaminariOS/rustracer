@@ -1,4 +1,4 @@
-use crate::{ Name, get_name};
+use crate::{get_name, Name};
 
 #[derive(Debug, Clone)]
 pub struct Texture {

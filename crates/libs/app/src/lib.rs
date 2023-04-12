@@ -4,7 +4,6 @@ pub use vulkan;
 
 pub mod camera;
 pub mod types;
-pub use resource_manager::load_spv;
 use anyhow::Result;
 use ash::vk::{self};
 use camera::{Camera, Controls};
@@ -16,14 +15,15 @@ use gui::{
 };
 use log;
 use pretty_env_logger;
+pub use resource_manager::load_spv;
 
 use crate::types::Vec3;
 use nalgebra::Point3;
+use std::sync::Arc;
 use std::{
     marker::PhantomData,
     time::{Duration, Instant},
 };
-use std::sync::Arc;
 use vulkan::*;
 use winit::{
     dpi::PhysicalSize,

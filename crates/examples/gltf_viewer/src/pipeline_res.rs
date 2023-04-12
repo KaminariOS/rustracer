@@ -1,4 +1,7 @@
-use crate::{ACC_BIND, AS_BIND, GEO_BIND, INDEX_BIND, DLIGHT_BIND, MAT_BIND, STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND, VERTEX_BIND, PLIGHT_BIND, SKYBOX_BIND};
+use crate::{
+    ACC_BIND, AS_BIND, DLIGHT_BIND, GEO_BIND, INDEX_BIND, MAT_BIND, PLIGHT_BIND, SKYBOX_BIND,
+    STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND, VERTEX_BIND,
+};
 use app::anyhow::Result;
 use app::load_spv;
 use app::vulkan::ash::vk;
@@ -15,9 +18,14 @@ pub struct PipelineRes {
     pub(crate) dynamic_dsl: DescriptorSetLayout,
 }
 
-pub fn create_pipeline(context: &Context, model: &VkGlobal, fully_opaque: bool) -> Result<PipelineRes> {
+pub fn create_pipeline(
+    context: &Context,
+    model: &VkGlobal,
+    fully_opaque: bool,
+) -> Result<PipelineRes> {
     // descriptor and pipeline layouts
-    let primary_hit_group_flags = vk::ShaderStageFlags::ANY_HIT_KHR | vk::ShaderStageFlags::CLOSEST_HIT_KHR;
+    let primary_hit_group_flags =
+        vk::ShaderStageFlags::ANY_HIT_KHR | vk::ShaderStageFlags::CLOSEST_HIT_KHR;
     let static_layout_bindings = [
         vk::DescriptorSetLayoutBinding::builder()
             .binding(AS_BIND)
@@ -137,8 +145,6 @@ pub fn create_pipeline(context: &Context, model: &VkGlobal, fully_opaque: bool) 
             stage: vk::ShaderStageFlags::CLOSEST_HIT_KHR,
             group: RayTracingShaderGroup::ClosestHit,
         },
-
-
         // RayTracingShaderCreateInfo {
         //     source: &shadow_rahit,
         //     stage: vk::ShaderStageFlags::ANY_HIT_KHR,
@@ -146,13 +152,11 @@ pub fn create_pipeline(context: &Context, model: &VkGlobal, fully_opaque: bool) 
         // },
     ];
     if !fully_opaque {
-        shaders_create_info.push(
-            RayTracingShaderCreateInfo {
-                source: &ray_rahit,
-                stage: vk::ShaderStageFlags::ANY_HIT_KHR,
-                group: RayTracingShaderGroup::AnyHit,
-            },
-        );
+        shaders_create_info.push(RayTracingShaderCreateInfo {
+            source: &ray_rahit,
+            stage: vk::ShaderStageFlags::ANY_HIT_KHR,
+            group: RayTracingShaderGroup::AnyHit,
+        });
     }
 
     let pipeline_create_info = RayTracingPipelineCreateInfo {

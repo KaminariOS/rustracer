@@ -100,7 +100,7 @@ impl AccelerationStructure {
         as_ranges: &[vk::AccelerationStructureBuildRangeInfoKHR],
         max_primitive_counts: &[u32],
         flags: vk::BuildAccelerationStructureFlagsKHR,
-        cmd_buffer: &CommandBuffer
+        cmd_buffer: &CommandBuffer,
     ) -> Result<(Self, Buffer)> {
         let build_geo_info = vk::AccelerationStructureBuildGeometryInfoKHR::builder()
             .ty(level)
@@ -161,12 +161,14 @@ impl AccelerationStructure {
                 .get_acceleration_structure_device_address(&address_info)
         };
 
-        Ok((Self {
-            ray_tracing,
-            inner,
-            _buffer: buffer,
-            address,
-        }, scratch_buffer
+        Ok((
+            Self {
+                ray_tracing,
+                inner,
+                _buffer: buffer,
+                address,
+            },
+            scratch_buffer,
         ))
     }
 }
@@ -190,7 +192,7 @@ impl Context {
             as_geometry,
             as_ranges,
             max_primitive_counts,
-            flags
+            flags,
         )
     }
 
@@ -214,7 +216,7 @@ impl Context {
             as_ranges,
             max_primitive_counts,
             flags,
-            command
+            command,
         )
     }
 
@@ -240,14 +242,13 @@ impl Context {
         )
     }
 
-
     pub fn create_top_level_acceleration_structure_batch(
         &self,
         as_geometry: &[vk::AccelerationStructureGeometryKHR],
         as_ranges: &[vk::AccelerationStructureBuildRangeInfoKHR],
         max_primitive_counts: &[u32],
         flags: vk::BuildAccelerationStructureFlagsKHR,
-        cmd_buffer: &CommandBuffer
+        cmd_buffer: &CommandBuffer,
     ) -> Result<(AccelerationStructure, Buffer)> {
         let ray_tracing = self.ray_tracing.clone().expect(
             "Cannot call Context::create_top_level_acceleration_structure when ray tracing is not enabled",
@@ -261,7 +262,7 @@ impl Context {
             as_ranges,
             max_primitive_counts,
             flags,
-            cmd_buffer
+            cmd_buffer,
         )
     }
 }

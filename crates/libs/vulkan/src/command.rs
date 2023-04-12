@@ -324,7 +324,13 @@ impl CommandBuffer {
         self.copy_buffer_to_image_layer(src, dst, layout, 1);
     }
 
-    pub fn copy_buffer_to_image_layer(&self, src: &Buffer, dst: &Image, layout: vk::ImageLayout, layer_count: u32) {
+    pub fn copy_buffer_to_image_layer(
+        &self,
+        src: &Buffer,
+        dst: &Image,
+        layout: vk::ImageLayout,
+        layer_count: u32,
+    ) {
         let region = vk::BufferImageCopy::builder()
             .image_subresource(vk::ImageSubresourceLayers {
                 aspect_mask: vk::ImageAspectFlags::COLOR,

@@ -1,8 +1,8 @@
-use glam::{Quat};
-use gltf::animation::{Channel, Interpolation, Sampler};
-use gltf::animation::util::ReadOutputs;
-use crate::{get_name, Name, NodeID};
 use crate::geometry::GeoBuilder;
+use crate::{get_name, Name, NodeID};
+use glam::Quat;
+use gltf::animation::util::ReadOutputs;
+use gltf::animation::{Channel, Interpolation, Sampler};
 
 pub struct Animation {
     pub index: usize,
@@ -25,8 +25,7 @@ enum Property {
 
 impl Property {
     fn len(&self) -> usize {
-        match self
-        {
+        match self {
             Self::Translation(a) | Self::Scale(a) => a.len(),
             Self::Rotation(a) => a.len(),
         }
@@ -59,10 +58,10 @@ impl AnimationChannel {
         let input: Vec<_> = reader.read_inputs().unwrap().collect();
         let output = reader.read_outputs().unwrap();
         let property = match output {
-            ReadOutputs::Translations(t) => {Property::Translation(t.collect())}
-            ReadOutputs::Rotations(r) => {Property::Rotation(r.into_f32().collect())}
-            ReadOutputs::Scales(s) => {Property::Scale(s.collect())}
-            ReadOutputs::MorphTargetWeights(_) => unimplemented!()
+            ReadOutputs::Translations(t) => Property::Translation(t.collect()),
+            ReadOutputs::Rotations(r) => Property::Rotation(r.into_f32().collect()),
+            ReadOutputs::Scales(s) => Property::Scale(s.collect()),
+            ReadOutputs::MorphTargetWeights(_) => unimplemented!(),
         };
         let sampler = channel.sampler();
         assert_eq!(input.len(), property.len());
@@ -79,7 +78,11 @@ impl AnimationChannel {
         let len = self.input.len();
         let max = self.input[len - 1];
         let interval = max - min;
-        let t = if t > min {(t - min) % interval + min} else {t};
+        let t = if t > min {
+            (t - min) % interval + min
+        } else {
+            t
+        };
         let mut s = 0;
         let mut e = 0;
         for (i, &d) in self.input[..len - 1].iter().enumerate() {
@@ -91,10 +94,13 @@ impl AnimationChannel {
         let factor = (t - self.input[s]) / (self.input[e] - self.input[s]);
         //     interpolation::cub_bez()
         use interpolation::lerp;
-        match &self.property  {
+        match &self.property {
             Property::Translation(t) => {
-                let translation: Vec<_> = t[s].iter().zip(t[e].iter())
-                    .map(|(l, r)| lerp(l, r, &factor)).collect();
+                let translation: Vec<_> = t[s]
+                    .iter()
+                    .zip(t[e].iter())
+                    .map(|(l, r)| lerp(l, r, &factor))
+                    .collect();
                 PropertyOutput::Translation([translation[0], translation[1], translation[2]])
                 // Mat4::from_translation(Vec3::from_slice(translation.as_slice()))
             }
@@ -104,9 +110,11 @@ impl AnimationChannel {
                 PropertyOutput::Rotation(l.slerp(r, factor).to_array())
             }
             Property::Scale(sv) => {
-                let scale:Vec<_> = sv[s].iter()
+                let scale: Vec<_> = sv[s]
+                    .iter()
                     .zip(sv[e].iter())
-                    .map(|(l, r)| lerp(l, r, &factor)).collect();
+                    .map(|(l, r)| lerp(l, r, &factor))
+                    .collect();
                 PropertyOutput::Scale([scale[0], scale[1], scale[2]])
                 // Mat4::from_scale(Vec3::from_slice(scale.as_slice()))
             }
@@ -114,24 +122,23 @@ impl AnimationChannel {
     }
 }
 
-struct AnimationSampler {
-
-}
+struct AnimationSampler {}
 
 impl<'a> From<Sampler<'_>> for AnimationSampler {
     fn from(sampler: Sampler<'_>) -> Self {
         sampler.input();
         sampler.output();
-        Self {
-
-        }
+        Self {}
     }
 }
 
 impl Animation {
     pub fn new(animation: gltf::Animation<'_>, builder: &GeoBuilder) -> Self {
         let index = animation.index();
-        let channels = animation.channels().map(|c| AnimationChannel::new(c, builder)).collect();
+        let channels = animation
+            .channels()
+            .map(|c| AnimationChannel::new(c, builder))
+            .collect();
         // let sampler= animation.samplers();
         Self {
             index,

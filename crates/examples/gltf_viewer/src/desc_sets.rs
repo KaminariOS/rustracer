@@ -1,5 +1,8 @@
 use crate::pipeline_res::PipelineRes;
-use crate::{ACC_BIND, AS_BIND, GEO_BIND, INDEX_BIND, MAT_BIND, STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND, VERTEX_BIND, DLIGHT_BIND, PLIGHT_BIND, SKYBOX_BIND};
+use crate::{
+    ACC_BIND, AS_BIND, DLIGHT_BIND, GEO_BIND, INDEX_BIND, MAT_BIND, PLIGHT_BIND, SKYBOX_BIND,
+    STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND, VERTEX_BIND,
+};
 use app::anyhow::Result;
 use app::vulkan::ash::vk;
 use app::vulkan::{
@@ -101,7 +104,6 @@ pub fn create_descriptor_sets(
             binding: UNIFORM_BIND,
             kind: WriteDescriptorSetKind::UniformBuffer { buffer: ubo_buffer },
         },
-
         WriteDescriptorSet {
             binding: DLIGHT_BIND,
             kind: WriteDescriptorSetKind::StorageBuffer {

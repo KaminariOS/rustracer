@@ -1,11 +1,11 @@
-use std::collections::HashMap;
+use crate::aabb::{get_aabb, Aabb};
+use crate::material::Material;
 use crate::{a3toa4, get_name, Index, MeshID, Name};
-use glam::{vec4, Vec2, Vec4, Vec4Swizzles, UVec4};
+use glam::{vec4, UVec4, Vec2, Vec4, Vec4Swizzles};
 use gltf::mesh::Mode;
 use gltf::{buffer, Semantic};
 use log::{info, warn};
-use crate::aabb::{Aabb, get_aabb};
-use crate::material::Material;
+use std::collections::HashMap;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
@@ -105,7 +105,11 @@ impl Mesh {
         for primitive in mesh.primitives().filter(is_primitive_supported) {
             primitives.push(Primitive::from(primitive, builder));
         }
-        Mesh { primitives, index, name: get_name!(mesh) }
+        Mesh {
+            primitives,
+            index,
+            name: get_name!(mesh),
+        }
     }
 }
 
@@ -119,13 +123,15 @@ pub struct Primitive {
 pub const DEFAULT_MATERIAL_INDEX: usize = 0;
 impl Primitive {
     fn from(primitive: gltf::Primitive, builder: &mut GeoBuilder) -> Self {
-        let mapping: HashMap<_, _> = primitive.mappings().map(|m| {
-            {
+        let mapping: HashMap<_, _> = primitive
+            .mappings()
+            .map(|m| {
                 let variants = m.variants();
                 let material = m.material().index().unwrap_or(DEFAULT_MATERIAL_INDEX);
                 variants.iter().map(move |v| (*v, material))
-            }
-        }).flatten().collect();
+            })
+            .flatten()
+            .collect();
 
         let material = primitive.material();
         let material_index = material.index().unwrap_or(DEFAULT_MATERIAL_INDEX) as u32;
@@ -161,45 +167,44 @@ impl Primitive {
             let uvs0 = reader
                 .read_tex_coords(0)
                 .map(|reader| reader.into_f32().map(Vec2::from).collect::<Vec<_>>())
-                .unwrap_or(vec![Vec2::ZERO; positions.len()])
-                ;
+                .unwrap_or(vec![Vec2::ZERO; positions.len()]);
             let uvs1 = reader
                 .read_tex_coords(1)
                 .map(|reader| reader.into_f32().map(Vec2::from).collect::<Vec<_>>())
-                .unwrap_or(vec![Vec2::ZERO; positions.len()])
-                ;
+                .unwrap_or(vec![Vec2::ZERO; positions.len()]);
 
-            let (mut tangents, tangents_found) =
-                if let Some(iter) = reader.read_tangents() {
-                    (iter.collect::<Vec<_>>(), true)
-                } else {
-                    (vec![[1.0, 0.0, 0.0, 0.0]; positions.len()], false)
-                };
-            if !tangents_found && !uvs0.is_empty() && builder.normal_textures[material_index as usize] {
+            let (mut tangents, tangents_found) = if let Some(iter) = reader.read_tangents() {
+                (iter.collect::<Vec<_>>(), true)
+            } else {
+                (vec![[1.0, 0.0, 0.0, 0.0]; positions.len()], false)
+            };
+            if !tangents_found
+                && !uvs0.is_empty()
+                && builder.normal_textures[material_index as usize]
+            {
                 info!("Tangents not found but uv found. Generating");
                 mikktspace::generate_tangents(&mut TangentCalcContext {
                     indices: indices.as_slice(),
                     positions: positions.as_slice(),
                     normals: normals.as_slice(),
                     uvs: uvs0.as_slice(),
-                    tangents: tangents.as_mut_slice(),}
-                );
+                    tangents: tangents.as_mut_slice(),
+                });
             }
 
             let colors = reader
                 .read_colors(0)
                 .map(|reader| reader.into_rgba_f32().map(Vec4::from).collect::<Vec<_>>());
 
-            let weights = reader.read_weights(0)
-                .map_or(vec![],
-                        |weights| weights.into_f32().map(Vec4::from).collect());
+            let weights = reader.read_weights(0).map_or(vec![], |weights| {
+                weights.into_f32().map(Vec4::from).collect()
+            });
             let joints = reader.read_joints(0).map_or(vec![], |joints| {
                 joints
                     .into_u16()
                     .map(|[x, y, z, w]| [u32::from(x), u32::from(y), u32::from(z), u32::from(w)])
                     .map(UVec4::from)
                     .collect()
-
             });
             let vertices = positions
                 .into_iter()
@@ -207,7 +212,7 @@ impl Primitive {
                 .map(|(index, position)| {
                     let normal = normals[index];
                     let color = colors.as_ref().map_or(Vec4::ONE, |colors| colors[index]);
-                    let uv =  uvs0[index];
+                    let uv = uvs0[index];
                     let weights = *weights.get(index).unwrap_or(&Default::default());
                     let joints = *joints.get(index).unwrap_or(&Default::default());
                     Vertex {
@@ -238,12 +243,10 @@ impl Primitive {
             // material: material_index as usize,
             geometry_id: geo_id,
             mapping,
-            aabb: get_aabb(&primitive.bounding_box())
+            aabb: get_aabb(&primitive.bounding_box()),
         }
     }
 }
-
-
 
 fn create_geo_normal(position: &[Vec4], indices: &[u32]) -> Vec<Vec4> {
     warn!("Creating normals");
@@ -287,11 +290,15 @@ impl<'a> mikktspace::Geometry for TangentCalcContext<'a> {
     }
 
     fn position(&self, face: usize, vert: usize) -> [f32; 3] {
-        self.positions[self.indices[face * 3 + vert] as usize].xyz().to_array()
+        self.positions[self.indices[face * 3 + vert] as usize]
+            .xyz()
+            .to_array()
     }
 
     fn normal(&self, face: usize, vert: usize) -> [f32; 3] {
-        self.normals[self.indices[face * 3 + vert] as usize].xyz().to_array()
+        self.normals[self.indices[face * 3 + vert] as usize]
+            .xyz()
+            .to_array()
     }
 
     fn tex_coord(&self, face: usize, vert: usize) -> [f32; 2] {
@@ -317,6 +324,6 @@ impl<'a> mikktspace::Geometry for TangentCalcContext<'a> {
         } else {
             1.0
         };
-        self.set_tangent_encoded(a3toa4(&tangent, sign), face, vert,);
+        self.set_tangent_encoded(a3toa4(&tangent, sign), face, vert);
     }
 }

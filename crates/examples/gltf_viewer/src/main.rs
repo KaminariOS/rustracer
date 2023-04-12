@@ -1,33 +1,33 @@
-use std::default::Default;
 use app::anyhow::Result;
 use app::camera::Camera;
+use std::default::Default;
 
 use app::vulkan::ash::vk::{self};
 use app::vulkan::gpu_allocator::MemoryLocation;
-use app::{App, FrameStats};
 use app::{vulkan::*, BaseApp};
+use app::{App, FrameStats};
 use std::mem::size_of;
 use std::rc::Rc;
 
-use std::time::{Instant};
 use log::info;
+use std::time::Instant;
 
 mod desc_sets;
 mod gui_state;
+mod loader;
 mod pipeline_res;
 mod ubo;
-mod loader;
 
 use crate::gui_state::{Scene, Skybox};
+use crate::loader::Loader;
 use asset_loader::acceleration_structures::{create_as, create_top_as, TopAS};
-use asset_loader::globals::{create_global, Buffers, VkGlobal, SkyboxResource};
-use asset_loader::{Doc, load_file};
+use asset_loader::globals::{create_global, Buffers, SkyboxResource, VkGlobal};
 use asset_loader::light::LightRaw;
+use asset_loader::{load_file, Doc};
 use desc_sets::*;
 use gui_state::Gui;
 use pipeline_res::*;
 use ubo::UniformBufferObject;
-use crate::loader::Loader;
 
 const WIDTH: u32 = 1920;
 const HEIGHT: u32 = 1080;
@@ -68,9 +68,8 @@ struct GltfViewer {
     clock: Instant,
     last_update: Instant,
     fully_opaque: bool,
-    loader: Rc<Loader>
+    loader: Rc<Loader>,
 }
-
 
 struct GltfViewerBuilder {
     ubo_buffer: Buffer,
@@ -90,17 +89,24 @@ struct GltfViewerBuilder {
     fully_opaque: bool,
 }
 
-
-
 impl GltfViewer {
-    fn new_with_scene(base: &BaseApp<Self>, scene: Scene, skybox: Skybox, loader: Rc<Loader>) -> Result<Self> {
+    fn new_with_scene(
+        base: &BaseApp<Self>,
+        scene: Scene,
+        skybox: Skybox,
+        loader: Rc<Loader>,
+    ) -> Result<Self> {
         let _context = &base.context;
         let doc = load_file(scene.path())?;
         Self::new_with_doc(base, doc, skybox, loader)
     }
 
-
-    fn new_with_doc(base: &BaseApp<Self>, doc: Doc, skybox: Skybox, loader: Rc<Loader>) -> Result<Self> {
+    fn new_with_doc(
+        base: &BaseApp<Self>,
+        doc: Doc,
+        skybox: Skybox,
+        loader: Rc<Loader>,
+    ) -> Result<Self> {
         let start = Instant::now();
         let context = &base.context;
         let ubo_buffer = context.create_buffer(
@@ -114,8 +120,11 @@ impl GltfViewer {
 
         let buffers = Buffers::new(context, &doc.geo_builder, &globals)?;
 
-        let (_bottom_as, top_as) = create_as(context, &doc, &buffers,
-                                     vk::BuildAccelerationStructureFlagsKHR::empty()
+        let (_bottom_as, top_as) = create_as(
+            context,
+            &doc,
+            &buffers,
+            vk::BuildAccelerationStructureFlagsKHR::empty(),
         )?;
         let pipeline_res = create_pipeline(context, &globals, fully_opaque)?;
 
@@ -134,33 +143,36 @@ impl GltfViewer {
             &buffers,
         )?;
         info!("Uploading to GPU: {}", start.elapsed().as_secs());
-        Ok(
-            GltfViewer {
-                ubo_buffer,
-                doc,
-                _bottom_as,
-                top_as,
-                pipeline_res,
-                sbt,
-                descriptor_res,
-                total_number_of_samples: 0,
-                old_camera: None,
-                prev_gui_state: None,
-                buffers,
-                globals,
-                clock: Instant::now(),
-                last_update: Instant::now(),
-                fully_opaque,
-                loader,
-            }
-        )
+        Ok(GltfViewer {
+            ubo_buffer,
+            doc,
+            _bottom_as,
+            top_as,
+            pipeline_res,
+            sbt,
+            descriptor_res,
+            total_number_of_samples: 0,
+            old_camera: None,
+            prev_gui_state: None,
+            buffers,
+            globals,
+            clock: Instant::now(),
+            last_update: Instant::now(),
+            fully_opaque,
+            loader,
+        })
     }
 }
 impl App for GltfViewer {
     type Gui = Gui;
 
     fn new(base: &BaseApp<Self>) -> Result<Self> {
-        Self::new_with_scene(base, Default::default(), Default::default(), Rc::new(Loader::new()))
+        Self::new_with_scene(
+            base,
+            Default::default(),
+            Default::default(),
+            Rc::new(Loader::new()),
+        )
     }
 
     fn update(
@@ -168,15 +180,21 @@ impl App for GltfViewer {
         base: &mut BaseApp<Self>,
         gui: &mut <Self as App>::Gui,
         _image_index: usize,
-        frame_stats: &FrameStats
+        frame_stats: &FrameStats,
     ) -> Result<()> {
         self.state_change(base, gui);
-        let view = base.camera.view_matrix() * if gui.scale > 0. {gui.scale} else {1./(gui.scale.abs() + 1.)};
+        let view = base.camera.view_matrix()
+            * if gui.scale > 0. {
+                gui.scale
+            } else {
+                1. / (gui.scale.abs() + 1.)
+            };
         let inverted_view = view.try_inverse().expect("Should be invertible");
 
         let proj = base.camera.projection_matrix();
         let inverted_proj = proj.try_inverse().expect("Should be invertible");
-        let number_of_samples = gui.get_number_of_samples(self.total_number_of_samples, frame_stats.frame_time);
+        let number_of_samples =
+            gui.get_number_of_samples(self.total_number_of_samples, frame_stats.frame_time);
         // println!("nums {} total: {}", number_of_samples, self.total_number_of_samples);
         if !gui.acc() {
             self.total_number_of_samples = 0;
@@ -209,7 +227,6 @@ impl App for GltfViewer {
 
         self.ubo_buffer.copy_data_to_buffer(&[ubo])?;
 
-
         Ok(())
     }
 
@@ -220,8 +237,7 @@ impl App for GltfViewer {
         image_index: usize,
     ) -> Result<()> {
         let static_set = &self.descriptor_res.static_set;
-        let dynamic_set = &self.descriptor_res
-            .dynamic_sets[image_index];
+        let dynamic_set = &self.descriptor_res.dynamic_sets[image_index];
 
         buffer.bind_rt_pipeline(&self.pipeline_res.pipeline);
 
@@ -289,7 +305,7 @@ impl App for GltfViewer {
 
         if self.old_camera.filter(|x| *x != base.camera).is_some() {
             self.old_camera = Some(base.camera);
-           self.total_number_of_samples = 0;
+            self.total_number_of_samples = 0;
         }
 
         if let Some(old_state) = self.prev_gui_state.filter(|x| x != gui_state) {
@@ -306,17 +322,23 @@ impl App for GltfViewer {
             self.total_number_of_samples = 0;
             if old_state.sun != gui_state.sun {
                 self.globals.d_lights[0] = gui_state.sun;
-                self.buffers.dlights_buffer.copy_data_to_buffer(self.globals.d_lights.as_slice()).unwrap();
+                self.buffers
+                    .dlights_buffer
+                    .copy_data_to_buffer(self.globals.d_lights.as_slice())
+                    .unwrap();
             }
-            if old_state.point_light_intensity != gui_state.point_light_intensity ||
-                gui_state.point_light_radius != old_state.point_light_radius
+            if old_state.point_light_intensity != gui_state.point_light_intensity
+                || gui_state.point_light_radius != old_state.point_light_radius
             {
                 self.globals.p_lights.iter_mut().for_each(|x| {
                     let mut new_light = LightRaw::random_light(gui_state.point_light_radius);
                     new_light.intensity = gui_state.point_light_intensity;
                     *x = new_light;
                 });
-                self.buffers.plights_buffer.copy_data_to_buffer(self.globals.p_lights.as_slice()).unwrap();
+                self.buffers
+                    .plights_buffer
+                    .copy_data_to_buffer(self.globals.p_lights.as_slice())
+                    .unwrap();
             }
         }
 
@@ -324,7 +346,13 @@ impl App for GltfViewer {
             self.last_update = Instant::now();
             let t = self.clock.elapsed().as_secs_f32() * gui_state.animation_speed;
             self.doc.animate(t);
-            let tlas = create_top_as(&base.context, &self.doc, &self._bottom_as, vk::BuildAccelerationStructureFlagsKHR::PREFER_FAST_TRACE).unwrap();
+            let tlas = create_top_as(
+                &base.context,
+                &self.doc,
+                &self._bottom_as,
+                vk::BuildAccelerationStructureFlagsKHR::PREFER_FAST_TRACE,
+            )
+            .unwrap();
             self.update_tlas(tlas);
         }
     }
@@ -332,18 +360,16 @@ impl App for GltfViewer {
 
 impl GltfViewer {
     fn update_tlas(&mut self, tlas: TopAS) {
-        self.descriptor_res.static_set.update(&[
-            WriteDescriptorSet {
-                binding: AS_BIND,
-                kind: WriteDescriptorSetKind::AccelerationStructure {
-                    acceleration_structure: &tlas.inner,
-                },
+        self.descriptor_res.static_set.update(&[WriteDescriptorSet {
+            binding: AS_BIND,
+            kind: WriteDescriptorSetKind::AccelerationStructure {
+                acceleration_structure: &tlas.inner,
             },
-        ]);
+        }]);
         self.top_as = tlas;
     }
 
     fn need_update(&self) -> bool {
-        self.last_update.elapsed().as_secs_f32() >= 1./60.
+        self.last_update.elapsed().as_secs_f32() >= 1. / 60.
     }
 }

@@ -1,11 +1,11 @@
-use std::borrow::Cow;
 use app::anyhow::Result;
+use asset_loader::light::LightRaw;
 use gui::imgui::{Condition, Ui};
-use strum::IntoEnumIterator;
-use strum_macros::{AsRefStr, EnumIter, IntoStaticStr};
+use std::borrow::Cow;
 use std::convert::AsRef;
 use std::time::Duration;
-use asset_loader::light::LightRaw;
+use strum::IntoEnumIterator;
+use strum_macros::{AsRefStr, EnumIter, IntoStaticStr};
 
 const FPS: f32 = 40.;
 const BUDGET: f32 = 1. / FPS;
@@ -100,8 +100,10 @@ pub enum Scene {
     Earth,
 
     // MultiUVTest,
-
-    FerrisCrab,LA_Night,WinterForest,Panocube
+    FerrisCrab,
+    LA_Night,
+    WinterForest,
+    Panocube,
 }
 
 impl Scene {
@@ -142,7 +144,6 @@ impl ToneMapMode {
     }
 }
 
-
 #[derive(Default, Debug, AsRefStr, IntoStaticStr, EnumIter, Copy, Clone, PartialEq)]
 pub enum Skybox {
     LancellottiChapel,
@@ -150,7 +151,7 @@ pub enum Skybox {
     SaintPetersBasilica,
     LearnOpengl,
     #[default]
-    UtahInteractiveGraphics
+    UtahInteractiveGraphics,
 }
 
 impl Skybox {
@@ -183,7 +184,7 @@ pub enum Mapping {
 }
 
 impl Gui {
-    pub fn is_mapping(&self) -> bool{
+    pub fn is_mapping(&self) -> bool {
         self.mapping != Mapping::RENDER
     }
 
@@ -191,9 +192,12 @@ impl Gui {
         self.mapping != Mapping::RENDER && self.mapping != Mapping::HEAT
     }
 
-    pub fn get_number_of_samples(&mut self, total_number_of_samples: u32, frame_time: Duration) -> u32 {
+    pub fn get_number_of_samples(
+        &mut self,
+        total_number_of_samples: u32,
+        frame_time: Duration,
+    ) -> u32 {
         if self.dynamic_samples {
-
             if frame_time.as_secs_f32() >= BUDGET && self.number_of_samples > 1 {
                 self.number_of_samples -= 1;
             } else {
@@ -205,7 +209,6 @@ impl Gui {
         } else {
             (self.max_number_of_samples - total_number_of_samples).min(self.number_of_samples)
         }
-
     }
 
     pub fn acc(&self) -> bool {
@@ -265,7 +268,10 @@ impl app::Gui for Gui {
                 ui.input_int("Number of samples", &mut number_of_samples)
                     .build();
                 self.number_of_samples = number_of_samples.abs() as _;
-                if ui.radio_button_bool(format!("Dynamic sampling(target: {}fps)", FPS as u32), self.dynamic_samples) {
+                if ui.radio_button_bool(
+                    format!("Dynamic sampling(target: {}fps)", FPS as u32),
+                    self.dynamic_samples,
+                ) {
                     self.dynamic_samples = !self.dynamic_samples;
                 }
 
@@ -280,8 +286,7 @@ impl app::Gui for Gui {
                 self.number_of_bounces = number_of_bounces as _;
 
                 let mut debug_number = self.debug as _;
-                ui.input_int("Debug control", &mut debug_number)
-                    .build();
+                ui.input_int("Debug control", &mut debug_number).build();
                 self.debug = debug_number.abs() as _;
                 ui.slider("scale", -20., 20., &mut self.scale);
                 ui.slider("Apertures", 0., 1., &mut self.aperture);
@@ -336,8 +341,8 @@ impl app::Gui for Gui {
                     Mapping::HEAT => ui.slider("Heatmap Scale", 0.1, 10., &mut self.map_scale),
                     Mapping::DISTANCE => {
                         ui.slider("dis_map Scale", 10., 1000., &mut self.map_scale)
-                    },
-                    _ => {false}
+                    }
+                    _ => false,
                 };
 
                 // ui.slider("Virtual light intensity",0., 2.0, &mut self.light_intensity);
@@ -392,15 +397,24 @@ impl app::Gui for Gui {
                 ui.slider("light phi", 0., 2. * PI, &mut self.light_angle[1]);
                 self.sun.update_angles(self.light_angle);
 
-                ui.slider("Point light intensity", 0., 2. , &mut self.point_light_intensity);
-                ui.slider("Point light distance", 1., 100. , &mut self.point_light_radius);
+                ui.slider(
+                    "Point light intensity",
+                    0.,
+                    2.,
+                    &mut self.point_light_intensity,
+                );
+                ui.slider(
+                    "Point light distance",
+                    1.,
+                    100.,
+                    &mut self.point_light_radius,
+                );
                 // let [r, g, b, _] = self.sun.color.to_array();
                 // let mut color = [r, g, b];
                 // ui.color_picker3_config("color", &mut color)
                 //     .display_rgb(true)
                 //     .build();
                 // self.sun.update_color([color[0], color[1], color[2], 0.]);
-
             });
     }
 }

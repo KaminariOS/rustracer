@@ -1,22 +1,22 @@
+mod aabb;
 #[cfg(feature = "ash")]
 pub mod acceleration_structures;
 mod animation;
+mod cubumap;
 mod error;
 mod geometry;
 mod image;
+pub mod light;
 mod material;
 mod scene_graph;
 mod texture;
-pub mod light;
-mod cubumap;
-mod aabb;
 
 #[cfg(feature = "ash")]
 pub mod globals;
 
-use gltf::Document;
 pub use crate::scene_graph::load_file;
 pub use crate::scene_graph::Doc;
+use gltf::Document;
 
 type Name = Option<String>;
 type Index = u32;
@@ -64,7 +64,6 @@ macro_rules! get_index {
         $expr.map(|m| m.index())
     };
 }
-
 
 #[macro_export]
 macro_rules! get_name {

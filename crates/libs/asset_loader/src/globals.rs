@@ -1,20 +1,23 @@
+use crate::cubumap::SkyBox;
 use crate::geometry::{GeoBuilder, PrimInfo};
+use crate::image::TexGamma;
+use crate::light::LightRaw;
 use crate::material::MaterialRaw;
 use crate::scene_graph::Doc;
 use crate::texture;
-use anyhow::Result;
-use std::mem::{size_of_val};
-use std::time::Instant;
-use log::info;
-use vulkan::ash::vk;
-use vulkan::gpu_allocator::MemoryLocation;
-use vulkan::utils::{create_gpu_only_buffer_from_data_batch};
-use vulkan::{Buffer, Context, DescriptorSet, Image, ImageBarrier, ImageView, Sampler, WriteDescriptorSet, WriteDescriptorSetKind};
-use vulkan::ash::vk::SamplerAddressMode;
-use crate::cubumap::SkyBox;
-use crate::image::TexGamma;
-use crate::light::LightRaw;
 use crate::texture::WrapMode;
+use anyhow::Result;
+use log::info;
+use std::mem::size_of_val;
+use std::time::Instant;
+use vulkan::ash::vk;
+use vulkan::ash::vk::SamplerAddressMode;
+use vulkan::gpu_allocator::MemoryLocation;
+use vulkan::utils::create_gpu_only_buffer_from_data_batch;
+use vulkan::{
+    Buffer, Context, DescriptorSet, Image, ImageBarrier, ImageView, Sampler, WriteDescriptorSet,
+    WriteDescriptorSetKind,
+};
 
 impl Into<vk::Format> for TexGamma {
     fn into(self) -> vk::Format {
@@ -39,7 +42,9 @@ impl Buffers {
         let vertices = geo_builder.vertices.as_slice();
         let indices = geo_builder.indices.as_slice();
         let now = Instant::now();
-        let cmd_buffer = context.command_pool.allocate_command_buffer(vk::CommandBufferLevel::PRIMARY)?;
+        let cmd_buffer = context
+            .command_pool
+            .allocate_command_buffer(vk::CommandBufferLevel::PRIMARY)?;
         cmd_buffer.begin(Some(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT))?;
 
         let (vertex_buffer, _v) = create_gpu_only_buffer_from_data_batch(
@@ -48,7 +53,7 @@ impl Buffers {
                 | vk::BufferUsageFlags::ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_KHR
                 | vk::BufferUsageFlags::STORAGE_BUFFER,
             vertices,
-            &cmd_buffer
+            &cmd_buffer,
         )?;
 
         let (index_buffer, _i) = create_gpu_only_buffer_from_data_batch(
@@ -57,23 +62,20 @@ impl Buffers {
                 | vk::BufferUsageFlags::ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_KHR
                 | vk::BufferUsageFlags::STORAGE_BUFFER,
             indices,
-            &cmd_buffer
+            &cmd_buffer,
         )?;
         let (geo_buffer, _g) = create_gpu_only_buffer_from_data_batch(
             context,
-            vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
-                | vk::BufferUsageFlags::STORAGE_BUFFER,
+            vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS | vk::BufferUsageFlags::STORAGE_BUFFER,
             &globals.prim_info,
-            &cmd_buffer
+            &cmd_buffer,
         )?;
 
         let (material_buffer, _s) = create_gpu_only_buffer_from_data_batch(
-
             context,
-            vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
-                | vk::BufferUsageFlags::STORAGE_BUFFER,
+            vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS | vk::BufferUsageFlags::STORAGE_BUFFER,
             &globals.materials,
-            &cmd_buffer
+            &cmd_buffer,
         )?;
 
         // End recording
@@ -82,7 +84,8 @@ impl Buffers {
         // Submit and wait
         let fence = context.create_fence(None)?;
         // let fence = Fence::null(&context.device);
-        context.graphics_queue
+        context
+            .graphics_queue
             .submit(&cmd_buffer, None, None, &fence)?;
         fence.wait(None)?;
         // Free
@@ -98,10 +101,10 @@ impl Buffers {
         dlights_buffer.copy_data_to_buffer(globals.d_lights.as_slice())?;
 
         let plights_buffer = context.create_buffer(
-            vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
-                | vk::BufferUsageFlags::STORAGE_BUFFER,
+            vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS | vk::BufferUsageFlags::STORAGE_BUFFER,
             MemoryLocation::CpuToGpu,
-            size_of_val(globals.p_lights.as_slice()) as _)?;
+            size_of_val(globals.p_lights.as_slice()) as _,
+        )?;
         plights_buffer.copy_data_to_buffer(globals.p_lights.as_slice())?;
         info!("Buffers: {}s", now.elapsed().as_secs());
         // println!("v_b: {:#02x}, i_b: {:#02x}, g_b: {:#02x}, m_b: {:#02x}", vertex_buffer.as_raw(), index_buffer.as_raw(), geo_buffer.as_raw(), material_buffer.as_raw());
@@ -170,7 +173,7 @@ pub struct VkGlobal {
     materials: Vec<MaterialRaw>,
     pub d_lights: Vec<LightRaw>,
     pub p_lights: Vec<LightRaw>,
-    pub skybox: SkyboxResource
+    pub skybox: SkyboxResource,
 }
 
 pub struct SkyboxResource {
@@ -194,16 +197,14 @@ impl SkyboxResource {
     }
 
     pub fn update_desc(&self, desc: &DescriptorSet, binding: u32) {
-        let skybox_write = [
-            WriteDescriptorSet {
-                binding,
-                kind: WriteDescriptorSetKind::CombinedImageSampler {
-                    view: &self.view,
-                    sampler: &self.sampler,
-                    layout: vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
-                },
-            }
-        ];
+        let skybox_write = [WriteDescriptorSet {
+            binding,
+            kind: WriteDescriptorSetKind::CombinedImageSampler {
+                view: &self.view,
+                sampler: &self.sampler,
+                layout: vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+            },
+        }];
         desc.update_texture_array(&skybox_write);
     }
 }
@@ -213,45 +214,56 @@ pub fn create_cubemap_view(context: &Context, skybox: &SkyBox) -> Result<(Image,
     info!("Skybox: [w: {}, h: {}]", w, h);
     let pixels_ref = skybox.collector.as_slice();
 
-    let staging =
-        context.create_buffer(
+    let staging = context.create_buffer(
         vk::BufferUsageFlags::TRANSFER_SRC,
         MemoryLocation::CpuToGpu,
-        size_of_val(pixels_ref) as _)?;
+        size_of_val(pixels_ref) as _,
+    )?;
 
     staging.copy_data_to_buffer(pixels_ref)?;
 
-    let image = context.create_cubemap_image (
+    let image = context.create_cubemap_image(
         vk::ImageUsageFlags::TRANSFER_DST | vk::ImageUsageFlags::SAMPLED,
         MemoryLocation::GpuOnly,
         skybox.get_gamma().into(),
         w,
-        h
+        h,
     )?;
 
     const FACES: u32 = 6;
     context.execute_one_time_commands(|cmd| {
-        cmd.pipeline_image_barriers_layers(&[ImageBarrier {
-            image: &image,
-            old_layout: vk::ImageLayout::UNDEFINED,
-            new_layout: vk::ImageLayout::TRANSFER_DST_OPTIMAL,
-            src_access_mask: vk::AccessFlags2::NONE,
-            dst_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
-            src_stage_mask: vk::PipelineStageFlags2::NONE,
-            dst_stage_mask: vk::PipelineStageFlags2::TRANSFER,
-        }], FACES);
+        cmd.pipeline_image_barriers_layers(
+            &[ImageBarrier {
+                image: &image,
+                old_layout: vk::ImageLayout::UNDEFINED,
+                new_layout: vk::ImageLayout::TRANSFER_DST_OPTIMAL,
+                src_access_mask: vk::AccessFlags2::NONE,
+                dst_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
+                src_stage_mask: vk::PipelineStageFlags2::NONE,
+                dst_stage_mask: vk::PipelineStageFlags2::TRANSFER,
+            }],
+            FACES,
+        );
 
-        cmd.copy_buffer_to_image_layer(&staging, &image, vk::ImageLayout::TRANSFER_DST_OPTIMAL, FACES);
+        cmd.copy_buffer_to_image_layer(
+            &staging,
+            &image,
+            vk::ImageLayout::TRANSFER_DST_OPTIMAL,
+            FACES,
+        );
 
-        cmd.pipeline_image_barriers_layers(&[ImageBarrier {
-            image: &image,
-            old_layout: vk::ImageLayout::TRANSFER_DST_OPTIMAL,
-            new_layout: vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
-            src_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
-            dst_access_mask: vk::AccessFlags2::SHADER_READ,
-            src_stage_mask: vk::PipelineStageFlags2::TRANSFER,
-            dst_stage_mask: vk::PipelineStageFlags2::RAY_TRACING_SHADER_KHR,
-        }], FACES);
+        cmd.pipeline_image_barriers_layers(
+            &[ImageBarrier {
+                image: &image,
+                old_layout: vk::ImageLayout::TRANSFER_DST_OPTIMAL,
+                new_layout: vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+                src_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
+                dst_access_mask: vk::AccessFlags2::SHADER_READ,
+                src_stage_mask: vk::PipelineStageFlags2::TRANSFER,
+                dst_stage_mask: vk::PipelineStageFlags2::RAY_TRACING_SHADER_KHR,
+            }],
+            FACES,
+        );
     })?;
     let view = image.create_cubemap_view()?;
     Ok((image, view))
@@ -306,7 +318,6 @@ fn create_image_view(context: &Context, i: &crate::image::Image) -> Result<(Imag
 }
 
 pub fn create_global(context: &Context, doc: &Doc, skybox: SkyboxResource) -> Result<VkGlobal> {
-
     info!("Fully opaque: {}", doc.geo_builder.fully_opaque());
     let mut images = vec![];
     let mut views = vec![];
@@ -319,7 +330,6 @@ pub fn create_global(context: &Context, doc: &Doc, skybox: SkyboxResource) -> Re
         Ok(())
     })?;
 
-
     let samplers = doc
         .samplers
         .iter()
@@ -328,7 +338,6 @@ pub fn create_global(context: &Context, doc: &Doc, skybox: SkyboxResource) -> Re
             context.create_sampler(&sampler_info)
         })
         .collect::<Result<Vec<_>>>()?;
-
 
     let textures = doc
         .textures
@@ -354,9 +363,9 @@ pub fn create_global(context: &Context, doc: &Doc, skybox: SkyboxResource) -> Re
 impl Into<vk::SamplerAddressMode> for WrapMode {
     fn into(self) -> SamplerAddressMode {
         match self {
-            WrapMode::ClampToEdge => {vk::SamplerAddressMode::CLAMP_TO_EDGE},
-            WrapMode::MirroredRepeat => {vk::SamplerAddressMode::MIRRORED_REPEAT},
-            WrapMode::Repeat => {vk::SamplerAddressMode::REPEAT}
+            WrapMode::ClampToEdge => vk::SamplerAddressMode::CLAMP_TO_EDGE,
+            WrapMode::MirroredRepeat => vk::SamplerAddressMode::MIRRORED_REPEAT,
+            WrapMode::Repeat => vk::SamplerAddressMode::REPEAT,
         }
     }
 }

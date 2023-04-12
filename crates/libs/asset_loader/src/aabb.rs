@@ -1,6 +1,6 @@
-use std::ops::Mul;
 use glam::{Mat4, Vec3, Vec4};
 use gltf::mesh::Bounds;
+use std::ops::Mul;
 
 /// Axis aligned bounding box.
 #[derive(Copy, Clone, Debug)]
@@ -16,7 +16,7 @@ impl Aabb {
     }
 }
 
-impl Aabb{
+impl Aabb {
     /// Compute the union of several AABBs.
     pub fn union(aabbs: &[Aabb]) -> Option<Self> {
         if aabbs.is_empty() {
@@ -26,12 +26,9 @@ impl Aabb{
         } else {
             // let partial_cmp = |a, b| a.partial_cmp(b);
             let by_key = |a: &f32, b: &f32| a.partial_cmp(b).unwrap();
-            let min_x = aabbs.iter().map(|aabb| aabb.min.x)
-                .min_by(by_key).unwrap();
-            let min_y = aabbs.iter().map(|aabb| aabb.min.y)
-                .min_by(by_key).unwrap();
-            let min_z = aabbs.iter().map(|aabb| aabb.min.z)
-                .min_by(by_key).unwrap();
+            let min_x = aabbs.iter().map(|aabb| aabb.min.x).min_by(by_key).unwrap();
+            let min_y = aabbs.iter().map(|aabb| aabb.min.y).min_by(by_key).unwrap();
+            let min_z = aabbs.iter().map(|aabb| aabb.min.z).min_by(by_key).unwrap();
             let min = Vec3::new(min_x, min_y, min_z);
 
             let max_x = aabbs.iter().map(|aabb| aabb.max.x).max_by(by_key).unwrap();
@@ -89,7 +86,6 @@ impl Mul<f32> for Aabb {
         Aabb::new(self.min * rhs, self.max * rhs)
     }
 }
-
 
 pub fn get_aabb(bounds: &Bounds<[f32; 3]>) -> Aabb {
     let min = bounds.min;

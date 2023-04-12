@@ -2,13 +2,13 @@ use std::collections::HashSet;
 
 use std::path::Path;
 
-use cfg_if::cfg_if;
-use gltf::Document;
 use crate::error::*;
 use crate::{check_indices, Name};
+use cfg_if::cfg_if;
 use gltf::image::{Format, Source};
-use image::{GenericImageView};
+use gltf::Document;
 use image::io::Reader as ImageReader;
+use image::GenericImageView;
 use log::info;
 
 #[derive(Debug, Clone)]
@@ -21,7 +21,6 @@ pub struct Image {
     pub gamma: TexGamma,
     format: Format,
 }
-
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum TexGamma {
@@ -63,11 +62,7 @@ impl Image {
 
         let width = img.width();
         let height = img.height();
-        let iter =
-            img
-                .pixels()
-                .map(|(_x, _y, c)| c.0)
-                .flatten();
+        let iter = img.pixels().map(|(_x, _y, c)| c.0).flatten();
         let pixels =
         //     if let Some(collecter) = collector {
         //     collecter.extend(iter);
@@ -94,7 +89,9 @@ impl TryFrom<&gltf::image::Data> for Image {
         let width = image.width;
         let height = image.height;
         let pixel_count = width * height;
-        let pixels = PixelIter::new(image, pixel_count as _)?.flatten().collect::<Vec<_>>();
+        let pixels = PixelIter::new(image, pixel_count as _)?
+            .flatten()
+            .collect::<Vec<_>>();
 
         Ok(Self {
             pixels,
@@ -149,26 +146,26 @@ impl<'a> Iterator for PixelIter<'a> {
         let index = self.position;
         use Format::*;
         let pixel = match self.format {
-                   R8 => [pixels[index], pixels[index], pixels[index], u8::MAX],
-        // actually luma8 with alpha
-        R8G8 => [
-            pixels[index * 2],
-            pixels[index * 2],
-            pixels[index * 2],
-            pixels[index * 2 + 1],
-        ],
-        R8G8B8 => [
-            pixels[index * 3],
-            pixels[index * 3 + 1],
-            pixels[index * 3 + 2],
-            std::u8::MAX,
-        ],
-        R8G8B8A8 => [
-            pixels[index * 4],
-            pixels[index * 4 + 1],
-            pixels[index * 4 + 2],
-            pixels[index * 4 + 3],
-        ],
+            R8 => [pixels[index], pixels[index], pixels[index], u8::MAX],
+            // actually luma8 with alpha
+            R8G8 => [
+                pixels[index * 2],
+                pixels[index * 2],
+                pixels[index * 2],
+                pixels[index * 2 + 1],
+            ],
+            R8G8B8 => [
+                pixels[index * 3],
+                pixels[index * 3 + 1],
+                pixels[index * 3 + 2],
+                std::u8::MAX,
+            ],
+            R8G8B8A8 => [
+                pixels[index * 4],
+                pixels[index * 4 + 1],
+                pixels[index * 4 + 2],
+                pixels[index * 4 + 3],
+            ],
             _ => unreachable!("Self::new already checks"),
         };
 
@@ -178,27 +175,36 @@ impl<'a> Iterator for PixelIter<'a> {
 }
 
 #[cfg(feature = "rayon")]
-pub fn process_images_par(gltf_images: &[gltf::image::Data], doc: &Document, linear: &HashSet<usize>) -> Vec<Image> {
+pub fn process_images_par(
+    gltf_images: &[gltf::image::Data],
+    doc: &Document,
+    linear: &HashSet<usize>,
+) -> Vec<Image> {
     use rayon::prelude::*;
     let image_infos = doc.images().collect::<Vec<_>>();
     info!("Rayon enabled. Processing {} images", image_infos.len());
-    let images: Vec<_> =
-                rayon::iter::once(Image::default())
-            .chain(
-                gltf_images.par_iter()
-                    .map(Image::try_from)
-                    .map(Result::unwrap)
-                    .zip(image_infos)
-                    .map(|(mut img, info)| {
-                        img.update_info(info, &linear);
-                        img
-                    })
-            ).collect();
+    let images: Vec<_> = rayon::iter::once(Image::default())
+        .chain(
+            gltf_images
+                .par_iter()
+                .map(Image::try_from)
+                .map(Result::unwrap)
+                .zip(image_infos)
+                .map(|(mut img, info)| {
+                    img.update_info(info, &linear);
+                    img
+                }),
+        )
+        .collect();
     check_indices!(images);
     images
 }
 
-pub fn process_images_unified(gltf_images: &[gltf::image::Data], doc: &Document, linear: &HashSet<usize>) -> Vec<Image> {
+pub fn process_images_unified(
+    gltf_images: &[gltf::image::Data],
+    doc: &Document,
+    linear: &HashSet<usize>,
+) -> Vec<Image> {
     cfg_if! {
         if #[cfg(feature = "rayon")] {
             process_images_par(&gltf_images, &doc, &linear)
@@ -209,21 +215,26 @@ pub fn process_images_unified(gltf_images: &[gltf::image::Data], doc: &Document,
 }
 
 #[cfg(not(feature = "rayon"))]
-pub fn process_images(gltf_images: &[gltf::image::Data], doc: &Document, linear: &HashSet<usize>) -> Vec<Image> {
+pub fn process_images(
+    gltf_images: &[gltf::image::Data],
+    doc: &Document,
+    linear: &HashSet<usize>,
+) -> Vec<Image> {
     let image_infos = doc.images().collect::<Vec<_>>();
     info!("Rayon disabled. Processing {} images", image_infos.len());
-    let images: Vec<_> =
-        once(Image::default())
-            .chain(
-                gltf_images.iter()
-                    .map(Image::try_from)
-                    .map(Result::unwrap)
-                    .zip(image_infos)
-                    .map(|(mut img, info)| {
-                        img.update_info(info, &linear);
-                        img
-                    })
-            ).collect();
+    let images: Vec<_> = once(Image::default())
+        .chain(
+            gltf_images
+                .iter()
+                .map(Image::try_from)
+                .map(Result::unwrap)
+                .zip(image_infos)
+                .map(|(mut img, info)| {
+                    img.update_info(info, &linear);
+                    img
+                }),
+        )
+        .collect();
     check_indices!(images);
     images
 }

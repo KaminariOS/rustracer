@@ -1,21 +1,21 @@
 use crate::error::*;
 use crate::geometry::{GeoBuilder, Mesh};
-use crate::image::{Image, process_images_unified};
+use crate::image::{process_images_unified, Image};
 use crate::material::{find_linear_textures, Material, MaterialRaw};
 use crate::texture::{Sampler, Texture};
-use crate::{ MeshID, Name, NodeID, SceneID, check_extensions, check_indices, get_index, get_name};
-use glam::{Mat4};
+use crate::{check_extensions, check_indices, get_index, get_name, MeshID, Name, NodeID, SceneID};
+use glam::Mat4;
 use gltf::buffer;
 use gltf::image;
-use gltf::{Document};
+use gltf::Document;
 
+use crate::animation::{Animation, PropertyOutput};
+use crate::light::{report_lights, Light, LightRaw};
+use gltf::scene::Transform;
+use log::info;
 use std::iter::once;
 use std::path::Path;
 use std::time::Instant;
-use gltf::scene::Transform;
-use log::{info};
-use crate::animation::{Animation, PropertyOutput};
-use crate::light::{Light, LightRaw, report_lights};
 
 #[derive(Default)]
 pub struct Doc {
@@ -65,30 +65,29 @@ impl Doc {
         }
 
         if dlights.is_empty() {
-                dlights.push(LightRaw {
-                    ..Default::default()
+            dlights.push(LightRaw {
+                ..Default::default()
             });
         }
         [dlights, plights]
     }
 
-    pub fn traverse_root_nodes<F: FnMut(&Node)>(&self, f:&mut F) {
-        self.get_current_scene().root_nodes.iter()
+    pub fn traverse_root_nodes<F: FnMut(&Node)>(&self, f: &mut F) {
+        self.get_current_scene()
+            .root_nodes
+            .iter()
             .map(|&node| &self.nodes[node])
             .for_each(|node| self.iter_gltf_node_tree(node, f));
     }
 
     // From Kajiya
-    fn iter_gltf_node_tree<F: FnMut(&Node)>(
-        &self,
-        node: &Node,
-        f: &mut F,
-    ) {
+    fn iter_gltf_node_tree<F: FnMut(&Node)>(&self, node: &Node, f: &mut F) {
         f(node);
-        node.children.iter()
+        node.children
+            .iter()
             .map(|&child| &self.nodes[child])
             .for_each(|child| self.iter_gltf_node_tree(child, f))
-        }
+    }
 
     fn new(doc: &Document, buffers: Vec<buffer::Data>, gltf_images: Vec<image::Data>) -> Self {
         let current_scene = doc
@@ -99,17 +98,23 @@ impl Doc {
         check_indices!(scenes);
         let nodes: Vec<_> = doc.nodes().map(Node::from).collect();
         check_indices!(nodes);
-        let lights: Vec<_> = doc.lights().into_iter().flat_map(|ls| ls.map(Light::from)).collect();
+        let lights: Vec<_> = doc
+            .lights()
+            .into_iter()
+            .flat_map(|ls| ls.map(Light::from))
+            .collect();
         check_indices!(lights);
         report_lights(&lights);
 
         let materials: Vec<_> = doc.materials().map(Material::from).collect();
         check_indices!(materials);
 
-        let mut geo_builder = GeoBuilder::new(buffers,
-        &materials);
+        let mut geo_builder = GeoBuilder::new(buffers, &materials);
 
-        let animations: Vec<_> = doc.animations().map(|a| Animation::new(a, &geo_builder) ).collect();
+        let animations: Vec<_> = doc
+            .animations()
+            .map(|a| Animation::new(a, &geo_builder))
+            .collect();
         check_indices!(animations);
 
         let now = Instant::now();
@@ -119,23 +124,29 @@ impl Doc {
             .collect();
         geo_builder.buffers = Vec::with_capacity(0);
         check_indices!(meshes);
-        info!("Finish processing meshes, time:{}s", now.elapsed().as_secs());
+        info!(
+            "Finish processing meshes, time:{}s",
+            now.elapsed().as_secs()
+        );
 
         let linear = find_linear_textures(&materials);
 
         let now = Instant::now();
         let images = process_images_unified(&gltf_images, &doc, &linear);
-        info!("Finish processing images, time:{}s", now.elapsed().as_secs());
+        info!(
+            "Finish processing images, time:{}s",
+            now.elapsed().as_secs()
+        );
 
         let samplers: Vec<_> = once(Sampler::default())
             .chain(doc.samplers().map(Sampler::from))
             .collect();
         check_indices!(samplers);
 
-        let textures = once(Texture::default()).chain(doc.textures().map(Texture::from)).collect::<Vec<_>>();
+        let textures = once(Texture::default())
+            .chain(doc.textures().map(Texture::from))
+            .collect::<Vec<_>>();
         check_indices!(textures);
-
-
 
         Self {
             current_scene,
@@ -155,11 +166,11 @@ impl Doc {
     }
 
     fn load_scene(&mut self, _document: &Document) {
-            let scene = &self.scenes[self.current_scene];
-            let root_nodes  = scene.root_nodes.clone();
-            root_nodes
-                .into_iter()
-                .for_each(|n| self.update_parent_transform(n, Mat4::IDENTITY));
+        let scene = &self.scenes[self.current_scene];
+        let root_nodes = scene.root_nodes.clone();
+        root_nodes
+            .into_iter()
+            .for_each(|n| self.update_parent_transform(n, Mat4::IDENTITY));
     }
 
     fn update_local_transform(&mut self, node_id: NodeID, new_local: Transform) {
@@ -180,19 +191,21 @@ impl Doc {
     }
 
     pub fn animate(&mut self, t: f32) {
-        let all: Vec<_> = self.animations.iter().map(|a| &a.channels)
+        let all: Vec<_> = self
+            .animations
+            .iter()
+            .map(|a| &a.channels)
             .flatten()
             .map(|c| {
                 let target = c.target;
                 let trans = c.get_transform(t);
                 (target, trans)
-            }).collect();
-        all.into_iter().for_each(|(target, trans)|
-            {
-                let transform = self.nodes[target].animate(trans);
-                self.update_local_transform(target, transform);
-            }
-        );
+            })
+            .collect();
+        all.into_iter().for_each(|(target, trans)| {
+            let transform = self.nodes[target].animate(trans);
+            self.update_local_transform(target, transform);
+        });
     }
 
     pub fn static_scene(&self) -> bool {
@@ -234,21 +247,30 @@ impl Node {
 
 impl Node {
     pub fn get_world_transform(&self) -> Mat4 {
-        self.parent_transform_cache *
-            self.get_local_transform()
+        self.parent_transform_cache * self.get_local_transform()
     }
     pub fn get_local_transform(&self) -> Mat4 {
         Mat4::from_cols_array_2d(&self.local_transform.clone().matrix())
     }
 
     pub fn animate(&self, update: PropertyOutput) -> Transform {
-        let (mut t, mut r, mut s ) = self.local_transform.clone().decomposed();
+        let (mut t, mut r, mut s) = self.local_transform.clone().decomposed();
         match update {
-            PropertyOutput::Translation(t_new) => {t = t_new;}
-            PropertyOutput::Rotation(r_new) => {r = r_new;}
-            PropertyOutput::Scale(s_new) => {s = s_new;}
+            PropertyOutput::Translation(t_new) => {
+                t = t_new;
+            }
+            PropertyOutput::Rotation(r_new) => {
+                r = r_new;
+            }
+            PropertyOutput::Scale(s_new) => {
+                s = s_new;
+            }
         }
-        Transform::Decomposed {translation: t, scale: s, rotation: r}
+        Transform::Decomposed {
+            translation: t,
+            scale: s,
+            rotation: r,
+        }
     }
 }
 
@@ -268,7 +290,7 @@ impl<'a> From<gltf::Skin<'_>> for Skin {
         Self {
             index: skin.index(),
             name: get_name!(skin),
-            joints
+            joints,
         }
     }
 }
@@ -288,15 +310,17 @@ impl<'a> From<gltf::Node<'_>> for Node {
     }
 }
 
-
-
 pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Doc> {
     let now = Instant::now();
     let name = path.as_ref().to_str().unwrap_or_default().to_string();
     let (document, buffers, gltf_images) =
         gltf::import(resource_manager::load_model(path)).map_err(|e| Error::Load(e.to_string()))?;
 
-    info!("Finish loading glTF {}, time:{}s", name, now.elapsed().as_secs());
+    info!(
+        "Finish loading glTF {}, time:{}s",
+        name,
+        now.elapsed().as_secs()
+    );
     check_extensions(&document);
 
     let mut doc = Doc::new(&document, buffers, gltf_images);
@@ -341,10 +365,10 @@ fn test() {
     println!();
 
     let nodes: Vec<_> = doc.nodes.iter().collect();
-    for  node in nodes {
+    for node in nodes {
         println!(
             "Node {:?} mesh:{:?} children:{:?}",
-              node.name, node.mesh, node.children
+            node.name, node.mesh, node.children
         );
     }
     println!();

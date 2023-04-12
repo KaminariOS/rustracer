@@ -3,7 +3,6 @@ use app::types::*;
 #[derive(Debug, Clone, Copy)]
 #[repr(C)]
 pub struct UniformBufferObject {
-
     pub(crate) model_view: Mat4,
     pub(crate) projection: Mat4,
     pub(crate) model_view_inverse: Mat4,

@@ -3,7 +3,7 @@
 A PBR [glTF 2.0](https://www.khronos.org/gltf) renderer based on Vulkan ray-tracing, written in Rust.
 
 ## Naming
-My project and I are not affiliated with the Rust Foundation. I name it `rustracer` only because I love Rust and ray tracing.
+This project and I are not affiliated with the Rust Foundation. I name it `rustracer` only because I love Rust and ray tracing.
 
 ## Credits
 
@@ -69,7 +69,7 @@ I stole the PBR shaders from the [referencePT](https://github.com/boksajak/refer
 ## Building
 ### Prerequisites
 - Linux and a graphics card that supports KHR ray tracing
-  - Currently, I hard-coded all model paths in an enum(in [`gui_state.rs`](crates/examples/gltf_viewer/src/gui_state.rs)) and load models in the search paths(see [`resource manager`](crates/libs/resource_manager)). Later I will add cmd and gui support for adding models without rebuild.
+  - Currently, I hard-coded all model paths in an enum(in [`gui_state.rs`](crates/examples/gltf_viewer/src/gui_state.rs)) and load models in the search paths(see [`resource manager`](crates/libs/resource_manager)). Later I will add cli and gui support for adding models without rebuild.
 - Windows not supported. Need some minor cfg tweaks to work on Windows. Open to pull requests.
 
 

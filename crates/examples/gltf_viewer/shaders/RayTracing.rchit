@@ -23,7 +23,7 @@ layout(binding = UNIFORM_BIND, set = 0) readonly uniform UniformBufferObjectStru
 hitAttributeEXT vec2 HitAttributes;
 rayPayloadInEXT RayPayload Ray;
 
-layout(location = 0) rayPayloadEXT RayPayload shadowRay;
+layout(location = 0) rayPayloadEXT ShadowRay shadowRay;
 
 vec3 normal_transform(vec3 normal) {
 	return normalize(vec3(gl_ObjectToWorldEXT * vec4(normal, 0.)));
@@ -41,8 +41,7 @@ bool castShadowRay(vec3 hitPosition, vec3 surfaceNormal, vec3 directionToLight, 
 	//    ShadowHitInfo payload;
 	//    payload.hasHit = true; //< Initialize hit flag to true, it will be set to false on a miss
 	float tMin = 0.1;
-	shadowRay.shadowRay = true;
-	shadowRay.t = 1.;
+	shadowRay.shadow = true;
 	uint flags = gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsSkipClosestHitShaderEXT;
 	if (ubo.fully_opaque) {
 		flags |= gl_RayFlagsOpaqueEXT;
@@ -52,9 +51,9 @@ bool castShadowRay(vec3 hitPosition, vec3 surfaceNormal, vec3 directionToLight, 
 	Scene,  flags, 0xff,
 //	SHADOW_RAY_INDEX
 	0
-	/*sbtRecordOffset*/, 0 /*sbtRecordStride*/, 0 /*missIndex*/,
+	/*sbtRecordOffset*/, 0 /*sbtRecordStride*/, 1 /*missIndex*/,
 	origin.xyz, tMin, direction.xyz, tMax, 0 /*payload*/);
-	return shadowRay.t < 0;
+	return !shadowRay.shadow;
 }
 
 // Samples a random light from the pool of all lights using simplest uniform distirbution

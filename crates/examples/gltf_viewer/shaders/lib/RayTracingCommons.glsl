@@ -19,9 +19,12 @@ struct RayPayload
 	vec3 emittance;
 	RngStateType rngState;
 	float volume_dis;
-	bool shadowRay;
 //	uint instance_id;
 //	vec2 bary;
+};
+
+struct ShadowRay {
+	bool shadow;
 };
 
 

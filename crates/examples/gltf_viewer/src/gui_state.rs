@@ -47,7 +47,10 @@ pub enum Scene {
     // VertexColorTest,
     SpecularTest,
 
-    #[default]
+    Bathroom,
+    BistroExt,
+    Emerald,
+    BistroInterior,
     CornellBoxLucy,
     Cornell,
     ABeautifulGame,
@@ -70,6 +73,7 @@ pub enum Scene {
     SparkLence,
     Apollo,
     CyberSamurai,
+    #[default]
     Apex,
     Ra,
     BlueEye,

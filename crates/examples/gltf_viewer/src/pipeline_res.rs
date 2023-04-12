@@ -124,6 +124,7 @@ pub fn create_pipeline(
     let ray_chit = load_spv("RayTracing.rchit.spv");
     let ray_rahit = load_spv("RayTracing.rahit.spv");
     let _shadow_rahit = load_spv("RayTracing.rahit.spv");
+    let shadow_miss = load_spv("RayTracing.shadow.rmiss.spv");
     let mut shaders_create_info = vec![
         RayTracingShaderCreateInfo {
             source: &ray_gen,
@@ -132,6 +133,11 @@ pub fn create_pipeline(
         },
         RayTracingShaderCreateInfo {
             source: &ray_miss,
+            stage: vk::ShaderStageFlags::MISS_KHR,
+            group: RayTracingShaderGroup::Miss,
+        },
+        RayTracingShaderCreateInfo {
+            source: &shadow_miss,
             stage: vk::ShaderStageFlags::MISS_KHR,
             group: RayTracingShaderGroup::Miss,
         },

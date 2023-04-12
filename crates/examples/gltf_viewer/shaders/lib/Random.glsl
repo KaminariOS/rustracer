@@ -3,7 +3,7 @@
 #extension GL_EXT_control_flow_attributes : require
 
 #define RngStateType uvec4
-#define RIS_CANDIDATES_LIGHTS 2
+#define RIS_CANDIDATES_LIGHTS 3
 
 // Generates a seed for a random number generator from 2 inputs plus a backoff
 // https://github.com/nvpro-samples/optix_prime_baking/blob/332a886f1ac46c0b3eea9e89a59593470c755a0e/random.h

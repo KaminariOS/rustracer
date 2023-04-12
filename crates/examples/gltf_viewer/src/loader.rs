@@ -12,17 +12,17 @@
 
 use log::{info};
 
-use std::error::Error;
-use std::path::{Path, PathBuf};
+
+
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
-use std::sync::Arc;
+
 use std::thread;
 use std::thread::JoinHandle;
-use app::vulkan::Context;
+
 use asset_loader::{Doc, load_file};
-use crate::GltfViewerBuilder;
-use crate::gui_state::{Scene, Skybox};
+
+
 
 enum Message {
     Load(String),
@@ -89,7 +89,7 @@ impl Loader {
     /// If no model is ready, then `None` is returned.
     pub fn get_model(&self) -> Option<Doc> {
         match self.model_receiver.try_recv() {
-            Ok(mut pre_loaded_model) => Some(pre_loaded_model),
+            Ok(pre_loaded_model) => Some(pre_loaded_model),
             _ => None,
         }
     }

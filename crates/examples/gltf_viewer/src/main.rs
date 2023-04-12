@@ -1,14 +1,14 @@
 use std::default::Default;
 use app::anyhow::Result;
 use app::camera::Camera;
-use app::types::*;
+
 use app::vulkan::ash::vk::{self};
 use app::vulkan::gpu_allocator::MemoryLocation;
 use app::{App, FrameStats};
 use app::{vulkan::*, BaseApp};
 use std::mem::size_of;
 use std::rc::Rc;
-use std::sync::Arc;
+
 use std::time::{Instant};
 use log::info;
 
@@ -19,7 +19,7 @@ mod ubo;
 mod loader;
 
 use crate::gui_state::{Scene, Skybox};
-use asset_loader::acceleration_structures::{BlasInput, create_as, create_top_as, TopAS};
+use asset_loader::acceleration_structures::{create_as, create_top_as, TopAS};
 use asset_loader::globals::{create_global, Buffers, VkGlobal, SkyboxResource};
 use asset_loader::{Doc, load_file};
 use asset_loader::light::LightRaw;
@@ -94,7 +94,7 @@ struct GltfViewerBuilder {
 
 impl GltfViewer {
     fn new_with_scene(base: &BaseApp<Self>, scene: Scene, skybox: Skybox, loader: Rc<Loader>) -> Result<Self> {
-        let context = &base.context;
+        let _context = &base.context;
         let doc = load_file(scene.path())?;
         Self::new_with_doc(base, doc, skybox, loader)
     }

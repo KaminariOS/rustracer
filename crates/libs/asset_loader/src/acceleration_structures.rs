@@ -12,8 +12,8 @@ use log::info;
 use vulkan::ash::vk;
 use vulkan::ash::vk::Packed24_8;
 
-use vulkan::utils::{create_gpu_only_buffer_from_data, create_gpu_only_buffer_from_data_batch};
-use vulkan::{AccelerationStructure, Buffer, Context, Fence};
+use vulkan::utils::{create_gpu_only_buffer_from_data_batch};
+use vulkan::{AccelerationStructure, Buffer, Context};
 
 fn primitive_to_vk_geometry(
     _context: &Context,

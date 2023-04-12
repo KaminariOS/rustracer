@@ -71,24 +71,6 @@ struct GltfViewer {
     loader: Rc<Loader>,
 }
 
-struct GltfViewerBuilder {
-    ubo_buffer: Buffer,
-    doc: Doc,
-    _bottom_as: Vec<AccelerationStructure>,
-    top_as: TopAS,
-    sbt: ShaderBindingTable,
-    pipeline_res: PipelineRes,
-    total_number_of_samples: u32,
-    prev_gui_state: Option<Gui>,
-    old_camera: Option<Camera>,
-
-    buffers: Buffers,
-    globals: VkGlobal,
-    clock: Instant,
-    last_update: Instant,
-    fully_opaque: bool,
-}
-
 impl GltfViewer {
     fn new_with_scene(
         base: &BaseApp<Self>,

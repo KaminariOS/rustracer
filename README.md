@@ -1,12 +1,15 @@
-# Rustracer
+# [Rustracer](https://github.com/KaminariOS/rustracer)
 
 A glTF 2.0 renderer based on Vulkan ray-tracing, written in Rust.
 
 This project is based on Adrien Ben's [vulkan-examples-rs](https://github.com/adrien-ben/vulkan-examples-rs).
 
-[Demo videos]()
+[Demo videos](https://www.youtube.com/playlist?list=PLD1H28onwV_mFsPySwOtlBn9h5ybzepir)
 
 I stole the PBR shaders from the [referencePT](https://github.com/boksajak/referencePT) project and made some changes.
+
+## Sample picture
+![Lucy in Cornell](images/lucy.png)
 
 ## Features
 * [x] Loading arbitrary glTF 2.0 models
@@ -61,6 +64,7 @@ I stole the PBR shaders from the [referencePT](https://github.com/boksajak/refer
 ## Building
 ### Prerequisites
 - Linux and a graphics card that supports KHR ray tracing
+  - Currently, I hard-coded all model paths in an enum(in `gui_state.rs`) and load models in the search paths(see `asset manager`). Later I will add cmd and gui support for adding models without rebuild.
 - Windows not supported. Need some minor cfg tweaks to work on Windows. Open to pull requests.
 
 
@@ -77,6 +81,7 @@ However, some external C libraries like Vulkan SDK may be missing on your system
 ## Assets
 A pointer to glTF models: 
 - [glTF sample models](https://github.com/KhronosGroup/glTF-Sample-Models).
+- [A ton of glTF models](https://sketchfab.com/search?features=downloadable&type=models)
 - [Open Research Content Archive](https://developer.nvidia.com/orca) can be converted to glTF with Blender.
 - [Poly heaven](https://polyhaven.com)
 

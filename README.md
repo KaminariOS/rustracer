@@ -96,3 +96,4 @@ Pointers to glTF models:
 - [adrien-ben/gltf-viewer-rs](https://github.com/adrien-ben/gltf-viewer-rs)
 - [adrien-ben/vulkan-examples-rs](https://github.com/adrien-ben/vulkan-examples-rs)
 - [GPSnoopy/RayTracingInVulkan](https://github.com/GPSnoopy/RayTracingInVulkan)
+- [Ray Tracing Gems II](https://www.realtimerendering.com/raytracinggems/rtg2/index.html)

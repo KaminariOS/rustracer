@@ -252,6 +252,9 @@ void main()
 		case TRANSMISSION:
 		Ray.emittance = vec3(transmission_factor);
 		return;
+		case GEO_ID:
+		Ray.emittance = hashAndColor(gl_InstanceCustomIndexEXT);
+		return;
 	}
 
 
@@ -415,15 +418,20 @@ void main()
 		}
 		else
 		if (length(emittance) < 0.01 && roughness == 1.) {
-			const bool isScattered = dot(gl_WorldRayDirectionEXT, outwardNormal) < 0.00;
-			const vec3 scatter = vec3(normal + RandomInUnitSphere(seed));
+			const bool isScattered = dot(gl_WorldRayDirectionEXT, geo_normal) < 0.00;
+			const vec3 scatter = normalize(vec3(outwardNormal + RandomInUnitSphere(seed)));
 			Ray.needScatter = isScattered;
 			Ray.scatterDirection = scatter;
 			Ray.hitValue = isScattered? color: vec3(0.);
 		}
 		else if (metallic > 0.) {
-			const vec3 reflected = reflect(gl_WorldRayDirectionEXT, normal);
-			const bool isScattered = dot(reflected, normal) > 0;
+			vec3 reflected;
+
+			reflected = reflect(gl_WorldRayDirectionEXT, outwardNormal);
+//			if (dot(reflected, geo_normal) <= 0 ) {
+//				reflected = reflect(gl_WorldRayDirectionEXT, geo_normal);
+//			}
+			const bool isScattered = dot(reflected, geo_normal) > 0;
 			Ray.needScatter = isScattered;
 			Ray.hitValue = isScattered? color: vec3(0.);
 			Ray.scatterDirection = reflected + 0.08 * RandomInUnitSphere(seed);

@@ -143,5 +143,6 @@ const uint ROUGHNESS = 7;
 const uint NORMAL = 8;
 const uint TANGENT = 9;
 const uint TRANSMISSION = 10;
+const uint GEO_ID = 11;
 
 

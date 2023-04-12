@@ -41,7 +41,6 @@ pub struct Gui {
 
 #[derive(IntoStaticStr, AsRefStr, EnumIter, PartialEq, Clone, Copy, Debug, Default)]
 pub enum Scene {
-    #[default]
     ZeroDay,
     TransmissionRoughnessTest,
     // Passed tests
@@ -57,6 +56,7 @@ pub enum Scene {
     BistroInterior,
     CornellBoxLucy,
     Cornell,
+    #[default]
     ABeautifulGame,
     Sponza,
     Type59,
@@ -190,6 +190,7 @@ pub enum Mapping {
     NORMAL = 8,
     TANGENT = 9,
     TRANSMISSION = 10,
+    GEO_ID = 11,
 }
 
 impl Gui {

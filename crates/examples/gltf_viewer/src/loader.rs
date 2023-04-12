@@ -10,7 +10,7 @@
 //! Users have to call `load` to load a new model and `get_model` to retrieve
 //! the loaded model.
 
-use model::{Model, ModelStagingResources};
+use log::{info};
 
 use std::error::Error;
 use std::path::{Path, PathBuf};
@@ -19,12 +19,13 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
-use asset_loader::Doc;
-use vulkan::ash::vk;
-use vulkan::{Context, PreLoadedResource};
+use app::vulkan::Context;
+use asset_loader::{Doc, load_file};
+use crate::GltfViewerBuilder;
+use crate::gui_state::{Scene, Skybox};
 
 enum Message {
-    Load(PathBuf),
+    Load(String),
     Stop,
 }
 
@@ -38,25 +39,24 @@ impl Loader {
     pub fn new() -> Self {
         let (message_sender, message_receiver) = mpsc::channel();
         let (model_sender, model_receiver) = mpsc::channel();
-
         let thread_handle = Some(thread::spawn(move || {
-            log::info!("Starting loader");
+            info!("Starting loader");
             loop {
                 let message = message_receiver.recv().expect("Failed to receive a path");
                 match message {
                     Message::Load(path) => {
-                        log::info!("Start loading {}", path.as_path().display());
-                        let pre_loaded_model = pre_load_model(&context, path.as_path());
+                        info!("Start loading {}", path);
+                        let pre_loaded_model = load_file(&path);
 
                         match pre_loaded_model {
                             Ok(pre_loaded_model) => {
-                                log::info!("Finish loading {}", path.as_path().display());
+                                info!("Finish loading {}", path);
                                 model_sender.send(pre_loaded_model).unwrap();
                             }
                             Err(error) => {
                                 log::error!(
-                                    "Failed to load {}. Cause: {}",
-                                    path.as_path().display(),
+                                    "Failed to load {}. Cause: {:?}",
+                                    path,
                                     error
                                 );
                             }
@@ -65,7 +65,7 @@ impl Loader {
                     Message::Stop => break,
                 }
             }
-            log::info!("Stopping loader");
+            info!("Stopping loader");
         }));
 
         Self {
@@ -78,7 +78,7 @@ impl Loader {
     /// Start loading a new model in the background.
     ///
     /// Call `get_model` to retrieve the loaded model.
-    pub fn load(&self, path: PathBuf) {
+    pub fn load(&self, path: String) {
         self.message_sender
             .send(Message::Load(path))
             .expect("Failed to send load message to loader");
@@ -87,22 +87,22 @@ impl Loader {
     /// Get the last loaded model.
     ///
     /// If no model is ready, then `None` is returned.
-    pub fn get_model(&self) -> Option<Model> {
+    pub fn get_model(&self) -> Option<Doc> {
         match self.model_receiver.try_recv() {
-            Ok(mut pre_loaded_model) => Some(pre_loaded_model.finish()),
+            Ok(mut pre_loaded_model) => Some(pre_loaded_model),
             _ => None,
         }
     }
 }
 
-fn pre_load_model<P: AsRef<Path>>(
-    path: P,
-) -> Result<PreLoadedResource<Model, ModelStagingResources>, Box<dyn Error>> {
-    let device = context.device();
-
-    // Create command buffer
-
-}
+// fn pre_load_model<P: AsRef<Path>>(
+//     path: P,
+// ) -> Result<PreLoadedResource<Model, ModelStagingResources>, Box<dyn Error>> {
+//     let device = context.device();
+//
+//     // Create command buffer
+//
+// }
 
 impl Drop for Loader {
     fn drop(&mut self) {
@@ -114,6 +114,10 @@ impl Drop for Loader {
                 .join()
                 .expect("Failed to wait for loader thread termination");
         }
-        log::info!("Loader dropped");
+        info!("Loader dropped");
     }
 }
+
+
+
+

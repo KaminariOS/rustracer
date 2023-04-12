@@ -7,7 +7,10 @@ use app::vulkan::gpu_allocator::MemoryLocation;
 use app::{App, FrameStats};
 use app::{vulkan::*, BaseApp};
 use std::mem::size_of;
+use std::rc::Rc;
+use std::sync::Arc;
 use std::time::{Instant};
+use log::info;
 
 mod desc_sets;
 mod gui_state;
@@ -18,12 +21,13 @@ mod loader;
 use crate::gui_state::{Scene, Skybox};
 use asset_loader::acceleration_structures::{BlasInput, create_as, create_top_as, TopAS};
 use asset_loader::globals::{create_global, Buffers, VkGlobal, SkyboxResource};
-use asset_loader::Doc;
+use asset_loader::{Doc, load_file};
 use asset_loader::light::LightRaw;
 use desc_sets::*;
 use gui_state::Gui;
 use pipeline_res::*;
 use ubo::UniformBufferObject;
+use crate::loader::Loader;
 
 const WIDTH: u32 = 1920;
 const HEIGHT: u32 = 1080;
@@ -51,8 +55,7 @@ struct GltfViewer {
     ubo_buffer: Buffer,
     doc: Doc,
     _bottom_as: Vec<AccelerationStructure>,
-    blas_inputs: Vec<BlasInput>,
-    _top_as: TopAS,
+    top_as: TopAS,
     pipeline_res: PipelineRes,
     sbt: ShaderBindingTable,
     descriptor_res: DescriptorRes,
@@ -65,73 +68,99 @@ struct GltfViewer {
     clock: Instant,
     last_update: Instant,
     fully_opaque: bool,
+    loader: Rc<Loader>
 }
-impl GltfViewer {
-    fn new_with_scene(base: &mut BaseApp<Self>, scene: Scene, skybox: Skybox) -> Result<Self> {
-        let context = &mut base.context;
 
+
+struct GltfViewerBuilder {
+    ubo_buffer: Buffer,
+    doc: Doc,
+    _bottom_as: Vec<AccelerationStructure>,
+    top_as: TopAS,
+    sbt: ShaderBindingTable,
+    pipeline_res: PipelineRes,
+    total_number_of_samples: u32,
+    prev_gui_state: Option<Gui>,
+    old_camera: Option<Camera>,
+
+    buffers: Buffers,
+    globals: VkGlobal,
+    clock: Instant,
+    last_update: Instant,
+    fully_opaque: bool,
+}
+
+
+
+impl GltfViewer {
+    fn new_with_scene(base: &BaseApp<Self>, scene: Scene, skybox: Skybox, loader: Rc<Loader>) -> Result<Self> {
+        let context = &base.context;
+        let doc = load_file(scene.path())?;
+        Self::new_with_doc(base, doc, skybox, loader)
+    }
+
+
+    fn new_with_doc(base: &BaseApp<Self>, doc: Doc, skybox: Skybox, loader: Rc<Loader>) -> Result<Self> {
+        let start = Instant::now();
+        let context = &base.context;
         let ubo_buffer = context.create_buffer(
             vk::BufferUsageFlags::UNIFORM_BUFFER,
             MemoryLocation::CpuToGpu,
             size_of::<UniformBufferObject>() as _,
         )?;
-        let doc = asset_loader::load_file(scene.path())?;
         let skybox = SkyboxResource::new(context, skybox.path())?;
         let globals = create_global(context, &doc, skybox)?;
         let fully_opaque = doc.geo_builder.fully_opaque();
 
         let buffers = Buffers::new(context, &doc.geo_builder, &globals)?;
 
-        let (blas, blas_inputs, tlas) = create_as(context, &doc, &buffers,
-                                                  vk::BuildAccelerationStructureFlagsKHR::empty()
+        let (_bottom_as, top_as) = create_as(context, &doc, &buffers,
+                                     vk::BuildAccelerationStructureFlagsKHR::empty()
         )?;
-        // let bottom_as = create_bottom_as(context, &model)?;
-
-        // let top_as = create_top_as(context, &bottom_as)?;
-
         let pipeline_res = create_pipeline(context, &globals, fully_opaque)?;
 
         let sbt = context.create_shader_binding_table(&pipeline_res.pipeline)?;
+        // base.camera.position = Point::new(0., 0.0, 16.0);
+        // base.camera.direction = Vec3::new(0.0, -0.0, -2.0);
 
         let descriptor_res = create_descriptor_sets(
-            context,
+            &base.context,
             &pipeline_res,
             &globals,
-            &tlas,
+            &top_as,
             base.storage_images.as_slice(),
             base.acc_images.as_slice(),
             &ubo_buffer,
             &buffers,
         )?;
-
-        base.camera.position = Point::new(0., 0.0, 16.0);
-        base.camera.direction = Vec3::new(0.0, -0.0, -2.0);
-
-        Ok(Self {
-            ubo_buffer,
-            doc,
-            _bottom_as: blas,
-            blas_inputs,
-            _top_as: tlas,
-            pipeline_res,
-            sbt,
-            descriptor_res,
-            total_number_of_samples: 0,
-            old_camera: None,
-            prev_gui_state: None,
-            buffers,
-            globals,
-            clock: Instant::now(),
-            last_update: Instant::now(),
-            fully_opaque,
-        })
+        info!("Uploading to GPU: {}", start.elapsed().as_secs());
+        Ok(
+            GltfViewer {
+                ubo_buffer,
+                doc,
+                _bottom_as,
+                top_as,
+                pipeline_res,
+                sbt,
+                descriptor_res,
+                total_number_of_samples: 0,
+                old_camera: None,
+                prev_gui_state: None,
+                buffers,
+                globals,
+                clock: Instant::now(),
+                last_update: Instant::now(),
+                fully_opaque,
+                loader,
+            }
+        )
     }
 }
 impl App for GltfViewer {
     type Gui = Gui;
 
-    fn new(base: &mut BaseApp<Self>) -> Result<Self> {
-        Self::new_with_scene(base, Default::default(), Default::default())
+    fn new(base: &BaseApp<Self>) -> Result<Self> {
+        Self::new_with_scene(base, Default::default(), Default::default(), Rc::new(Loader::new()))
     }
 
     fn update(
@@ -179,6 +208,8 @@ impl App for GltfViewer {
         };
 
         self.ubo_buffer.copy_data_to_buffer(&[ubo])?;
+
+
         Ok(())
     }
 
@@ -189,7 +220,8 @@ impl App for GltfViewer {
         image_index: usize,
     ) -> Result<()> {
         let static_set = &self.descriptor_res.static_set;
-        let dynamic_set = &self.descriptor_res.dynamic_sets[image_index];
+        let dynamic_set = &self.descriptor_res
+            .dynamic_sets[image_index];
 
         buffer.bind_rt_pipeline(&self.pipeline_res.pipeline);
 
@@ -245,6 +277,9 @@ impl App for GltfViewer {
     }
 
     fn state_change(&mut self, base: &mut BaseApp<Self>, gui_state: &mut <Self as App>::Gui) {
+        if let Some(doc) = self.loader.get_model() {
+            *self = Self::new_with_doc(base, doc, gui_state.skybox, self.loader.clone()).unwrap();
+        }
         if self.old_camera.is_none() {
             self.old_camera = Some(base.camera);
         }
@@ -254,12 +289,13 @@ impl App for GltfViewer {
 
         if self.old_camera.filter(|x| *x != base.camera).is_some() {
             self.old_camera = Some(base.camera);
-            self.total_number_of_samples = 0;
+           self.total_number_of_samples = 0;
         }
 
         if let Some(old_state) = self.prev_gui_state.filter(|x| x != gui_state) {
             if old_state.scene != gui_state.scene {
-                *self = Self::new_with_scene(base, gui_state.scene, gui_state.skybox).unwrap();
+                self.loader.load(gui_state.scene.path().to_string());
+                // *self = Self::new_with_scene(base, gui_state.scene, gui_state.skybox, self.loader.clone()).unwrap();
             }
             if old_state.skybox != gui_state.skybox {
                 let skybox = SkyboxResource::new(&base.context, gui_state.skybox.path()).unwrap();
@@ -292,8 +328,6 @@ impl App for GltfViewer {
             self.update_tlas(tlas);
         }
     }
-
-
 }
 
 impl GltfViewer {
@@ -306,7 +340,7 @@ impl GltfViewer {
                 },
             },
         ]);
-        self._top_as = tlas;
+        self.top_as = tlas;
     }
 
     fn need_update(&self) -> bool {

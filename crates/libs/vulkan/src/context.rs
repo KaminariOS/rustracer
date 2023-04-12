@@ -78,7 +78,7 @@ impl<'a> ContextBuilder<'a> {
         }
     }
 
-    pub fn build(self) -> Result<Context> {
+    pub fn build(self) -> Result<Arc<Context>> {
         Context::new(self)
     }
 }
@@ -93,7 +93,7 @@ impl Context {
             required_device_features,
             with_raytracing_context,
         }: ContextBuilder,
-    ) -> Result<Self> {
+    ) -> Result<Arc<Self>> {
         // Vulkan instance
         let entry = Entry::linked();
         let mut instance = Instance::new(&entry, vulkan_version, app_name)?;
@@ -155,7 +155,7 @@ impl Context {
             buffer_device_address: required_device_features.buffer_device_address,
         })?;
 
-        Ok(Self {
+        Ok(Arc::new(Self {
             allocator: Arc::new(Mutex::new(allocator)),
             command_pool,
             ray_tracing,
@@ -168,7 +168,7 @@ impl Context {
             surface,
             instance,
             _entry: entry,
-        })
+        }))
     }
 }
 

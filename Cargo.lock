@@ -665,6 +665,7 @@ dependencies = [
  "app",
  "asset_loader",
  "gui",
+ "log",
  "rand",
  "strum",
  "strum_macros",

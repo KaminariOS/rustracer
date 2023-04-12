@@ -73,7 +73,7 @@ pub fn create_as(
     doc: &Doc,
     buffers: &Buffers,
     flags: vk::BuildAccelerationStructureFlagsKHR,
-) -> Result<(Vec<AccelerationStructure>, Vec<BlasInput>, TopAS)> {
+) -> Result<(Vec<AccelerationStructure>, TopAS)> {
     let time = Instant::now();
     let mut blas_inputs: Vec<_> = doc
         .meshes
@@ -129,7 +129,7 @@ pub fn create_as(
     context.command_pool.free_command_buffer(&cmd_buffer)?;
     let tlas = create_top_as(context, doc, &blases, flags)?;
     info!("Finish building acceleration structure: {}s", time.elapsed().as_secs());
-    Ok((blases, blas_inputs, tlas))
+    Ok((blases, tlas))
 }
 
 pub struct TopAS {

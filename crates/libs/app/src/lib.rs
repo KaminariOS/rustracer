@@ -23,6 +23,7 @@ use std::{
     marker::PhantomData,
     time::{Duration, Instant},
 };
+use std::sync::Arc;
 use vulkan::*;
 use winit::{
     dpi::PhysicalSize,
@@ -42,7 +43,7 @@ pub struct BaseApp<B: App> {
     pub acc_images: Vec<ImageAndView>,
     command_buffers: Vec<CommandBuffer>,
     in_flight_frames: InFlightFrames,
-    pub context: Context,
+    pub context: Arc<Context>,
     pub camera: Camera,
     stats_display_mode: StatsDisplayMode,
 }
@@ -50,7 +51,7 @@ pub struct BaseApp<B: App> {
 pub trait App: Sized {
     type Gui: Gui;
 
-    fn new(base: &mut BaseApp<Self>) -> Result<Self>;
+    fn new(base: &BaseApp<Self>) -> Result<Self>;
 
     fn update(
         &mut self,
@@ -265,7 +266,7 @@ impl<B: App> BaseApp<B> {
             required_extensions.push("VK_KHR_deferred_host_operations");
         }
 
-        let mut context = ContextBuilder::new(window)
+        let context = ContextBuilder::new(window)
             .vulkan_version(VERSION_1_3)
             .app_name(app_name)
             .required_extensions(&required_extensions)
@@ -293,7 +294,7 @@ impl<B: App> BaseApp<B> {
 
         let storage_images = if enable_raytracing {
             create_storage_images(
-                &mut context,
+                &context,
                 swapchain.format,
                 swapchain.extent,
                 swapchain.images.len(),
@@ -304,7 +305,7 @@ impl<B: App> BaseApp<B> {
 
         let acc_images = if enable_raytracing {
             create_storage_images(
-                &mut context,
+                &context,
                 vk::Format::R32G32B32A32_SFLOAT,
                 swapchain.extent,
                 1,
@@ -676,7 +677,7 @@ impl<B: App> BaseApp<B> {
 }
 
 fn create_storage_images(
-    context: &mut Context,
+    context: &Arc<Context>,
     format: vk::Format,
     extent: vk::Extent2D,
     count: usize,

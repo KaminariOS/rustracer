@@ -68,7 +68,7 @@ I stole the PBR shaders from the [referencePT](https://github.com/boksajak/refer
 - Windows not supported. Need some minor cfg tweaks to work on Windows. Open to pull requests.
 
 
-Thanks to the superior Rust package manager `Cargo`, building and running is almost as simple as a one-liner: `cargo run`. 
+Thanks to the superior Rust package manager `Cargo`, building and running can be as brainless as a one-liner: `cargo run`. 
 
 However, some external C libraries like Vulkan SDK may be missing on your system. 
 - To install those libraries automatically,

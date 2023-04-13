@@ -3,11 +3,11 @@
 A PBR [glTF 2.0](https://www.khronos.org/gltf) renderer based on Vulkan ray-tracing, written in Rust.
 
 ## Naming
-This project and I are not affiliated with the Rust Foundation. I name it `rustracer` only because I love Rust and ray tracing.
+This project and I are not affiliated with the [Rust Foundation](https://foundation.rust-lang.org). I name it `rustracer` only because I love [Rust](https://www.rust-lang.org) and ray tracing.
 
 ## Credits
 
-This project is based on Adrien Ben's [vulkan-examples-rs](https://github.com/adrien-ben/vulkan-examples-rs). Sample accumulation implementation is from project [RaytracingInVulkan](https://github.com/GPSnoopy/RayTracingInVulkan).
+This project is based on Adrien Ben's [vulkan-examples-rs](https://github.com/adrien-ben/vulkan-examples-rs). Sample accumulation implementation is from project [Ray Tracing In Vulkan](https://github.com/GPSnoopy/RayTracingInVulkan).
 
 I stole the PBR shaders from the [referencePT](https://github.com/boksajak/referencePT) project and made some changes.
 

@@ -46,6 +46,7 @@ const DLIGHT_BIND: u32 = 10;
 const PLIGHT_BIND: u32 = 11;
 const SKYBOX_BIND: u32 = 12;
 const ANIMATION_BIND: u32 = 13;
+const SKIN_BIND: u32 = 14;
 const ENABLE_RAYTRACING: bool = true;
 
 fn main() -> Result<()> {

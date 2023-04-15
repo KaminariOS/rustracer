@@ -1,10 +1,15 @@
 #version 460
 #include "lib/RayTracingCommons.glsl"
 
+#define MAX_BONES_PER_SKIN 32
+struct Skin {
+    mat4[MAX_BONES_PER_SKIN] bones;
+};
 layout (local_size_x = 256) in;
 
 layout(binding = VERTEX_BIND, set = 0) readonly buffer Vertices_in { Vertex vin[]; };
 layout(binding = ANIMATION_BIND, set = 0) writeonly buffer Vertices_out { Vertex vout[]; };
+layout(binding = SKIN_BIND, set = 0) readonly buffer Skins { Skin skins[]; };
 
 void main() {
     uint gID = gl_GlobalInvocationID.x;

@@ -1,4 +1,4 @@
-use crate::{ACC_BIND, ANIMATION_BIND, AS_BIND, DLIGHT_BIND, GEO_BIND, INDEX_BIND, MAT_BIND, PLIGHT_BIND, SKYBOX_BIND, STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND, VERTEX_BIND};
+use crate::{ACC_BIND, ANIMATION_BIND, AS_BIND, DLIGHT_BIND, GEO_BIND, INDEX_BIND, MAT_BIND, PLIGHT_BIND, SKIN_BIND, SKYBOX_BIND, STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND, VERTEX_BIND};
 use app::anyhow::Result;
 use app::load_spv;
 use app::vulkan::ash::vk;
@@ -193,6 +193,12 @@ pub fn create_animation_pipeline(
             .build(),
         vk::DescriptorSetLayoutBinding::builder()
             .binding(ANIMATION_BIND)
+            .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
+            .descriptor_count(1)
+            .stage_flags(stage_flag)
+            .build(),
+        vk::DescriptorSetLayoutBinding::builder()
+            .binding(SKIN_BIND)
             .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
             .descriptor_count(1)
             .stage_flags(stage_flag)

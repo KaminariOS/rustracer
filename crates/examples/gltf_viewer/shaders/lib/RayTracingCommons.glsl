@@ -131,6 +131,7 @@ const uint DLIGHT_BIND = 10;
 const uint PLIGHT_BIND = 11;
 const uint SKYBOX_BIND = 12;
 const uint ANIMATION_BIND = 13;
+const uint SKIN_BIND = 14;
 
 
 const uint RENDER = 0;

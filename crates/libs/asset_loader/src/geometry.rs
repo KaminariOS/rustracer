@@ -67,7 +67,7 @@ pub struct PrimInfo {
     v_offset: u32,
     i_offset: u32,
     material_id: u32,
-    _padding: u32,
+    skin_id: u32,
     // transform: Mat4
 }
 
@@ -77,7 +77,7 @@ impl PrimInfo {
             v_offset: v_off,
             i_offset: i_off,
             material_id: mat,
-            _padding: 0,
+            skin_id: 0,
             // transform: Default::default(),
         }
     }

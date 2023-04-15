@@ -7,7 +7,9 @@ This project and I are not affiliated with the [Rust Foundation](https://foundat
 
 ## Credits
 
-This project is based on Adrien Ben's [vulkan-examples-rs](https://github.com/adrien-ben/vulkan-examples-rs). Sample accumulation implementation is from project [Ray Tracing In Vulkan](https://github.com/GPSnoopy/RayTracingInVulkan).
+This project is based on Adrien Ben's [vulkan-examples-rs](https://github.com/adrien-ben/vulkan-examples-rs). 
+
+Sample accumulation implementation, heatmap and Lucy obj model are from project [Ray Tracing In Vulkan](https://github.com/GPSnoopy/RayTracingInVulkan).
 
 I stole the PBR shaders from the [referencePT](https://github.com/boksajak/referencePT) project and made some changes.
 

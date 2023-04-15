@@ -101,7 +101,7 @@ pub fn create_as(
                     &b.build_range_infos,
                     &b.max_primitives,
                     // vk::BuildAccelerationStructureFlagsKHR::ALLOW_UPDATE,
-                    vk::BuildAccelerationStructureFlagsKHR::empty(),
+                    flags,
                     &cmd_buffer,
                 )
                 .unwrap()

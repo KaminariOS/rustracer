@@ -58,6 +58,7 @@ struct GltfViewer {
     _bottom_as: Vec<AccelerationStructure>,
     top_as: TopAS,
     pipeline_res: PipelineRes,
+    animation_pipeline: Option<PipelineRes>,
     sbt: ShaderBindingTable,
     descriptor_res: DescriptorRes,
     total_number_of_samples: u32,
@@ -101,7 +102,12 @@ impl GltfViewer {
         let globals = create_global(context, &doc, skybox)?;
         let fully_opaque = doc.geo_builder.fully_opaque();
 
-        let buffers = Buffers::new(context, &doc.geo_builder, &globals)?;
+        let need_compute = doc.need_compute();
+        let buffers = Buffers::new(context,
+                                   &doc.geo_builder,
+                                   &globals,
+                                    need_compute
+        )?;
 
         let (_bottom_as, top_as) = create_as(
             context,
@@ -132,6 +138,7 @@ impl GltfViewer {
             _bottom_as,
             top_as,
             pipeline_res,
+            animation_pipeline: None,
             sbt,
             descriptor_res,
             total_number_of_samples: 0,

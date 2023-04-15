@@ -82,6 +82,11 @@ impl Doc {
             .for_each(|node| self.iter_gltf_node_tree(node, f));
     }
 
+    pub fn need_compute(&self) -> bool {
+        // Add morph later
+        !self.skins.is_empty()
+    }
+
     // From Kajiya
     fn iter_gltf_node_tree<F: FnMut(&Node)>(&self, node: &Node, f: &mut F) {
         f(node);

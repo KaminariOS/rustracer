@@ -16,7 +16,7 @@ pub struct ComputePipelineCreateInfo<'a> {
 }
 
 impl ComputePipeline {
-    pub(crate) fn new(
+    pub fn new(
         device: Arc<Device>,
         layout: &PipelineLayout,
         create_info: ComputePipelineCreateInfo,

@@ -548,27 +548,6 @@ impl<B: App> BaseApp<B> {
             let storage_image = &self.storage_images[image_index].image;
             let acc_image = &self.acc_images[0].image;
 
-            buffer.pipeline_image_barriers(&[
-                ImageBarrier {
-                    image: acc_image,
-                    old_layout: vk::ImageLayout::UNDEFINED,
-                    new_layout: vk::ImageLayout::GENERAL,
-                    src_access_mask: vk::AccessFlags2::SHADER_READ | vk::AccessFlags2::SHADER_WRITE,
-                    dst_access_mask: vk::AccessFlags2::SHADER_WRITE | vk::AccessFlags2::SHADER_READ,
-                    src_stage_mask: vk::PipelineStageFlags2::ALL_COMMANDS,
-                    dst_stage_mask: vk::PipelineStageFlags2::ALL_COMMANDS,
-                },
-                ImageBarrier {
-                    image: storage_image,
-                    old_layout: vk::ImageLayout::UNDEFINED,
-                    new_layout: vk::ImageLayout::GENERAL,
-                    src_access_mask: vk::AccessFlags2::TRANSFER_READ,
-                    dst_access_mask: vk::AccessFlags2::SHADER_WRITE,
-                    src_stage_mask: vk::PipelineStageFlags2::ALL_COMMANDS,
-                    dst_stage_mask: vk::PipelineStageFlags2::ALL_COMMANDS,
-                },
-            ]);
-
             base_app.record_raytracing_commands(self, buffer, image_index)?;
 
             // Copy ray tracing result into swapchain

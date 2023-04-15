@@ -67,37 +67,3 @@ pub fn create_gpu_only_buffer_from_data_batch<T: Copy>(
 
     Ok((buffer, staging_buffer))
 }
-
-pub fn create_gpu_only_as_buffer_from_data<T: Copy>(
-    context: &Context,
-    usage: vk::BufferUsageFlags,
-    data: &[T],
-) -> Result<Buffer> {
-    let size = size_of_val(data) as _;
-    let staging_buffer = context.create_buffer(
-        vk::BufferUsageFlags::TRANSFER_SRC,
-        MemoryLocation::CpuToGpu,
-        size,
-    )?;
-    staging_buffer.copy_data_to_buffer(data)?;
-
-    let buffer = context.create_buffer(
-        usage | vk::BufferUsageFlags::TRANSFER_DST,
-        MemoryLocation::GpuOnly,
-        size,
-    )?;
-
-    context.execute_one_time_commands(|cmd_buffer| {
-        cmd_buffer.copy_buffer(&staging_buffer, &buffer);
-        cmd_buffer.pipeline_buffer_barriers(&[BufferBarrier {
-            buffer: &buffer,
-            src_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
-            dst_access_mask: vk::AccessFlags2::ACCELERATION_STRUCTURE_READ_KHR
-                | vk::AccessFlags2::ACCELERATION_STRUCTURE_WRITE_KHR,
-            src_stage_mask: vk::PipelineStageFlags2::TRANSFER,
-            dst_stage_mask: vk::PipelineStageFlags2::ACCELERATION_STRUCTURE_BUILD_KHR,
-        }])
-    })?;
-
-    Ok(buffer)
-}

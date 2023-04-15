@@ -3,7 +3,7 @@
 A PBR [glTF 2.0](https://www.khronos.org/gltf) renderer based on Vulkan ray-tracing, written in Rust.
 
 ## Naming
-This project and I are not affiliated with the [Rust Foundation](https://foundation.rust-lang.org). I name it `rustracer` only because I love [Rust](https://www.rust-lang.org) and ray tracing.
+This project and I are not affiliated with the [Rust Foundation](https://foundation.rust-lang.org). I name it `rustracer` only because I love [Rust](https://rust.facepunch.com) and ray tracing.
 
 ## Credits
 

@@ -10,6 +10,8 @@ pub mod light;
 mod material;
 mod scene_graph;
 mod texture;
+mod morph;
+mod skinning;
 
 #[cfg(feature = "ash")]
 pub mod globals;
@@ -62,6 +64,14 @@ macro_rules! check_indices {
 macro_rules! get_index {
     ($expr:expr) => {
         $expr.map(|m| m.index())
+    };
+}
+
+
+#[macro_export]
+macro_rules! get_index_array {
+    ($expr:expr) => {
+        get_index!($expr).collect::<Vec<_>>()
     };
 }
 

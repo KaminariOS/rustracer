@@ -3,7 +3,7 @@ use crate::geometry::{GeoBuilder, Mesh};
 use crate::image::{process_images_unified, Image};
 use crate::material::{find_linear_textures, Material, MaterialRaw};
 use crate::texture::{Sampler, Texture};
-use crate::{check_extensions, check_indices, get_index, get_name, MeshID, Name, NodeID, SceneID};
+use crate::{check_extensions, check_indices, get_index, get_index_array, get_name, MeshID, Name, NodeID, SceneID};
 use glam::Mat4;
 use gltf::buffer;
 use gltf::image;
@@ -16,6 +16,7 @@ use log::info;
 use std::iter::once;
 use std::path::Path;
 use std::time::Instant;
+use crate::skinning::Skin;
 
 #[derive(Default)]
 pub struct Doc {
@@ -33,6 +34,7 @@ pub struct Doc {
     pub(crate) images: Vec<Image>,
     pub(crate) samplers: Vec<Sampler>,
     pub geo_builder: GeoBuilder,
+    pub skins: Vec<Skin>,
 }
 
 impl Doc {
@@ -116,13 +118,14 @@ impl Doc {
             .map(|a| Animation::new(a, &geo_builder))
             .collect();
         check_indices!(animations);
+        doc.skins();
+        // doc.
 
         let now = Instant::now();
         let meshes: Vec<_> = doc
             .meshes()
             .map(|m| Mesh::new(m, &mut geo_builder))
             .collect();
-        geo_builder.buffers = Vec::with_capacity(0);
         check_indices!(meshes);
         info!(
             "Finish processing meshes, time:{}s",
@@ -148,6 +151,11 @@ impl Doc {
             .collect::<Vec<_>>();
         check_indices!(textures);
 
+        let skins = doc.skins()
+            .map(|s| Skin::new(s, &geo_builder.buffers))
+            .collect();
+
+        geo_builder.buffers = Vec::with_capacity(0);
         Self {
             current_scene,
             scenes,
@@ -162,6 +170,7 @@ impl Doc {
             samplers,
             geo_builder,
             lights,
+            skins,
         }
     }
 
@@ -224,13 +233,14 @@ impl<'a> From<gltf::Scene<'_>> for Scene {
         Self {
             index: scene.index(),
             name: get_name!(scene),
-            root_nodes: get_index!(scene.nodes()).collect(),
+            root_nodes: get_index_array!(scene.nodes()),
         }
     }
 }
 
 pub struct Node {
     index: usize,
+    pub skin: Option<usize>,
     name: Name,
     children: Vec<NodeID>,
     light: Option<usize>,
@@ -265,6 +275,7 @@ impl Node {
             PropertyOutput::Scale(s_new) => {
                 s = s_new;
             }
+            _ => {unimplemented!()}
         }
         Transform::Decomposed {
             translation: t,
@@ -274,34 +285,15 @@ impl Node {
     }
 }
 
-struct Skin {
-    index: usize,
-    name: Name,
-    joints: Vec<NodeID>,
-    // inverse_bind_matrices: Vec<Mat4>,
-}
 
-impl<'a> From<gltf::Skin<'_>> for Skin {
-    fn from(skin: gltf::Skin<'_>) -> Self {
-        // let reader = skin.inverse_bind_matrices();
-        let joints = get_index!(skin.joints()).collect();
-        skin.skeleton();
-        // let reader = skin.reader();
-        Self {
-            index: skin.index(),
-            name: get_name!(skin),
-            joints,
-        }
-    }
-}
 
 impl<'a> From<gltf::Node<'_>> for Node {
     fn from(node: gltf::Node) -> Self {
-        // node.skin();
         Self {
             index: node.index(),
+            skin: get_index!(node.skin()),
             name: get_name!(node),
-            children: get_index!(node.children()).collect(),
+            children: get_index_array!(node.children()),
             light: get_index!(node.light()),
             mesh: get_index!(node.mesh()),
             local_transform: node.transform(),

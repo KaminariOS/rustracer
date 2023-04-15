@@ -21,6 +21,7 @@ enum Property {
     Translation(Vec<[f32; 3]>),
     Rotation(Vec<[f32; 4]>),
     Scale(Vec<[f32; 3]>),
+    Morph(Vec<[f32; 3]>)
 }
 
 impl Property {
@@ -28,6 +29,7 @@ impl Property {
         match self {
             Self::Translation(a) | Self::Scale(a) => a.len(),
             Self::Rotation(a) => a.len(),
+            _ => {unimplemented!()}
         }
     }
 }
@@ -48,7 +50,9 @@ pub enum PropertyOutput {
     Translation([f32; 3]),
     Rotation([f32; 4]),
     Scale([f32; 3]),
+    Morph,
 }
+
 impl AnimationChannel {
     fn new(channel: Channel<'_>, builder: &GeoBuilder) -> Self {
         let reader = channel.reader(|buffer| Some(&builder.buffers[buffer.index()]));
@@ -61,7 +65,7 @@ impl AnimationChannel {
             ReadOutputs::Translations(t) => Property::Translation(t.collect()),
             ReadOutputs::Rotations(r) => Property::Rotation(r.into_f32().collect()),
             ReadOutputs::Scales(s) => Property::Scale(s.collect()),
-            ReadOutputs::MorphTargetWeights(_) => unimplemented!(),
+            ReadOutputs::MorphTargetWeights(m) => Property::Morph(vec![]),
         };
         let sampler = channel.sampler();
         assert_eq!(input.len(), property.len());
@@ -118,6 +122,7 @@ impl AnimationChannel {
                 PropertyOutput::Scale([scale[0], scale[1], scale[2]])
                 // Mat4::from_scale(Vec3::from_slice(scale.as_slice()))
             }
+            _ => {unimplemented!()}
         }
     }
 }

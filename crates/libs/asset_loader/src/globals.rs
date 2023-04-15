@@ -30,6 +30,7 @@ impl Into<vk::Format> for TexGamma {
 
 pub struct Buffers {
     pub vertex_buffer: Buffer,
+    pub animation_buffer: Option<Buffer>,
     pub index_buffer: Buffer,
     pub geo_buffer: Buffer,
     pub material_buffer: Buffer,
@@ -38,7 +39,11 @@ pub struct Buffers {
 }
 
 impl Buffers {
-    pub fn new(context: &Context, geo_builder: &GeoBuilder, globals: &VkGlobal) -> Result<Self> {
+    pub fn new(context: &Context, 
+               geo_builder: &GeoBuilder, 
+               globals: &VkGlobal,
+                need_compute: bool,
+    ) -> Result<Self> {
         let vertices = geo_builder.vertices.as_slice();
         let indices = geo_builder.indices.as_slice();
         let now = Instant::now();
@@ -55,6 +60,16 @@ impl Buffers {
             vertices,
             &cmd_buffer,
         )?;
+        let animation_buffer = if need_compute {
+            Some(create_gpu_only_buffer_from_data_batch(
+                context,
+                vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
+                    | vk::BufferUsageFlags::ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_KHR
+                    | vk::BufferUsageFlags::STORAGE_BUFFER,
+                vertices,
+                &cmd_buffer,
+            )?)
+        } else {None};
 
         let (index_buffer, _i) = create_gpu_only_buffer_from_data_batch(
             context,
@@ -90,6 +105,8 @@ impl Buffers {
         fence.wait(None)?;
         // Free
         context.command_pool.free_command_buffer(&cmd_buffer)?;
+        let animation_buffer = animation_buffer
+            .map(|(b, _)| b);
 
         let _size_of_slice = size_of_val(globals.d_lights.as_slice());
         let _size = size_of_val(&globals.d_lights);
@@ -154,6 +171,7 @@ impl Buffers {
         // ))?;
         Ok(Self {
             vertex_buffer,
+            animation_buffer,
             index_buffer,
             geo_buffer,
             material_buffer,

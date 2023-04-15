@@ -31,7 +31,7 @@
       rustc = pinnedRust;
       cargo = pinnedRust;
     };
-    cargoExpand = pkgs.cargo-expand.override { inherit rustPlatform; };
+    #cargoExpand = pkgs.cargo-expand.override { inherit rustPlatform; };
   in {
     
 devShell = pkgs.mkShell rec {
@@ -39,7 +39,8 @@ devShell = pkgs.mkShell rec {
     "fortify"
   ];
   nativeBuildInputs = [
-        pinnedRust cargoExpand
+    pinnedRust 
+    #cargoExpand
   ];
   buildInputs = with pkgs; [
 #    alsaLib
@@ -59,7 +60,7 @@ devShell = pkgs.mkShell rec {
     xorg.libXi
     xorg.libXrandr
     shaderc
-    renderdoc
+    #renderdoc
 #    gcc-unwrapped.lib
   ];
 

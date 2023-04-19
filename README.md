@@ -38,7 +38,7 @@ I stole the PBR shaders from the [referencePT](https://github.com/boksajak/refer
     * [ ] Morph targets
   * [x] Extensions
       * [x] "KHR_materials_ior",
-      * [ ] "KHR_materials_pbrSpecularGlossiness",
+      * [x] "KHR_materials_pbrSpecularGlossiness",
       * [x] "KHR_materials_transmission",
         * [ ] importance sampling and BTDF 
       * [x] "KHR_materials_variants",
@@ -54,7 +54,8 @@ I stole the PBR shaders from the [referencePT](https://github.com/boksajak/refer
   * [ ] Async acceleration structure building
 
 * [ ] Realtime ray tracing 
-  * [ ] G-buffer Rasterization mode
+  * [ ] Rasterization mode
+  * [ ] G-buffer
   * [ ] Hybrid mode
   * [ ] SVGF denoiser
   * [ ] Path regularization

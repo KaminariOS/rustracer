@@ -666,7 +666,7 @@ inout float volume_dis
 
 		// Function 'diffuseTerm' is predivided by PDF of sampling the cosine weighted hemisphere
 		sampleWeight = (1 - material.specular_factor * data.F) * data.diffuseReflectance * diffuseTerm(data);
-//		sampleWeight *= (1. - material.transmission);
+		sampleWeight *= (1. - material.transmission);
 		//        sampleWeight = data.diffuseReflectance * lambertian(data);
 
 		//        #if COMBINE_BRDFS_WITH_FRESNEL
@@ -680,11 +680,11 @@ inout float volume_dis
 	}
 	else if (brdfType == SPECULAR_TYPE) {
 		const BrdfData data = prepareBRDFData(Nlocal, vec3(0.0f, 0.0f, 1.0f) /* unused L vector */, Vlocal, material);
-		rayDirectionLocal = material.specular_factor * sampleSpecular(Vlocal, data.alpha, data.alphaSquared, data.specularF0, u, sampleWeight, data.specularF90);
+		rayDirectionLocal = sampleSpecular(Vlocal, data.alpha, data.alphaSquared, data.specularF0, u, sampleWeight, data.specularF90);
 //		rayDirectionLocal = reflect(-Vlocal, Nlocal);
 //		vec3 F = evalFresnel(material.F0, shadowedF90(material.F90), dot(rayDirectionLocal, Nlocal));
 //		sampleWeight = F;
-//		sampleWeight *= material.specular_factor;
+		sampleWeight *= material.specular_factor;
 	} else if (brdfType == TRANSMISSION_TYPE) {
 		if (material.volume) {
 			const float refraction_ratio = material.frontFace ? 1 / material.ior: material.ior;

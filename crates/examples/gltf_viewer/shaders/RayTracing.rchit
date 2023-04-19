@@ -189,7 +189,6 @@ void main()
 	geo_normal = frontFace? geo_normal: -geo_normal;
 	const vec3 outwardNormal = dot(geo_normal, normal) < 0.? -normal: normal;
 
-	origin = offset_ray(origin, geo_normal);
 
 
 	vec3 emittance = mat.emissive_factor.rgb;
@@ -392,6 +391,9 @@ void main()
 		}
 	}
 
+	if (brdfType == TRANSMISSION_TYPE) {
+		origin = offset_ray(origin, -geo_normal);
+	}
 	vec3 brdfWeight;
 	vec2 u = vec2(rand(rngState), rand(rngState));
 	vec3 direction;

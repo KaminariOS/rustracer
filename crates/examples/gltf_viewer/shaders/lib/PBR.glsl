@@ -183,6 +183,7 @@ struct MaterialBrdf {
 	vec3 dielectricSpecularF90;
 	vec3 F0;
 	vec3 F90;
+	vec3 c_diff;
 	bool frontFace;
 
 	vec3 attenuation_color;
@@ -201,6 +202,7 @@ void matBuild(inout MaterialBrdf material) {
 	material.dielectricSpecularF90 = material.specular_color_factor;
 	material.F0 = mix(material.dielectricSpecularF0, material.baseColor, material.metallic);
 	material.F90 = mix(material.dielectricSpecularF90, vec3(1.), material.metallic);
+	material.c_diff = mix(material.baseColor, vec3(0.0), material.metallic);
 }
 
 
@@ -219,11 +221,6 @@ vec3 baseColorToSpecularF0(const MaterialBrdf material, vec3 baseColor, float me
 float luminance(vec3 rgb)
 {
 	return dot(rgb, vec3(0.2126f, 0.7152f, 0.0722f));
-}
-
-vec3 baseColorToDiffuseReflectance(vec3 baseColor, float metalness)
-{
-	return baseColor * (1.0f - metalness);
 }
 
 // Schlick's approximation to Fresnel term
@@ -329,7 +326,7 @@ BRDF getBrdfProbability(MaterialBrdf mat, vec3 V, vec3 shadingNormal) {
 	// Evaluate Fresnel term using the shading normal
 	// Note: we use the shading normal instead of the microfacet normal (half-vector) for Fresnel term here. That's suboptimal for rough surfaces at grazing angles, but half-vector is yet unknown at this point
 	float specularF0 = luminance(mat.F0);
-	float diffuseReflectance = luminance(baseColorToDiffuseReflectance(mat.baseColor, mat.metallic));
+	float diffuseReflectance = luminance(mat.c_diff);
 	float Fresnel = saturate(luminance(evalFresnel(vec3(specularF0), shadowedF90(mat.F90), max(0.0f, dot(V, shadingNormal)))));
 
 	// Approximate relative contribution of BRDFs using the Fresnel term
@@ -553,7 +550,7 @@ BrdfData prepareBRDFData(vec3 N, vec3 L, vec3 V, MaterialBrdf material) {
 	// Unpack material properties
 	data.specularF0 = material.F0;
 	data.specularF90 = material.F90;
-	data.diffuseReflectance = baseColorToDiffuseReflectance(material.baseColor, material.metallic);
+	data.diffuseReflectance = material.c_diff;
 
 	// Unpack 'perceptively linear' -> 'linear' -> 'squared' roughness
 	data.roughness = material.roughness;

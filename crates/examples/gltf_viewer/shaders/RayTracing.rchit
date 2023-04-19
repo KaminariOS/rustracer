@@ -183,7 +183,7 @@ void main()
 	normal = normal_transform(normal);
 
 //	normal = geo_normal;
-	const vec3 V = -gl_WorldRayDirectionEXT;
+	const vec3 V = -normalize(gl_WorldRayDirectionEXT.xyz);
 	const float cos = dot(V, geo_normal);
 	const bool frontFace = cos >= 0.;
 	geo_normal = frontFace? geo_normal: -geo_normal;
@@ -208,6 +208,32 @@ void main()
 		vec4 metallic_roughness = texture(textures[mr_index], getUV(uv0And1, mr_tex.coord));
 		roughness *= metallic_roughness.g;
 		metallic *= metallic_roughness.b;
+	}
+
+	vec3 specular_factor_workflow = vec3(1.);
+	if (mat.workflow == SPECULAR_GLOSS_WORKFLOW) {
+		SpecularGlossiness sg = mat.sg;
+		vec4 diffuse_factor = sg.diffuse_factor;
+		vec4 specular_glossiness_factor = sg.specular_glossiness_factor;
+
+		TextureInfo diffuse_texture = sg.diffuse_texture;
+		TextureInfo specular_glossiness_texture = sg.specular_glossiness_texture;
+		if (diffuse_texture.index >= 0) {
+			diffuse_factor *= texture(textures[diffuse_texture.index], getUV(uv0And1, diffuse_texture.coord));
+		}
+		if (specular_glossiness_texture.index >= 0) {
+			vec4 sg_tex = texture(textures[specular_glossiness_texture.index], getUV(uv0And1, specular_glossiness_texture.coord));
+			specular_glossiness_factor *= sg_tex;
+		}
+		specular_factor_workflow = specular_glossiness_factor.rgb;
+		float glossiness_factor = specular_glossiness_factor.a;
+		roughness = 1. - glossiness_factor;
+		float maxSpecular = max(max(specular_factor_workflow.r, specular_factor_workflow.g),
+		specular_factor_workflow.b);
+
+		// Convert metallic value from specular glossiness inputs
+		color = mix_vertex.color.rgb * diffuse_factor.rgb;
+		metallic = convertMetallic(color, specular_factor_workflow, maxSpecular);
 	}
 
 	const TransmissionInfo trans_info = mat.transmission_info;
@@ -282,10 +308,9 @@ void main()
 
 	Ray.emittance = emittance * ubo.exposure;
 	Ray.needScatter = false;
-	Ray.hitValue = vec3(1.);
 	uint brdfType;
 
-	vec3 throughput = color;
+	vec3 throughput = vec3(1.);
 	MaterialBrdf matbrdf;
 	matbrdf.baseColor = color;
 	matbrdf.metallic = metallic;
@@ -297,6 +322,11 @@ void main()
 	matbrdf.use_spec = spec_info.exist;
 	matbrdf.frontFace = frontFace;
 	matBuild(matbrdf);
+	if (mat.workflow == SPECULAR_GLOSS_WORKFLOW) {
+		float maxSpecular = max(max(specular_factor_workflow.r, specular_factor_workflow.g), specular_factor_workflow.b);
+		matbrdf.c_diff = color * (1. - maxSpecular);
+		matbrdf.F0 = specular_factor_workflow;
+	}
 	matbrdf.attenuation_color = volume_info.attenuation_color;
 	matbrdf.attenuation_distance = volume_info.attenuation_distance;
 	matbrdf.volume = volume_info.exists;
@@ -321,7 +351,7 @@ void main()
 		brdfType = SPECULAR_TYPE;
 	}
 	else {
-		BRDF brdfProbability = getBrdfProbability(matbrdf, -gl_WorldRayDirectionEXT, outwardNormal);
+		BRDF brdfProbability = getBrdfProbability(matbrdf, V, outwardNormal);
 		float randfloat = rand(rngState);
 
 		if (randfloat < brdfProbability.specular) {
@@ -366,7 +396,7 @@ void main()
 	vec2 u = vec2(rand(rngState), rand(rngState));
 	vec3 direction;
 	Ray.needScatter = evalIndirectCombinedBRDF(u, outwardNormal, geo_normal,
-	-gl_WorldRayDirectionEXT,
+	V,
 	matbrdf,
 	brdfType,
 	direction,
@@ -380,8 +410,8 @@ void main()
 	Ray.scatterDirection = direction;
 	Ray.hitValue = throughput;
 
-////	Ray.emittance = vec3(hashAndColor(brdfType));
-	//	Ray.needScatter = false;
+//	Ray.emittance = vec3(hashAndColor(brdfType));
+//		Ray.needScatter = false;
 //	if (dot(-gl_WorldRayDirectionEXT, geo_normal) > 0) {
 //		Ray.emittance = vec3(1.);
 //	} else {

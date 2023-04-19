@@ -14,10 +14,11 @@ layout(location = 0) rayPayloadInEXT RayPayload Ray;
 void main()
 {
 	vec3 light_acc = vec3(0.);
+	vec3 ray_direction = normalize(gl_WorldRayDirectionEXT.xyz);
 	if (Ray.t != 0) {
 		for(int i = 0; i < lights.length(); i++) {
 			Light li = lights[i];
-			float cos = dot(normalize(li.transform.xyz), normalize(gl_WorldRayDirectionEXT));
+			float cos = dot(normalize(li.transform.xyz), ray_direction);
 			if (cos < 0.) {
 				light_acc += -cos * li.color.xyz * li.intensity;
 			}
@@ -26,9 +27,9 @@ void main()
 	if (Camera.HasSky)
 	{
 		// Sky color
-		const float t = 0.5 * (normalize(gl_WorldRayDirectionEXT).y + 1);
+//		const float t = 0.5 * (normalize(gl_WorldRayDirectionEXT).y + 1);
 //		const vec3 skyColor = mix(vec3(1.0), vec3(0.5, 0.7, 1.0), t);
-		const vec3 skyColor = texture(skybox, gl_WorldRayDirectionEXT).xyz;
+		const vec3 skyColor = texture(skybox, ray_direction).rgb;
 		light_acc += skyColor + light_acc;
 	} else
 	{

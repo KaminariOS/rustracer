@@ -31,7 +31,7 @@ I stole the PBR shaders from the [referencePT](https://github.com/boksajak/refer
   * [x] Alpha blending and testing
   * [x] Full PBR material support
     * [x] Metallic-Roughness workflow
-    * [ ] Specular-Glossiness workflow
+    * [x] Specular-Glossiness workflow
   * [x] Animations
     * [x] Articulated (translate, rotate, scale)
     * [ ] Skinning

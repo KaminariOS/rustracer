@@ -32,6 +32,18 @@ struct SpecularInfo {
     bool exist;
     vec2 _padding;
 };
+
+
+struct SpecularGlossiness {
+    vec4 diffuse_factor;
+    vec4 specular_glossiness_factor;
+    TextureInfo diffuse_texture;
+    TextureInfo specular_glossiness_texture;
+};
+
+const uint METALLIC_WORKFLOW = 0;
+const uint SPECULAR_GLOSS_WORKFLOW = 1;
+
 // https://developer.nvidia.com/blog/best-practices-for-using-nvidia-rtx-ray-tracing-updated/
 // Use a separate hit shader for each material model(for example: metal?). Reducing code and data divergence within hit shaders is helpful, especially with incoherent rays. In particular, avoid übershaders that manually switch between material models. Implementing each required material model in a separate hit shader gives the system the best possibilities to manage divergent hit shading.
 //
@@ -39,9 +51,9 @@ struct SpecularInfo {
 struct MaterialRaw {
     uint alpha_mode;
 	float alpha_cutoff;
-	vec2 _padding;
-    float _padding1;
     bool double_sided;
+    uint workflow;
+	vec2 _padding;
 
     TextureInfo baseColorTexture;
     vec4 baseColor;
@@ -57,9 +69,24 @@ struct MaterialRaw {
     TransmissionInfo transmission_info;
     VolumeInfo volume_info;
     SpecularInfo specular_info;
-
+    SpecularGlossiness sg;
 };
 
+const float c_MinRoughness = 0.04;
+// Gets metallic factor from specular glossiness workflow inputs
+// https://github.com/SaschaWillems/Vulkan-glTF-PBR/blob/master/data/shaders/pbr_khr.frag
+float convertMetallic(vec3 diffuse, vec3 specular, float maxSpecular) {
+    float perceivedDiffuse = sqrt(0.299 * diffuse.r * diffuse.r + 0.587 * diffuse.g * diffuse.g + 0.114 * diffuse.b * diffuse.b);
+    float perceivedSpecular = sqrt(0.299 * specular.r * specular.r + 0.587 * specular.g * specular.g + 0.114 * specular.b * specular.b);
+    if (perceivedSpecular < c_MinRoughness) {
+        return 0.0;
+    }
+    float a = c_MinRoughness;
+    float b = perceivedDiffuse * (1.0 - maxSpecular) / (1.0 - c_MinRoughness) + perceivedSpecular - 2.0 * c_MinRoughness;
+    float c = c_MinRoughness - perceivedSpecular;
+    float D = max(b * b - 4.0 * a * c, 0.0);
+    return clamp((-b + sqrt(D)) / (2.0 * a), 0.0, 1.0);
+}
 
 
 

@@ -91,6 +91,7 @@ pub struct Material {
     transmission: Option<TransmissionInfo>,
     volume_info: Option<VolumeInfo>,
     specular_info: Option<SpecularInfo>,
+    specular_glossiness: Option<SpecularGlossiness>,
 }
 
 impl Material {
@@ -135,6 +136,13 @@ pub fn find_linear_textures(materials: &[Material]) -> HashSet<usize> {
         {
             set.insert(sp as _);
         }
+        // if let Some(sg) = m
+        //     .specular_glossiness.map(|sg| sg.specular_glossiness_texture)
+        //     .filter(|t| t.is_some())
+        // {
+        //     set.insert(sg.texture_index as _);
+        // }
+
     });
     set
 }
@@ -144,9 +152,10 @@ pub fn find_linear_textures(materials: &[Material]) -> HashSet<usize> {
 pub struct MaterialRaw {
     pub alpha_mode: u32,
     pub alpha_cutoff: f32,
-    pub _padding: [f32; 3],
     pub double_sided: u32,
+    pub workflow: u32,
 
+    pub _padding: [f32; 2],
     pub base_color_texture: TextureInfo,
     // 4 int
     pub base_color: [f32; 4],
@@ -167,14 +176,18 @@ pub struct MaterialRaw {
     pub transmission: TransmissionInfo,
     pub volume_info: VolumeInfo,
     specular_info: SpecularInfo,
+    sg: SpecularGlossiness,
 }
 
 impl From<&Material> for MaterialRaw {
     fn from(value: &Material) -> Self {
+        let workflow = if value.specular_glossiness.is_some() {
+            Workflow::SpecularGlossiness
+        } else {Workflow::MetallicRoughness};
         Self {
             alpha_mode: value.alpha_mode as _,
             alpha_cutoff: value.alpha_cutoff.unwrap_or(0.5),
-            _padding: [0.; 3],
+            _padding: [0.; 2],
             double_sided: value.double_sided.into(),
             base_color_texture: value.base_color_texture,
             base_color: value.base_color,
@@ -188,6 +201,8 @@ impl From<&Material> for MaterialRaw {
             transmission: value.transmission.unwrap_or_default(),
             volume_info: value.volume_info.unwrap_or_default(),
             specular_info: value.specular_info.unwrap_or_default(),
+            workflow: workflow as _,
+            sg: value.specular_glossiness.unwrap_or_default(),
         }
     }
 }
@@ -267,12 +282,15 @@ impl From<Transmission<'_>> for TransmissionInfo {
         }
     }
 }
+
+#[repr(C)]
+#[derive(Copy, Clone, Default)]
 struct SpecularGlossiness {
     diffuse_factor: [f32; 4],
+    specular_factor: [f32; 3],
+    glossiness_factor: f32,
     diffuse_texture: TextureInfo,
     specular_glossiness_texture: TextureInfo,
-    glossiness_factor: f32,
-    specular_factor: [f32; 3],
 }
 
 impl<'a> From<PbrSpecularGlossiness<'_>> for SpecularGlossiness {
@@ -324,6 +342,11 @@ impl Default for SpecularInfo {
     }
 }
 
+enum Workflow {
+    MetallicRoughness = 0,
+    SpecularGlossiness = 1,
+}
+
 impl<'a> From<gltf::Material<'_>> for Material {
     fn from(material: gltf::Material) -> Self {
         let index = material.index().unwrap_or(DEFAULT_MATERIAL_INDEX);
@@ -334,18 +357,19 @@ impl<'a> From<gltf::Material<'_>> for Material {
         if unlit {
             info!("Unlit material detected: {}", index);
         }
-        let _sg = material
+        let sg = material
             .pbr_specular_glossiness()
             .map(SpecularGlossiness::from);
 
+
         let mut base_color_texture = TextureInfo::new(pbr.base_color_texture());
-        if base_color_texture.is_none() {
-            base_color_texture = TextureInfo::new(
-                material
-                    .pbr_specular_glossiness()
-                    .and_then(|sg| sg.diffuse_texture()),
-            )
-        }
+        // if base_color_texture.is_none() {
+        //     base_color_texture = TextureInfo::new(
+        //         material
+        //             .pbr_specular_glossiness()
+        //             .and_then(|sg| sg.diffuse_texture()),
+        //     )
+        // }
         let volume_info = material.volume().map(VolumeInfo::from);
 
         Self {
@@ -370,6 +394,7 @@ impl<'a> From<gltf::Material<'_>> for Material {
             volume_info,
             unlit,
             specular_info: specular,
+            specular_glossiness: sg,
         }
     }
 }

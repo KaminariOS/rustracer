@@ -79,6 +79,18 @@ bool testOpacityAnyHit() {
 		);
 	}
 	float opacity = color4.a;
+	if (mat.workflow == SPECULAR_GLOSS_WORKFLOW) {
+		SpecularGlossiness sg = mat.sg;
+		vec4 diffuse_factor = sg.diffuse_factor;
+
+		TextureInfo diffuse_texture = sg.diffuse_texture;
+		if (diffuse_texture.index >= 0) {
+			diffuse_factor *= texture(textures[diffuse_texture.index], getUV(uv0And1, diffuse_texture.coord));
+		}
+		color4 = mix_vertex.color * diffuse_factor;
+
+		float opacity = color4.a;
+	}
 
 	// Decide whether this hit is opaque or not according to chosen alpha testing mode
 	if (mat.alpha_mode == MASK) {

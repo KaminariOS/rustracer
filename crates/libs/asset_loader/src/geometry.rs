@@ -18,7 +18,7 @@ pub struct Vertex {
     pub joints: UVec4,
     pub uv0: Vec2,
     pub uv1: Vec2,
-    pub material_index: u32,
+    pub skin_index: i32,
 }
 
 #[derive(Clone)]
@@ -111,6 +111,11 @@ impl Mesh {
             index,
             name: get_name!(mesh),
         }
+    }
+
+    pub fn get_aabb(&self) -> Option<Aabb> {
+        let aabbs: Vec<_> = self.primitives.iter().map(|p| p.aabb).collect();
+        Aabb::union(&aabbs)
     }
 }
 
@@ -236,7 +241,7 @@ impl Primitive {
                         joints,
                         uv0: uv,
                         uv1: uvs1[index],
-                        material_index,
+                        skin_index: -1,
                     }
                 })
                 .collect();

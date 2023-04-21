@@ -181,7 +181,7 @@ pub fn create_pipeline(
     })
 }
 //
-pub fn create_animation_pipeline(context: &Context) -> Result<ComputePipelineRes> {
+pub fn create_compute_pipeline(context: &Context) -> Result<ComputePipelineRes> {
     let shader = load_spv("AnimationCompute.comp.spv");
     let info = ComputePipelineCreateInfo {
         shader_source: &shader,

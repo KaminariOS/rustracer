@@ -61,6 +61,12 @@ impl Aabb {
         let two = 2.;
         self.min + (self.max - self.min) / two
     }
+
+    pub fn get_transform(&self) -> Mat4 {
+        let translation = Mat4::from_translation(-self.get_center());
+        let scale = Mat4::from_scale(Vec3::splat(10. / self.get_larger_side_size()));
+        scale * translation
+    }
 }
 
 /// Transform the AABB by multiplying it with a Matrix4.

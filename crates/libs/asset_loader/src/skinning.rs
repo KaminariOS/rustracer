@@ -5,7 +5,7 @@ use crate::scene_graph::Node;
 use crate::{get_index, get_index_array, get_name, Name, NodeID};
 
 pub struct Skin {
-    index: usize,
+    pub index: usize,
     name: Name,
     joints: Vec<Joint>,
 }

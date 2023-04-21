@@ -104,6 +104,11 @@ impl GltfViewer {
         let fully_opaque = doc.geo_builder.fully_opaque();
 
         let need_compute = doc.need_compute();
+        let compute = if need_compute {
+            Some(create_compute_pipeline(context)?)
+        } else {
+            None
+        };
         let buffers = Buffers::new(context, &doc.geo_builder, &globals, need_compute)?;
 
         let (_bottom_as, top_as) = create_as(

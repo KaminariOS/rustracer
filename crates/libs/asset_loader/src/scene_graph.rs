@@ -21,6 +21,7 @@ use log::info;
 use std::iter::once;
 use std::path::Path;
 use std::time::Instant;
+use crate::aabb::Aabb;
 
 #[derive(Default)]
 pub struct Doc {
@@ -160,10 +161,11 @@ impl Doc {
             .collect::<Vec<_>>();
         check_indices!(textures);
 
-        let skins = doc
+        let skins: Vec<_> = doc
             .skins()
             .map(|s| Skin::new(s, &geo_builder.buffers))
             .collect();
+        check_indices!(skins);
 
         geo_builder.buffers = Vec::with_capacity(0);
         Self {
@@ -193,27 +195,25 @@ impl Doc {
             }
         };
         self.traverse_root_nodes(&mut f);
-        for (m, map) in mesh_to_node.into_iter().enumerate() {
+        for (mesh, map) in mesh_to_node.into_iter().enumerate() {
             let (mut non_affine, affine): (Vec<_>, Vec<_>) = map.into_iter().partition(|x| x.1);
-            let no_affine = affine.is_empty();
-            if (no_affine && non_affine.len() == 1) || non_affine.is_empty() {
+            if non_affine.is_empty() {
                 continue;
             }
-            if no_affine {
-                non_affine.pop();
-            }
             for (node, _) in non_affine {
-                info!(
-                    "Duplicating node: {} name: {:?}",
-                    node, self.nodes[node].name
-                );
-                self.duplicate_mesh_for_node(m, node);
+                self.duplicate_mesh_for_node(mesh, node);
             }
         }
     }
 
     fn duplicate_mesh_for_node(&mut self, mesh: usize, node: usize) {
+        info!(
+            "Duplicating node: {} name: {:?}",
+            node, self.nodes[node].name
+        );
         let new_mesh_id = self.meshes.len();
+        let skin_index = self.nodes[node].skin.unwrap();
+        assert_eq!(self.nodes[node].mesh.unwrap(), mesh);
         *self.nodes[node].mesh.as_mut().unwrap() = new_mesh_id;
         self.meshes.push(self.meshes[mesh].clone());
 
@@ -227,8 +227,10 @@ impl Doc {
             self.meshes[new_mesh_id].primitives[p_index].geometry_id = new_primitive_id;
             let cur_vertex_len = geo_builder.vertices.len();
             let cur_index_len = geo_builder.indices.len();
+            let mut dup_vertices = geo_builder.vertices[vertex_offset..vertex_offset + vertex_length].to_vec();
+            // dup_vertices.
             geo_builder.vertices.extend(
-                geo_builder.vertices[vertex_offset..vertex_offset + vertex_length].to_vec(),
+                dup_vertices
             );
             geo_builder
                 .indices
@@ -244,9 +246,13 @@ impl Doc {
     fn load_scene(&mut self, _document: &Document) {
         let scene = &self.scenes[self.current_scene];
         let root_nodes = scene.root_nodes.clone();
+        let aabbs: Vec<_> = root_nodes.iter().filter_map(|i| self.get_node_aabb(*i)).collect();
+        let aabb = Aabb::union(&aabbs).unwrap();
+
         root_nodes
             .into_iter()
-            .for_each(|n| self.update_parent_transform(n, Mat4::IDENTITY));
+            .for_each(|n| self.update_parent_transform(n, aabb.get_transform()));
+
     }
 
     fn update_local_transform(&mut self, node_id: NodeID, new_local: Transform) {
@@ -287,6 +293,18 @@ impl Doc {
     pub fn static_scene(&self) -> bool {
         self.animations.is_empty()
     }
+
+    pub fn get_node_aabb(&self, node: usize) -> Option<Aabb> {
+        let cur = &self.nodes[node];
+        let mut childs: Vec<_> = cur.children.iter().filter_map(|c|
+            self.get_node_aabb(*c)
+        ).collect();
+        if let Some(local) = cur.mesh.and_then(|m| self.meshes[m].get_aabb()) {
+            childs.push(local);
+        }
+        childs.iter_mut().for_each(|aabb| *aabb = *aabb * cur.get_local_transform());
+        Aabb::union(&childs)
+    }
 }
 
 pub struct Scene {
@@ -320,6 +338,8 @@ impl Node {
     pub fn is_leaf(&self) -> bool {
         self.children.is_empty()
     }
+
+
 }
 
 impl Node {
@@ -386,7 +406,9 @@ pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Doc> {
     check_extensions(&document);
 
     let mut doc = Doc::new(&document, buffers, gltf_images);
-    doc.duplicate_mesh_for_non_affine_transform();
+    if !doc.skins.is_empty() {
+        doc.duplicate_mesh_for_non_affine_transform();
+    }
     doc.load_scene(&document);
     if !doc.static_scene() {
         info!("Animation available.");

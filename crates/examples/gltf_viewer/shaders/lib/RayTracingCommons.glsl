@@ -58,7 +58,7 @@ struct Vertex {
 	vec4 weights;
 	uvec4 joints;
 	vec4 uv0And1;
-	uint material_index;
+	int skin_index;
 };
 
 vec2 getUV(vec4 uv0And1, uint index) {
@@ -90,7 +90,7 @@ out Vertex mix_v) {
 	mix_v.color = Mix(v0.color, v1.color, v2.color, barycentricCoords);
 	mix_v.normal = normalize(Mix(v0.normal, v1.normal, v2.normal, barycentricCoords));
 	mix_v.tangent = normalize(Mix(v0.tangent, v1.tangent, v2.tangent, barycentricCoords));
-	mix_v.material_index = v0.material_index;
+	mix_v.skin_index = v0.skin_index;
 	return calculate_geo_normal(v0.pos, v1.pos, v2.pos);
 }
 

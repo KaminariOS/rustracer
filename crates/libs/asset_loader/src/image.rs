@@ -44,8 +44,9 @@ impl Default for Image {
 
 impl Image {
     pub fn update_info(&mut self, info: gltf::Image, linear: &HashSet<usize>) {
-        self.index = info.index() + 1;
-        if linear.contains(&self.index) {
+        let original_index = info.index();
+        self.index = original_index + 1;
+        if linear.contains(&original_index) {
             self.gamma = TexGamma::Linear;
         }
         self.source = match info.source() {

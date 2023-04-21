@@ -4,7 +4,7 @@ use gltf::material::{
     AlphaMode, NormalTexture, OcclusionTexture, PbrMetallicRoughness, PbrSpecularGlossiness,
     Specular, Transmission, Volume,
 };
-use gltf::texture;
+use gltf::{Document, texture};
 use log::info;
 use std::collections::HashSet;
 
@@ -103,38 +103,31 @@ impl Material {
     }
 }
 
-pub fn find_linear_textures(materials: &[Material]) -> HashSet<usize> {
+pub fn find_linear_textures(doc: &Document) -> HashSet<usize> {
     // https://gltf-transform.donmccurdy.com/classes/core.material.html
     // Textures containing color data (baseColorTexture, emissiveTexture) are sRGB.
     // All other textures are linear. Like other resources, textures should be reused when possible.
     let mut set: HashSet<_> = HashSet::new();
-    materials.iter().for_each(|m| {
-        if m.normal_texture.is_some() {
-            set.insert(m.normal_texture.texture_index as usize);
+    doc.materials().for_each(|m| {
+        if let Some(t) = m.normal_texture() {
+            set.insert(t.texture().source().index());
         }
-        if m.metallic_roughness_info
-            .metallic_roughness_texture
-            .is_some()
+        if let Some(t) = m.pbr_metallic_roughness().metallic_roughness_texture()
         {
             set.insert(
-                m.metallic_roughness_info
-                    .metallic_roughness_texture
-                    .texture_index as usize,
+                t.texture().source().index(),
             );
         }
-        if let Some(tr) = m
-            .transmission
-            .filter(|t| t.transmission_texture.is_some())
-            .map(|t| t.transmission_texture.texture_index)
+        if let Some(t) = m
+            .transmission().and_then(|tr| tr.transmission_texture())
         {
-            set.insert(tr as _);
+            set.insert(t.texture().source().index());
         }
         if let Some(sp) = m
-            .specular_info
-            .filter(|s| s.specular_texture.is_some())
-            .map(|s| s.specular_texture.texture_index)
+            .specular()
+            .and_then(|s| s.specular_texture())
         {
-            set.insert(sp as _);
+            set.insert(sp.texture().source().index());
         }
         // if let Some(sg) = m
         //     .specular_glossiness.map(|sg| sg.specular_glossiness_texture)

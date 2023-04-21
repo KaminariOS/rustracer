@@ -29,7 +29,7 @@ impl Property {
         match self {
             Self::Translation(a) | Self::Scale(a) => a.len(),
             Self::Rotation(a) => a.len(),
-            _ => {unimplemented!()}
+            Self::Morph(a) => a.len(),
         }
     }
 }

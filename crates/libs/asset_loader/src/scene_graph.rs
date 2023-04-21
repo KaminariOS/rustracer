@@ -1,6 +1,7 @@
+use std::collections::{HashMap, HashSet};
 use crate::error::*;
 use crate::geometry::{GeoBuilder, Mesh};
-use crate::image::{process_images_unified, Image};
+use crate::image::{process_images_unified, Image, TexGamma};
 use crate::material::{find_linear_textures, Material, MaterialRaw};
 use crate::texture::{Sampler, Texture};
 use crate::{check_extensions, check_indices, get_index, get_index_array, get_name, MeshID, Name, NodeID, SceneID};
@@ -137,7 +138,7 @@ impl Doc {
             now.elapsed().as_secs()
         );
 
-        let linear = find_linear_textures(&materials);
+        let linear = find_linear_textures(doc);
 
         let now = Instant::now();
         let images = process_images_unified(&gltf_images, &doc, &linear);
@@ -145,7 +146,11 @@ impl Doc {
             "Finish processing images, time:{}s",
             now.elapsed().as_secs()
         );
-
+        let is: (Vec<_>, Vec<_>) = images.iter().enumerate()
+            .filter(|(i, image)| *i > 0)
+            .map(|(i, img)| (i - 1, img.gamma)).
+            partition(|(i, g)| *g == TexGamma::Linear);
+        println!("image info: {:?}", is);
         let samplers: Vec<_> = once(Sampler::default())
             .chain(doc.samplers().map(Sampler::from))
             .collect();
@@ -176,6 +181,58 @@ impl Doc {
             geo_builder,
             lights,
             skins,
+        }
+    }
+
+    fn duplicate_mesh_for_non_affine_transform(&mut self) {
+        let mesh_len = self.meshes.len();
+        let mut mesh_to_node = vec![HashMap::new(); mesh_len];
+        let mut f = |node: &Node| {
+          if let Some(mesh) = node.mesh {
+              mesh_to_node[mesh].insert(node.index, node.need_compute_pass());
+          }
+        };
+        self.traverse_root_nodes(&mut f);
+        for (m, map) in mesh_to_node.into_iter().enumerate() {
+            let (mut non_affine, affine,): (Vec<_>, Vec<_>) = map.into_iter()
+                .partition(|x| x.1);
+            let no_affine = affine.is_empty();
+            if (no_affine && non_affine.len() == 1) ||
+                non_affine.is_empty() {
+                continue
+            }
+            if no_affine {
+                non_affine.pop();
+            }
+            for (node, _) in non_affine {
+                info!("Duplicating node: {} name: {:?}", node, self.nodes[node].name);
+                self.duplicate_mesh_for_node(m, node);
+            }
+        }
+    }
+
+    fn duplicate_mesh_for_node(&mut self, mesh: usize, node: usize) {
+        let new_mesh_id = self.meshes.len();
+        *self.nodes[node].mesh.as_mut().unwrap() = new_mesh_id;
+        self.meshes.push(self.meshes[mesh].clone());
+
+        for p_index in 0..self.meshes[new_mesh_id].primitives.len() {
+            let geometry_id = self.meshes[new_mesh_id].primitives[p_index].geometry_id as usize;
+            let geo_builder = &mut self.geo_builder;
+            let [vertex_offset, index_offset, material_id] = geo_builder.offsets[geometry_id];
+            let [vertex_offset, index_offset] = [vertex_offset as usize, index_offset as usize];
+            let [vertex_length, index_length] = geo_builder.len[geometry_id];
+            let new_primitive_id = geo_builder.next_geo_id(material_id);
+            self.meshes[new_mesh_id].primitives[p_index].geometry_id = new_primitive_id;
+            let cur_vertex_len = geo_builder.vertices.len();
+            let cur_index_len = geo_builder.indices.len();
+            geo_builder.vertices
+                .extend(geo_builder.vertices[vertex_offset..vertex_offset + vertex_length].to_vec());
+            geo_builder.indices
+                .extend(geo_builder.indices[index_offset..index_offset + index_length].to_vec());
+            let [vertex_offset, index_offset] = [cur_vertex_len as u32, cur_index_len as u32];
+            geo_builder.len.push([vertex_length, index_length]);
+            geo_builder.offsets.push([vertex_offset, index_offset, material_id]);
         }
     }
 
@@ -280,7 +337,7 @@ impl Node {
             PropertyOutput::Scale(s_new) => {
                 s = s_new;
             }
-            _ => {unimplemented!()}
+            _ => {}
         }
         Transform::Decomposed {
             translation: t,
@@ -288,12 +345,17 @@ impl Node {
             rotation: r,
         }
     }
+
+    pub fn need_compute_pass(&self) -> bool {
+        self.skin.is_some()
+    }
 }
 
 
 
 impl<'a> From<gltf::Node<'_>> for Node {
     fn from(node: gltf::Node) -> Self {
+        // node.weights()
         Self {
             index: node.index(),
             skin: get_index!(node.skin()),
@@ -321,6 +383,7 @@ pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Doc> {
     check_extensions(&document);
 
     let mut doc = Doc::new(&document, buffers, gltf_images);
+    doc.duplicate_mesh_for_non_affine_transform();
     doc.load_scene(&document);
     if !doc.static_scene() {
         info!("Animation available.");

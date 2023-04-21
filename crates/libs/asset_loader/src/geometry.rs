@@ -21,6 +21,7 @@ pub struct Vertex {
     pub material_index: u32,
 }
 
+#[derive(Clone)]
 pub struct Mesh {
     pub(crate) index: MeshID,
     pub name: Name,
@@ -84,7 +85,7 @@ impl PrimInfo {
 }
 
 impl GeoBuilder {
-    fn next_geo_id(&mut self, material_id: u32) -> u32 {
+    pub fn next_geo_id(&mut self, material_id: u32) -> u32 {
         let cur = self.geo_counter;
         self.geo_counter += 1;
         self.material_id.push(material_id as usize);
@@ -113,6 +114,7 @@ impl Mesh {
     }
 }
 
+#[derive(Clone)]
 pub struct Primitive {
     // pub(crate) material: MaterialID,
     pub geometry_id: u32,

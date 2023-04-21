@@ -4,7 +4,7 @@ use gltf::material::{
     AlphaMode, NormalTexture, OcclusionTexture, PbrMetallicRoughness, PbrSpecularGlossiness,
     Specular, Transmission, Volume,
 };
-use gltf::{Document, texture};
+use gltf::{texture, Document};
 use log::info;
 use std::collections::HashSet;
 
@@ -112,21 +112,13 @@ pub fn find_linear_textures(doc: &Document) -> HashSet<usize> {
         if let Some(t) = m.normal_texture() {
             set.insert(t.texture().source().index());
         }
-        if let Some(t) = m.pbr_metallic_roughness().metallic_roughness_texture()
-        {
-            set.insert(
-                t.texture().source().index(),
-            );
-        }
-        if let Some(t) = m
-            .transmission().and_then(|tr| tr.transmission_texture())
-        {
+        if let Some(t) = m.pbr_metallic_roughness().metallic_roughness_texture() {
             set.insert(t.texture().source().index());
         }
-        if let Some(sp) = m
-            .specular()
-            .and_then(|s| s.specular_texture())
-        {
+        if let Some(t) = m.transmission().and_then(|tr| tr.transmission_texture()) {
+            set.insert(t.texture().source().index());
+        }
+        if let Some(sp) = m.specular().and_then(|s| s.specular_texture()) {
             set.insert(sp.texture().source().index());
         }
         // if let Some(sg) = m
@@ -135,7 +127,6 @@ pub fn find_linear_textures(doc: &Document) -> HashSet<usize> {
         // {
         //     set.insert(sg.texture_index as _);
         // }
-
     });
     set
 }
@@ -176,7 +167,9 @@ impl From<&Material> for MaterialRaw {
     fn from(value: &Material) -> Self {
         let workflow = if value.specular_glossiness.is_some() {
             Workflow::SpecularGlossiness
-        } else {Workflow::MetallicRoughness};
+        } else {
+            Workflow::MetallicRoughness
+        };
         Self {
             alpha_mode: value.alpha_mode as _,
             alpha_cutoff: value.alpha_cutoff.unwrap_or(0.5),
@@ -354,8 +347,7 @@ impl<'a> From<gltf::Material<'_>> for Material {
             .pbr_specular_glossiness()
             .map(SpecularGlossiness::from);
 
-
-        let mut base_color_texture = TextureInfo::new(pbr.base_color_texture());
+        let base_color_texture = TextureInfo::new(pbr.base_color_texture());
         // if base_color_texture.is_none() {
         //     base_color_texture = TextureInfo::new(
         //         material

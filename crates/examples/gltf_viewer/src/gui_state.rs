@@ -142,7 +142,6 @@ pub enum Scene {
     LA_Night,
     // WinterForest,
     // Panocube,
-
     CemeteryAngelCampanella,
     CemeteryAngelMiller,
     BaptismalAngelKneeling,

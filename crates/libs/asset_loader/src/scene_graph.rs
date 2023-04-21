@@ -1,23 +1,26 @@
-use std::collections::{HashMap, HashSet};
 use crate::error::*;
 use crate::geometry::{GeoBuilder, Mesh};
 use crate::image::{process_images_unified, Image, TexGamma};
 use crate::material::{find_linear_textures, Material, MaterialRaw};
 use crate::texture::{Sampler, Texture};
-use crate::{check_extensions, check_indices, get_index, get_index_array, get_name, MeshID, Name, NodeID, SceneID};
+use crate::{
+    check_extensions, check_indices, get_index, get_index_array, get_name, MeshID, Name, NodeID,
+    SceneID,
+};
 use glam::Mat4;
 use gltf::buffer;
 use gltf::image;
 use gltf::Document;
+use std::collections::HashMap;
 
 use crate::animation::{Animation, PropertyOutput};
 use crate::light::{report_lights, Light, LightRaw};
+use crate::skinning::Skin;
 use gltf::scene::Transform;
 use log::info;
 use std::iter::once;
 use std::path::Path;
 use std::time::Instant;
-use crate::skinning::Skin;
 
 #[derive(Default)]
 pub struct Doc {
@@ -146,10 +149,12 @@ impl Doc {
             "Finish processing images, time:{}s",
             now.elapsed().as_secs()
         );
-        let is: (Vec<_>, Vec<_>) = images.iter().enumerate()
-            .filter(|(i, image)| *i > 0)
-            .map(|(i, img)| (i - 1, img.gamma)).
-            partition(|(i, g)| *g == TexGamma::Linear);
+        let is: (Vec<_>, Vec<_>) = images
+            .iter()
+            .enumerate()
+            .filter(|(i, _image)| *i > 0)
+            .map(|(i, img)| (i - 1, img.gamma))
+            .partition(|(_i, g)| *g == TexGamma::Linear);
         println!("image info: {:?}", is);
         let samplers: Vec<_> = once(Sampler::default())
             .chain(doc.samplers().map(Sampler::from))
@@ -161,7 +166,8 @@ impl Doc {
             .collect::<Vec<_>>();
         check_indices!(textures);
 
-        let skins = doc.skins()
+        let skins = doc
+            .skins()
             .map(|s| Skin::new(s, &geo_builder.buffers))
             .collect();
 
@@ -188,24 +194,25 @@ impl Doc {
         let mesh_len = self.meshes.len();
         let mut mesh_to_node = vec![HashMap::new(); mesh_len];
         let mut f = |node: &Node| {
-          if let Some(mesh) = node.mesh {
-              mesh_to_node[mesh].insert(node.index, node.need_compute_pass());
-          }
+            if let Some(mesh) = node.mesh {
+                mesh_to_node[mesh].insert(node.index, node.need_compute_pass());
+            }
         };
         self.traverse_root_nodes(&mut f);
         for (m, map) in mesh_to_node.into_iter().enumerate() {
-            let (mut non_affine, affine,): (Vec<_>, Vec<_>) = map.into_iter()
-                .partition(|x| x.1);
+            let (mut non_affine, affine): (Vec<_>, Vec<_>) = map.into_iter().partition(|x| x.1);
             let no_affine = affine.is_empty();
-            if (no_affine && non_affine.len() == 1) ||
-                non_affine.is_empty() {
-                continue
+            if (no_affine && non_affine.len() == 1) || non_affine.is_empty() {
+                continue;
             }
             if no_affine {
                 non_affine.pop();
             }
             for (node, _) in non_affine {
-                info!("Duplicating node: {} name: {:?}", node, self.nodes[node].name);
+                info!(
+                    "Duplicating node: {} name: {:?}",
+                    node, self.nodes[node].name
+                );
                 self.duplicate_mesh_for_node(m, node);
             }
         }
@@ -226,13 +233,17 @@ impl Doc {
             self.meshes[new_mesh_id].primitives[p_index].geometry_id = new_primitive_id;
             let cur_vertex_len = geo_builder.vertices.len();
             let cur_index_len = geo_builder.indices.len();
-            geo_builder.vertices
-                .extend(geo_builder.vertices[vertex_offset..vertex_offset + vertex_length].to_vec());
-            geo_builder.indices
+            geo_builder.vertices.extend(
+                geo_builder.vertices[vertex_offset..vertex_offset + vertex_length].to_vec(),
+            );
+            geo_builder
+                .indices
                 .extend(geo_builder.indices[index_offset..index_offset + index_length].to_vec());
             let [vertex_offset, index_offset] = [cur_vertex_len as u32, cur_index_len as u32];
             geo_builder.len.push([vertex_length, index_length]);
-            geo_builder.offsets.push([vertex_offset, index_offset, material_id]);
+            geo_builder
+                .offsets
+                .push([vertex_offset, index_offset, material_id]);
         }
     }
 
@@ -350,8 +361,6 @@ impl Node {
         self.skin.is_some()
     }
 }
-
-
 
 impl<'a> From<gltf::Node<'_>> for Node {
     fn from(node: gltf::Node) -> Self {

@@ -8,10 +8,10 @@ mod geometry;
 mod image;
 pub mod light;
 mod material;
-mod scene_graph;
-mod texture;
 mod morph;
+mod scene_graph;
 mod skinning;
+mod texture;
 
 #[cfg(feature = "ash")]
 pub mod globals;
@@ -66,7 +66,6 @@ macro_rules! get_index {
         $expr.map(|m| m.index())
     };
 }
-
 
 #[macro_export]
 macro_rules! get_index_array {

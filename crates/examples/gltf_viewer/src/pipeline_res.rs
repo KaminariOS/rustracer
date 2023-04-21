@@ -1,8 +1,15 @@
-use crate::{ACC_BIND, ANIMATION_BIND, AS_BIND, DLIGHT_BIND, GEO_BIND, INDEX_BIND, MAT_BIND, PLIGHT_BIND, SKIN_BIND, SKYBOX_BIND, STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND, VERTEX_BIND};
+use crate::{
+    ACC_BIND, ANIMATION_BIND, AS_BIND, DLIGHT_BIND, GEO_BIND, INDEX_BIND, MAT_BIND, PLIGHT_BIND,
+    SKIN_BIND, SKYBOX_BIND, STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND, VERTEX_BIND,
+};
 use app::anyhow::Result;
 use app::load_spv;
 use app::vulkan::ash::vk;
-use app::vulkan::{ComputePipeline, ComputePipelineCreateInfo, Context, DescriptorSetLayout, PipelineLayout, RayTracingPipeline, RayTracingPipelineCreateInfo, RayTracingShaderCreateInfo, RayTracingShaderGroup};
+use app::vulkan::{
+    ComputePipeline, ComputePipelineCreateInfo, Context, DescriptorSetLayout, PipelineLayout,
+    RayTracingPipeline, RayTracingPipelineCreateInfo, RayTracingShaderCreateInfo,
+    RayTracingShaderGroup,
+};
 use asset_loader::globals::VkGlobal;
 
 pub struct PipelineRes {
@@ -174,11 +181,7 @@ pub fn create_pipeline(
     })
 }
 //
-pub fn create_animation_pipeline(
-    context: &Context,
-
-) -> Result<ComputePipelineRes> {
-
+pub fn create_animation_pipeline(context: &Context) -> Result<ComputePipelineRes> {
     let shader = load_spv("AnimationCompute.comp.spv");
     let info = ComputePipelineCreateInfo {
         shader_source: &shader,
@@ -206,11 +209,7 @@ pub fn create_animation_pipeline(
     ];
     let dsl = context.create_descriptor_set_layout(&layout_bindings)?;
     let pipeline_layout = context.create_pipeline_layout(&[&dsl])?;
-    let pipeline = ComputePipeline::new(
-        context.device.clone(),
-        &pipeline_layout,
-        info
-    )?;
+    let pipeline = ComputePipeline::new(context.device.clone(), &pipeline_layout, info)?;
     Ok(ComputePipelineRes {
         pipeline,
         pipeline_layout,

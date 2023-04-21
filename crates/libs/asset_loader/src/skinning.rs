@@ -1,8 +1,8 @@
 use glam::Mat4;
 use gltf::buffer;
-use vulkan::Fence;
-use crate::{get_index, get_index_array, get_name, Name, NodeID};
+
 use crate::scene_graph::Node;
+use crate::{get_index, get_index_array, get_name, Name, NodeID};
 
 pub struct Skin {
     index: usize,
@@ -15,7 +15,8 @@ impl Skin {
         // let reader = skin.inverse_bind_matrices();
         let joints: Vec<_> = get_index_array!(skin.joints());
         skin.skeleton();
-        let ibms: Vec<_> = skin.reader(|b| Some(&data[b.index()]))
+        let ibms: Vec<_> = skin
+            .reader(|b| Some(&data[b.index()]))
             .read_inverse_bind_matrices()
             .unwrap()
             .map(|m| Mat4::from_cols_array_2d(&m))
@@ -38,10 +39,7 @@ pub struct Joint {
 
 impl From<(usize, Mat4)> for Joint {
     fn from((node, ibm): (usize, Mat4)) -> Self {
-        Self {
-            node,
-            ibm,
-        }
+        Self { node, ibm }
     }
 }
 

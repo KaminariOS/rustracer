@@ -21,7 +21,7 @@ enum Property {
     Translation(Vec<[f32; 3]>),
     Rotation(Vec<[f32; 4]>),
     Scale(Vec<[f32; 3]>),
-    Morph(Vec<[f32; 3]>)
+    Morph(Vec<[f32; 3]>),
 }
 
 impl Property {
@@ -65,7 +65,7 @@ impl AnimationChannel {
             ReadOutputs::Translations(t) => Property::Translation(t.collect()),
             ReadOutputs::Rotations(r) => Property::Rotation(r.into_f32().collect()),
             ReadOutputs::Scales(s) => Property::Scale(s.collect()),
-            ReadOutputs::MorphTargetWeights(m) => Property::Morph(vec![]),
+            ReadOutputs::MorphTargetWeights(_m) => Property::Morph(vec![]),
         };
         let sampler = channel.sampler();
         assert_eq!(input.len(), property.len());
@@ -122,7 +122,9 @@ impl AnimationChannel {
                 PropertyOutput::Scale([scale[0], scale[1], scale[2]])
                 // Mat4::from_scale(Vec3::from_slice(scale.as_slice()))
             }
-            _ => {unimplemented!()}
+            _ => {
+                unimplemented!()
+            }
         }
     }
 }

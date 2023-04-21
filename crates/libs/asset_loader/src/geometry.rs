@@ -1,7 +1,7 @@
 use crate::aabb::{get_aabb, Aabb};
 use crate::material::Material;
 use crate::{a3toa4, get_name, Index, MeshID, Name};
-use glam::{vec4, UVec4, Vec2, Vec4, Vec4Swizzles, Vec3};
+use glam::{vec4, UVec4, Vec2, Vec3, Vec4, Vec4Swizzles};
 use gltf::mesh::Mode;
 use gltf::{buffer, Semantic};
 use log::{info, warn};
@@ -148,22 +148,16 @@ impl Primitive {
             let pos_reader = reader.read_positions().unwrap();
             // let joints_reader = reader.read_joints(0).unwrap();
             // let joints_reader = reader.read_weights(0).unwrap();
-            let morph_targets: Vec<_> = reader
+            let _morph_targets: Vec<_> = reader
                 .read_morph_targets()
-                .map(|(
-                          position_d,
-                          normal_d,
-                          tangent_d
-                      )|
-                {
+                .map(|(position_d, normal_d, tangent_d)| {
                     (
                         position_d.map(|p| p.map(Vec3::from)),
                         normal_d.map(|n| n.map(Vec3::from)),
-                        tangent_d.map(|t| t.map(Vec3::from))
-                    ,)
-
-                }
-            ).collect();
+                        tangent_d.map(|t| t.map(Vec3::from)),
+                    )
+                })
+                .collect();
 
             let positions: Vec<_> = pos_reader.map(|p| vec4(p[0], p[1], p[2], 0.)).collect();
 

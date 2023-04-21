@@ -39,10 +39,11 @@ pub struct Buffers {
 }
 
 impl Buffers {
-    pub fn new(context: &Context, 
-               geo_builder: &GeoBuilder, 
-               globals: &VkGlobal,
-                need_compute: bool,
+    pub fn new(
+        context: &Context,
+        geo_builder: &GeoBuilder,
+        globals: &VkGlobal,
+        need_compute: bool,
     ) -> Result<Self> {
         let vertices = geo_builder.vertices.as_slice();
         let indices = geo_builder.indices.as_slice();
@@ -69,7 +70,9 @@ impl Buffers {
                 vertices,
                 &cmd_buffer,
             )?)
-        } else {None};
+        } else {
+            None
+        };
 
         let (index_buffer, _i) = create_gpu_only_buffer_from_data_batch(
             context,
@@ -105,8 +108,7 @@ impl Buffers {
         fence.wait(None)?;
         // Free
         context.command_pool.free_command_buffer(&cmd_buffer)?;
-        let animation_buffer = animation_buffer
-            .map(|(b, _)| b);
+        let animation_buffer = animation_buffer.map(|(b, _)| b);
 
         let _size_of_slice = size_of_val(globals.d_lights.as_slice());
         let _size = size_of_val(&globals.d_lights);

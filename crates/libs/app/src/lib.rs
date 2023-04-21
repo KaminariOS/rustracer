@@ -546,7 +546,7 @@ impl<B: App> BaseApp<B> {
 
         if self.raytracing_enabled {
             let storage_image = &self.storage_images[image_index].image;
-            let acc_image = &self.acc_images[0].image;
+            let _acc_image = &self.acc_images[0].image;
 
             base_app.record_raytracing_commands(self, buffer, image_index)?;
 

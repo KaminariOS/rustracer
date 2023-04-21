@@ -149,13 +149,7 @@ impl Doc {
             "Finish processing images, time:{}s",
             now.elapsed().as_secs()
         );
-        let is: (Vec<_>, Vec<_>) = images
-            .iter()
-            .enumerate()
-            .filter(|(i, _image)| *i > 0)
-            .map(|(i, img)| (i - 1, img.gamma))
-            .partition(|(_i, g)| *g == TexGamma::Linear);
-        println!("image info: {:?}", is);
+
         let samplers: Vec<_> = once(Sampler::default())
             .chain(doc.samplers().map(Sampler::from))
             .collect();

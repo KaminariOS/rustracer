@@ -43,11 +43,10 @@ pub struct Gui {
 pub enum Scene {
     ZeroDay,
     TransmissionRoughnessTest,
-    // Passed tests
+    // Passed tests:
     // UnlitTest,
     // VertexColorTest,
     SpecularTest,
-
     Bathroom,
 
     BistroExt,
@@ -56,9 +55,11 @@ pub enum Scene {
     BistroInterior,
     CornellBoxLucy,
     Cornell,
+
     #[default]
     ABeautifulGame,
     Sponza,
+
     Type59,
 
     DamagedHelmet,
@@ -78,6 +79,33 @@ pub enum Scene {
     KikuHoshimi,
     SparkLence,
     Apollo,
+
+    LamborghiniInterior,
+    Skull,
+    Ironman85,
+    Laocoon,
+    LamborghiniBlue,
+    Room,
+    Spartan,
+    SciFiGirlWalk,
+
+    SciFiGirl,
+    BathroomRPT,
+    Xeno,
+    CL4P,
+    MillenniumFalcon,
+    MillenniumFalconHighPoly,
+    BusterDrone,
+    Lamborghini2021,
+    SkullSimple,
+    LouisXIV,
+    DragonArmor,
+    StormTrooper,
+    Nier,
+    Crusader,
+    Thinker,
+    Enterprise,
+
     CyberSamurai,
     Apex,
     Ra,
@@ -96,6 +124,7 @@ pub enum Scene {
     NormalTangentTest,
     NormalTangentMirrorTest,
     EnvironmentTest,
+
     SpecGlossVsMetalRough,
     AlphaBlendModeTest,
     // BrainStem,
@@ -109,17 +138,33 @@ pub enum Scene {
     Earth,
 
     // MultiUVTest,
-    FerrisCrab,
+    // FerrisCrab,
     LA_Night,
-    WinterForest,
-    Panocube,
+    // WinterForest,
+    // Panocube,
+
+    CemeteryAngelCampanella,
+    CemeteryAngelMiller,
+    BaptismalAngelKneeling,
+    // Batman,
+    GingaSpark,
+    Katana,
+    Valkyrie,
+    Aurelius,
+    Nile,
+    Liberty,
+    Pagoda,
+    Tardis,
+    Colosseum,
+    Kentaur,
+    Tritonen,
+    FrankAngel,
 }
 
 impl Scene {
     pub fn path(&self) -> &'static str {
         match self {
             Self::Cornell => "cornellBox.gltf",
-            Self::Type59 => "type59.gltf",
             scene => scene.into(),
         }
     }
@@ -298,7 +343,7 @@ impl app::Gui for Gui {
                 let mut debug_number = self.debug as _;
                 ui.input_int("Debug control", &mut debug_number).build();
                 self.debug = debug_number.abs() as _;
-                ui.slider("scale", -20., 20., &mut self.scale);
+                ui.slider("scale", -40., 40., &mut self.scale);
                 ui.slider("Apertures", 0., 1., &mut self.aperture);
                 ui.slider("Focus", 0.1, 20., &mut self.focus_distance);
                 ui.slider("Orthographic", 0., 100., &mut self.orthographic_fov_dis);

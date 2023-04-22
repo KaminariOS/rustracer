@@ -164,6 +164,21 @@ pub enum Scene {
     Kentaur,
     Tritonen,
     FrankAngel,
+
+    // Chief,
+    // Avengers,
+    // ShutterGirl,
+    // DaedricGauntlet,
+    Curiosity,
+    DragonFlying,
+    Chernovan,
+    // IcyDragon,
+    // Zombie,
+    // DragonThree,
+    // Lotus,
+    // Trex,
+    // Phoenix,
+    // Wolf,
 }
 
 impl Scene {

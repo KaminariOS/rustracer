@@ -1,0 +1,1 @@
+https://github.com/nvpro-samples/vk_raytracing_tutorial_KHR/blob/master/media/scenes/cornellBox.gltf

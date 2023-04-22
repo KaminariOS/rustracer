@@ -54,7 +54,8 @@ pub enum Scene {
     Emerald,
     BistroInterior,
     CornellBoxLucy,
-    Cornell,
+    #[default]
+    CornellBox,
 
     ABeautifulGame,
     Sponza,
@@ -99,7 +100,6 @@ pub enum Scene {
     MillenniumFalcon,
     MillenniumFalconHighPoly,
 
-    #[default]
     BusterDrone,
     Lamborghini2021,
     SkullSimple,
@@ -184,7 +184,6 @@ pub enum Scene {
 impl Scene {
     pub fn path(&self) -> &'static str {
         match self {
-            Self::Cornell => "cornellBox.gltf",
             scene => scene.into(),
         }
     }

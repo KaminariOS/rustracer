@@ -34,7 +34,7 @@ I stole the PBR shaders from the [referencePT](https://github.com/boksajak/refer
     * [x] Specular-Glossiness workflow
   * [x] Animations
     * [x] Articulated (translate, rotate, scale)
-    * [ ] Skinning
+    * [x] Skinning
     * [ ] Morph targets
   * [x] Extensions
       * [x] "KHR_materials_ior",

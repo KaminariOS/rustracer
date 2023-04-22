@@ -56,7 +56,6 @@ pub enum Scene {
     CornellBoxLucy,
     Cornell,
 
-    #[default]
     ABeautifulGame,
     Sponza,
 
@@ -74,9 +73,13 @@ pub enum Scene {
     Ford,
     Ironman,
     Knight,
+    // RiggedSimple,
+    CesiumMan,
+    // RiggedFigure,
+    // SimpleSkin,
     Loba,
     Hulkbuster,
-    KikuHoshimi,
+    // KikuHoshimi,
     SparkLence,
     Apollo,
 
@@ -89,12 +92,14 @@ pub enum Scene {
     Spartan,
     SciFiGirlWalk,
 
-    SciFiGirl,
+    // SciFiGirl,
     BathroomRPT,
     Xeno,
     CL4P,
     MillenniumFalcon,
     MillenniumFalconHighPoly,
+
+    #[default]
     BusterDrone,
     Lamborghini2021,
     SkullSimple,
@@ -127,7 +132,8 @@ pub enum Scene {
 
     SpecGlossVsMetalRough,
     AlphaBlendModeTest,
-    // BrainStem,
+
+    BrainStem,
     // Fox,
     NegativeScaleTest,
     TextureCoordinateTest,

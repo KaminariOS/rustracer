@@ -69,7 +69,11 @@ pub fn create_descriptor_sets(
         WriteDescriptorSet {
             binding: VERTEX_BIND,
             kind: WriteDescriptorSetKind::StorageBuffer {
-                buffer: &buffers.vertex_buffer,
+                buffer: if let Some((_, ani)) = &buffers.animation_buffers {
+                    ani
+                } else {
+                    &buffers.vertex_buffer
+                }
             },
         },
         WriteDescriptorSet {

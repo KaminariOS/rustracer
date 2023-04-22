@@ -271,7 +271,6 @@ impl Doc {
         let aabbs: Vec<_> = root_nodes.iter().filter_map(|i| self.get_node_aabb(*i)).collect();
         let aabb = Aabb::union(&aabbs).unwrap();
         self.aabb_trans = aabb.get_transform();
-        self.aabb_trans = Mat4::IDENTITY;
         root_nodes
             .into_iter()
             .for_each(|n| self.update_parent_transform(n, self.aabb_trans));

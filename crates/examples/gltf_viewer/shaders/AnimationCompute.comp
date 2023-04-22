@@ -27,7 +27,7 @@ void main() {
             weights.w * skin.bones[joints.w];
 
             vec4 pos = transform * vec4(v.pos, 1.);
-            v.pos = (pos / pos.w).xyz;
+            v.pos = pos.xyz;
             v.normal = normalize((transform * vec4(v.normal, 0.)).xyz);
             float w = v.tangent.w;
             v.tangent = normalize((transform * vec4(v.tangent.xyz, 0.)));

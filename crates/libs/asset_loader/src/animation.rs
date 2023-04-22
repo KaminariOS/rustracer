@@ -21,7 +21,7 @@ enum Property {
     Translation(Vec<[f32; 3]>),
     Rotation(Vec<[f32; 4]>),
     Scale(Vec<[f32; 3]>),
-    Morph(Vec<[f32; 3]>),
+    Morph(Vec<Vec<f32>>),
 }
 
 impl Property {
@@ -60,15 +60,22 @@ impl AnimationChannel {
         let target_node = target.node().index();
         // let property = target.property().into();
         let input: Vec<_> = reader.read_inputs().unwrap().collect();
+        let input_len = input.len();
         let output = reader.read_outputs().unwrap();
         let property = match output {
             ReadOutputs::Translations(t) => Property::Translation(t.collect()),
             ReadOutputs::Rotations(r) => Property::Rotation(r.into_f32().collect()),
             ReadOutputs::Scales(s) => Property::Scale(s.collect()),
-            ReadOutputs::MorphTargetWeights(_m) => Property::Morph(vec![]),
+            ReadOutputs::MorphTargetWeights(m) => {
+                let weights:Vec<_> = m.into_f32().collect();
+                let chuck_size = weights.len() / input_len;
+                Property::Morph(weights.chunks(chuck_size).map(
+                    |x| x.iter().map(|e| *e).collect()
+                ).collect())
+            },
         };
         let sampler = channel.sampler();
-        assert_eq!(input.len(), property.len());
+        assert_eq!(input_len, property.len());
         Self {
             target: target_node,
             property,
@@ -123,7 +130,7 @@ impl AnimationChannel {
                 // Mat4::from_scale(Vec3::from_slice(scale.as_slice()))
             }
             _ => {
-                unimplemented!()
+                PropertyOutput::Scale([1.; 3])
             }
         }
     }

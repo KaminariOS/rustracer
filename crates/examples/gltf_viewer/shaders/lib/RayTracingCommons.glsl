@@ -88,7 +88,8 @@ out Vertex mix_v) {
 	mix_v.uv0And1 = Mix(v0.uv0And1, v1.uv0And1, v2.uv0And1, barycentricCoords);
 	mix_v.pos = Mix(v0.pos, v1.pos, v2.pos, barycentricCoords);
 	mix_v.color = Mix(v0.color, v1.color, v2.color, barycentricCoords);
-	mix_v.normal = normalize(Mix(v0.normal, v1.normal, v2.normal, barycentricCoords));
+	mix_v.normal = normalize(Mix(normalize(v0.normal), normalize(v1.normal),
+	normalize(v2.normal), barycentricCoords));
 	mix_v.tangent = normalize(Mix(v0.tangent, v1.tangent, v2.tangent, barycentricCoords));
 	mix_v.skin_index = v0.skin_index;
 	return calculate_geo_normal(v0.pos, v1.pos, v2.pos);

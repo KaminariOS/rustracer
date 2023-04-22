@@ -1,6 +1,6 @@
 use crate::error::*;
 use crate::geometry::{GeoBuilder, Mesh};
-use crate::image::{process_images_unified, Image, TexGamma};
+use crate::image::{process_images_unified, Image};
 use crate::material::{find_linear_textures, Material, MaterialRaw};
 use crate::texture::{Sampler, Texture};
 use crate::{
@@ -13,15 +13,15 @@ use gltf::image;
 use gltf::Document;
 use std::collections::HashMap;
 
+use crate::aabb::Aabb;
 use crate::animation::{Animation, PropertyOutput};
 use crate::light::{report_lights, Light, LightRaw};
-use crate::skinning::{MAX_JOINTS, Skin, SkinRaw};
+use crate::skinning::{Skin, SkinRaw};
 use gltf::scene::Transform;
 use log::info;
 use std::iter::once;
 use std::path::Path;
 use std::time::Instant;
-use crate::aabb::Aabb;
 
 #[derive(Default)]
 pub struct Doc {
@@ -208,10 +208,13 @@ impl Doc {
                 for p_index in 0..self.meshes[mesh].primitives.len() {
                     let geometry_id = self.meshes[mesh].primitives[p_index].geometry_id as usize;
                     let geo_builder = &mut self.geo_builder;
-                    let [vertex_offset, index_offset, material_id] = geo_builder.offsets[geometry_id];
-                    let [vertex_offset, index_offset] = [vertex_offset as usize, index_offset as usize];
-                    let [vertex_length, index_length] = geo_builder.len[geometry_id];
-                    let dup_vertices = &mut geo_builder.vertices[vertex_offset..vertex_offset + vertex_length];
+                    let [vertex_offset, index_offset, _material_id] =
+                        geo_builder.offsets[geometry_id];
+                    let [vertex_offset, _index_offset] =
+                        [vertex_offset as usize, index_offset as usize];
+                    let [vertex_length, _index_length] = geo_builder.len[geometry_id];
+                    let dup_vertices =
+                        &mut geo_builder.vertices[vertex_offset..vertex_offset + vertex_length];
                     dup_vertices.iter_mut().for_each(|v| {
                         assert_eq!(v.skin_index, -1);
                         v.skin_index = skin_index as i32;
@@ -245,15 +248,14 @@ impl Doc {
             self.meshes[new_mesh_id].primitives[p_index].geometry_id = new_primitive_id;
             let cur_vertex_len = geo_builder.vertices.len();
             let cur_index_len = geo_builder.indices.len();
-            let mut dup_vertices = geo_builder.vertices[vertex_offset..vertex_offset + vertex_length].to_vec();
+            let mut dup_vertices =
+                geo_builder.vertices[vertex_offset..vertex_offset + vertex_length].to_vec();
             dup_vertices.iter_mut().for_each(|v| {
                 assert_eq!(v.skin_index, -1);
                 v.skin_index = skin_index as i32;
             });
             // dup_vertices.
-            geo_builder.vertices.extend(
-                dup_vertices
-            );
+            geo_builder.vertices.extend(dup_vertices);
             geo_builder
                 .indices
                 .extend(geo_builder.indices[index_offset..index_offset + index_length].to_vec());
@@ -268,13 +270,15 @@ impl Doc {
     fn load_scene(&mut self, _document: &Document) {
         let scene = &self.scenes[self.current_scene];
         let root_nodes = scene.root_nodes.clone();
-        let aabbs: Vec<_> = root_nodes.iter().filter_map(|i| self.get_node_aabb(*i)).collect();
+        let aabbs: Vec<_> = root_nodes
+            .iter()
+            .filter_map(|i| self.get_node_aabb(*i))
+            .collect();
         let aabb = Aabb::union(&aabbs).unwrap();
         self.aabb_trans = aabb.get_transform();
         root_nodes
             .into_iter()
             .for_each(|n| self.update_parent_transform(n, self.aabb_trans));
-
     }
 
     fn update_local_transform(&mut self, node_id: NodeID, new_local: Transform) {
@@ -317,21 +321,28 @@ impl Doc {
     }
 
     pub fn get_skins(&self) -> Vec<SkinRaw> {
-        let mut skins: Vec<_> = self.skins.iter()
-            .map(|s| s.get_skin_matrices(&self.nodes)).collect();
+        let skins: Vec<_> = self
+            .skins
+            .iter()
+            .map(|s| s.get_skin_matrices(&self.nodes))
+            .collect();
 
         skins
     }
 
     pub fn get_node_aabb(&self, node: usize) -> Option<Aabb> {
         let cur = &self.nodes[node];
-        let mut childs: Vec<_> = cur.children.iter().filter_map(|c|
-            self.get_node_aabb(*c)
-        ).collect();
+        let mut childs: Vec<_> = cur
+            .children
+            .iter()
+            .filter_map(|c| self.get_node_aabb(*c))
+            .collect();
         if let Some(local) = cur.mesh.and_then(|m| self.meshes[m].get_aabb()) {
             childs.push(local);
         }
-        childs.iter_mut().for_each(|aabb| *aabb = *aabb * cur.get_local_transform());
+        childs
+            .iter_mut()
+            .for_each(|aabb| *aabb = *aabb * cur.get_local_transform());
         Aabb::union(&childs)
     }
 }
@@ -367,8 +378,6 @@ impl Node {
     pub fn is_leaf(&self) -> bool {
         self.children.is_empty()
     }
-
-
 }
 
 impl Node {
@@ -403,7 +412,6 @@ impl Node {
     pub fn need_compute_pass(&self) -> bool {
         self.skin.is_some()
     }
-
 }
 
 impl<'a> From<gltf::Node<'_>> for Node {

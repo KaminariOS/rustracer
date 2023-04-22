@@ -12,13 +12,14 @@ use std::rc::Rc;
 use log::info;
 use std::time::Instant;
 
+mod compute_unit;
 mod desc_sets;
 mod gui_state;
 mod loader;
 mod pipeline_res;
 mod ubo;
-mod compute_unit;
 
+use crate::compute_unit::ComputeUnit;
 use crate::gui_state::{Scene, Skybox};
 use crate::loader::Loader;
 use asset_loader::acceleration_structures::{create_as, create_top_as, TopAS};
@@ -29,7 +30,6 @@ use desc_sets::*;
 use gui_state::Gui;
 use pipeline_res::*;
 use ubo::UniformBufferObject;
-use crate::compute_unit::ComputeUnit;
 
 const WIDTH: u32 = 1920;
 const HEIGHT: u32 = 1080;
@@ -108,10 +108,11 @@ impl GltfViewer {
         let buffers = Buffers::new(context, &doc.geo_builder, &globals)?;
         let compute_unit = if buffers.animation_buffers.is_some() {
             let compute_unit = ComputeUnit::new(context, &buffers)?;
-            compute_unit.dispatch(context, &buffers,
-                                  doc.geo_builder.vertices.len() as u32)?;
+            compute_unit.dispatch(context, &buffers, doc.geo_builder.vertices.len() as u32)?;
             Some(compute_unit)
-        } else {None};
+        } else {
+            None
+        };
 
         let (_bottom_as, top_as) = create_as(
             context,
@@ -287,7 +288,11 @@ impl App for GltfViewer {
         Ok(())
     }
 
-    fn state_change(&mut self, base: &mut BaseApp<Self>, gui_state: &mut <Self as App>::Gui) -> Result<()> {
+    fn state_change(
+        &mut self,
+        base: &mut BaseApp<Self>,
+        gui_state: &mut <Self as App>::Gui,
+    ) -> Result<()> {
         if let Some(doc) = self.loader.get_model() {
             *self = Self::new_with_doc(base, doc, gui_state.skybox, self.loader.clone())?;
         }
@@ -339,11 +344,16 @@ impl App for GltfViewer {
             self.last_update = Instant::now();
             let t = self.clock.elapsed().as_secs_f32() * gui_state.animation_speed;
             self.doc.animate(t);
-            let tlas = if let Some((skin, ani)) = &self.buffers.animation_buffers {
+            let tlas = if let Some((skin, _ani)) = &self.buffers.animation_buffers {
                 let new_skin = self.doc.get_skins();
                 skin.copy_data_to_buffer(&new_skin)?;
                 self.compute(&base.context)?;
-                let (blas, tlas) = create_as(&base.context, &self.doc, &self.buffers, vk::BuildAccelerationStructureFlagsKHR::empty())?;
+                let (blas, tlas) = create_as(
+                    &base.context,
+                    &self.doc,
+                    &self.buffers,
+                    vk::BuildAccelerationStructureFlagsKHR::empty(),
+                )?;
                 self._bottom_as = blas;
                 tlas
             } else {
@@ -358,7 +368,6 @@ impl App for GltfViewer {
         }
         Ok(())
     }
-
 }
 
 impl GltfViewer {
@@ -376,7 +385,7 @@ impl GltfViewer {
         self.last_update.elapsed().as_secs_f32() >= 1. / 60.
     }
 
-    fn compute(&mut self, context: &Context) -> Result<()>{
+    fn compute(&mut self, context: &Context) -> Result<()> {
         if let Some(compute) = &self.compute_unit {
             let vertex_count = self.doc.geo_builder.vertices.len() as u32;
             compute.dispatch(context, &self.buffers, vertex_count)?;

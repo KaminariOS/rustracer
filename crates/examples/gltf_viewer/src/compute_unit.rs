@@ -1,9 +1,12 @@
-use app::load_spv;
-use app::vulkan::{Buffer, CommandBuffer, ComputePipeline, ComputePipelineCreateInfo, Context, DescriptorSetLayout, PipelineLayout, WriteDescriptorSet, WriteDescriptorSetKind};
-use app::vulkan::ash::vk;
 use crate::desc_sets::DescriptorRes;
 use crate::{ANIMATION_BIND, SKIN_BIND, VERTEX_BIND};
 use app::anyhow::Result;
+use app::load_spv;
+use app::vulkan::ash::vk;
+use app::vulkan::{
+    ComputePipeline, ComputePipelineCreateInfo, Context, DescriptorSetLayout, PipelineLayout,
+    WriteDescriptorSet, WriteDescriptorSetKind,
+};
 use asset_loader::globals::Buffers;
 
 const DISPATCH_SIZE: u32 = 256;
@@ -24,11 +27,7 @@ impl ComputeUnit {
         })
     }
 
-    pub fn dispatch(&self,
-                    context: &Context,
-                    buffers: &Buffers,
-                    vertex_count: u32
-    ) -> Result<()> {
+    pub fn dispatch(&self, context: &Context, _buffers: &Buffers, vertex_count: u32) -> Result<()> {
         let cmd_buffer = context
             .command_pool
             .allocate_command_buffer(vk::CommandBufferLevel::PRIMARY)?;
@@ -41,7 +40,7 @@ impl ComputeUnit {
             0,
             &[static_set],
         );
-        cmd_buffer.dispatch((vertex_count / DISPATCH_SIZE) + 1, 1, 1,);
+        cmd_buffer.dispatch((vertex_count / DISPATCH_SIZE) + 1, 1, 1);
         unsafe {
             context.device.inner.cmd_pipeline_barrier2(
                 cmd_buffer.inner,
@@ -69,7 +68,6 @@ impl ComputeUnit {
         Ok(())
     }
 }
-
 
 pub fn create_compute_pipeline(context: &Context) -> Result<ComputePipelineRes> {
     let shader = load_spv("AnimationCompute.comp.spv");
@@ -118,13 +116,10 @@ pub fn create_descriptor_sets(
     pipeline_res: &ComputePipelineRes,
     buffers: &Buffers,
 ) -> Result<DescriptorRes> {
-
-    let pool_sizes = [
-        vk::DescriptorPoolSize::builder()
-            .ty(vk::DescriptorType::STORAGE_BUFFER)
-            .descriptor_count(3)
-            .build(),
-    ];
+    let pool_sizes = [vk::DescriptorPoolSize::builder()
+        .ty(vk::DescriptorType::STORAGE_BUFFER)
+        .descriptor_count(3)
+        .build()];
 
     let pool = context.create_descriptor_pool(1, &pool_sizes)?;
 
@@ -139,15 +134,11 @@ pub fn create_descriptor_sets(
         },
         WriteDescriptorSet {
             binding: SKIN_BIND,
-            kind: WriteDescriptorSetKind::StorageBuffer {
-                buffer: skins,
-            },
+            kind: WriteDescriptorSetKind::StorageBuffer { buffer: skins },
         },
         WriteDescriptorSet {
             binding: ANIMATION_BIND,
-            kind: WriteDescriptorSetKind::StorageBuffer {
-                buffer: ani,
-            },
+            kind: WriteDescriptorSetKind::StorageBuffer { buffer: ani },
         },
     ]);
     Ok(DescriptorRes {
@@ -156,4 +147,3 @@ pub fn create_descriptor_sets(
         static_set,
     })
 }
-

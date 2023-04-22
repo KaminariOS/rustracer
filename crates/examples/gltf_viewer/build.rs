@@ -1,4 +1,3 @@
-use std::error::Error;
 use std::io;
 use std::process::{Command, Output};
 

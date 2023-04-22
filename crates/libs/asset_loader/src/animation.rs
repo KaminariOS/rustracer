@@ -60,12 +60,15 @@ impl AnimationChannel {
             ReadOutputs::Rotations(r) => Property::Rotation(r.into_f32().collect()),
             ReadOutputs::Scales(s) => Property::Scale(s.collect()),
             ReadOutputs::MorphTargetWeights(m) => {
-                let weights:Vec<_> = m.into_f32().collect();
+                let weights: Vec<_> = m.into_f32().collect();
                 let chuck_size = weights.len() / input_len;
-                Property::Morph(weights.chunks(chuck_size).map(
-                    |x| x.iter().map(|e| *e).collect()
-                ).collect())
-            },
+                Property::Morph(
+                    weights
+                        .chunks(chuck_size)
+                        .map(|x| x.iter().map(|e| *e).collect())
+                        .collect(),
+                )
+            }
         };
         let sampler = channel.sampler();
         assert_eq!(input_len, property.len());
@@ -103,43 +106,41 @@ impl AnimationChannel {
         let interpolation = self.interpolation;
         match &self.property {
             Property::Translation(t) => {
-                let res= match interpolation {
+                let res = match interpolation {
                     Interpolation::Linear => interpolate_lerp3(t[s], t[e], factor),
-                    Interpolation::Step => {t[s]}
-                    Interpolation::CubicSpline => {
-                        cubic_spline(
-                            [t[s3], t[s3 + 1], t[s3 + 2]],
-                            prev_time,
-                            [t[s3 + 3], t[s3 + 4], t[s3 + 5]],
-                            next_time,
-                            factor
-                        )
-                    }
+                    Interpolation::Step => t[s],
+                    Interpolation::CubicSpline => cubic_spline(
+                        [t[s3], t[s3 + 1], t[s3 + 2]],
+                        prev_time,
+                        [t[s3 + 3], t[s3 + 4], t[s3 + 5]],
+                        next_time,
+                        factor,
+                    ),
                 };
                 PropertyOutput::Translation(res)
             }
             Property::Rotation(r) => {
                 let l = Quat::from_array(r[s]);
                 let right = Quat::from_array(r[e]);
-                let res= match interpolation {
-                    Interpolation::Linear | Interpolation::CubicSpline => l.slerp(right, factor).to_array(),
-                    Interpolation::Step => {r[s]}
+                let res = match interpolation {
+                    Interpolation::Linear | Interpolation::CubicSpline => {
+                        l.slerp(right, factor).to_array()
+                    }
+                    Interpolation::Step => r[s],
                 };
                 PropertyOutput::Rotation(res)
             }
             Property::Scale(t) => {
-                let res= match interpolation {
+                let res = match interpolation {
                     Interpolation::Linear => interpolate_lerp3(t[s], t[e], factor),
-                    Interpolation::Step => {t[s]}
-                    Interpolation::CubicSpline => {
-                        cubic_spline(
-                            [t[s3], t[s3 + 1], t[s3 + 2]],
-                            prev_time,
-                            [t[s3 + 3], t[s3 + 4], t[s3 + 5]],
-                            next_time,
-                            factor
-                        )
-                    }
+                    Interpolation::Step => t[s],
+                    Interpolation::CubicSpline => cubic_spline(
+                        [t[s3], t[s3 + 1], t[s3 + 2]],
+                        prev_time,
+                        [t[s3 + 3], t[s3 + 4], t[s3 + 5]],
+                        next_time,
+                        factor,
+                    ),
                 };
                 PropertyOutput::Scale(res)
             }

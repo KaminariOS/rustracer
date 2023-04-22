@@ -1,7 +1,7 @@
-use std::default::Default;
 use glam::Mat4;
 use gltf::buffer;
 use log::warn;
+use std::default::Default;
 
 use crate::scene_graph::Node;
 use crate::{get_index, get_index_array, get_name, Name, NodeID};
@@ -43,9 +43,7 @@ impl Skin {
         }
         let mut res: SkinRaw = [Default::default(); MAX_JOINTS];
         let len = len.min(MAX_JOINTS);
-        self.joints[0..len].iter()
-            .enumerate()
-            .for_each(|(i, j)| {
+        self.joints[0..len].iter().enumerate().for_each(|(i, j)| {
             res[i] = (j.compute_skinning_matrix(nodes)).into();
         });
         res
@@ -61,7 +59,7 @@ pub struct JointRaw {
 impl From<Mat4> for JointRaw {
     fn from(value: Mat4) -> Self {
         Self {
-            matrix: value.to_cols_array()
+            matrix: value.to_cols_array(),
         }
     }
 }

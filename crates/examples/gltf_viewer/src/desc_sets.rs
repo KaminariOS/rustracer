@@ -73,7 +73,7 @@ pub fn create_descriptor_sets(
                     ani
                 } else {
                     &buffers.vertex_buffer
-                }
+                },
             },
         },
         WriteDescriptorSet {

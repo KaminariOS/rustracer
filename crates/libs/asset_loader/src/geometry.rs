@@ -197,7 +197,10 @@ impl Primitive {
             };
             if !tangents_found
                 && !uvs0.is_empty()
-                && *builder.normal_textures.get(material_index as usize).unwrap_or(&false)
+                && *builder
+                    .normal_textures
+                    .get(material_index as usize)
+                    .unwrap_or(&false)
             {
                 info!("Normal map found but tangents not found. Generating tangents...");
                 mikktspace::generate_tangents(&mut TangentCalcContext {

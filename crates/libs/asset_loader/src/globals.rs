@@ -10,7 +10,8 @@ use anyhow::Result;
 use log::info;
 use std::mem::size_of_val;
 use std::time::Instant;
-use glam::Mat4;
+
+use crate::skinning::{JointRaw, MAX_JOINTS};
 use vulkan::ash::vk;
 use vulkan::ash::vk::SamplerAddressMode;
 use vulkan::gpu_allocator::MemoryLocation;
@@ -19,7 +20,6 @@ use vulkan::{
     Buffer, Context, DescriptorSet, Image, ImageBarrier, ImageView, Sampler, WriteDescriptorSet,
     WriteDescriptorSetKind,
 };
-use crate::skinning::{JointRaw, MAX_JOINTS};
 
 impl Into<vk::Format> for TexGamma {
     fn into(self) -> vk::Format {
@@ -41,11 +41,7 @@ pub struct Buffers {
 }
 
 impl Buffers {
-    pub fn new(
-        context: &Context,
-        geo_builder: &GeoBuilder,
-        globals: &VkGlobal,
-    ) -> Result<Self> {
+    pub fn new(context: &Context, geo_builder: &GeoBuilder, globals: &VkGlobal) -> Result<Self> {
         let vertices = geo_builder.vertices.as_slice();
         let indices = geo_builder.indices.as_slice();
         let no_skin = globals.skins.is_empty();
@@ -136,7 +132,9 @@ impl Buffers {
             )?;
             skins_buffer.copy_data_to_buffer(globals.skins.as_slice())?;
             Some((skins_buffer, ani))
-        } else { None };
+        } else {
+            None
+        };
 
         info!("Buffers: {}s", now.elapsed().as_secs());
         // println!("v_b: {:#02x}, i_b: {:#02x}, g_b: {:#02x}, m_b: {:#02x}", vertex_buffer.as_raw(), index_buffer.as_raw(), geo_buffer.as_raw(), material_buffer.as_raw());

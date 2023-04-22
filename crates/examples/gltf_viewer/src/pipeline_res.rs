@@ -1,17 +1,15 @@
 use crate::{
-    ACC_BIND, ANIMATION_BIND, AS_BIND, DLIGHT_BIND, GEO_BIND, INDEX_BIND, MAT_BIND, PLIGHT_BIND,
-    SKIN_BIND, SKYBOX_BIND, STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND, VERTEX_BIND,
+    ACC_BIND, AS_BIND, DLIGHT_BIND, GEO_BIND, INDEX_BIND, MAT_BIND, PLIGHT_BIND, SKYBOX_BIND,
+    STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND, VERTEX_BIND,
 };
 use app::anyhow::Result;
 use app::load_spv;
 use app::vulkan::ash::vk;
 use app::vulkan::{
-    ComputePipeline, ComputePipelineCreateInfo, Context, DescriptorSetLayout, PipelineLayout,
-    RayTracingPipeline, RayTracingPipelineCreateInfo, RayTracingShaderCreateInfo,
-    RayTracingShaderGroup,
+    Context, DescriptorSetLayout, PipelineLayout, RayTracingPipeline, RayTracingPipelineCreateInfo,
+    RayTracingShaderCreateInfo, RayTracingShaderGroup,
 };
 use asset_loader::globals::VkGlobal;
-use crate::compute_unit::ComputePipelineRes;
 
 pub struct PipelineRes {
     pub(crate) pipeline: RayTracingPipeline,
@@ -182,4 +180,3 @@ pub fn create_pipeline(
     })
 }
 //
-

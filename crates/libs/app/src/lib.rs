@@ -90,7 +90,11 @@ pub trait App: Sized {
     }
 
     fn on_recreate_swapchain(&mut self, base: &BaseApp<Self>) -> Result<()>;
-    fn state_change(&mut self, _base: &mut BaseApp<Self>, _gui_state: &mut Self::Gui) -> Result<()> {
+    fn state_change(
+        &mut self,
+        _base: &mut BaseApp<Self>,
+        _gui_state: &mut Self::Gui,
+    ) -> Result<()> {
         Ok(())
     }
 }

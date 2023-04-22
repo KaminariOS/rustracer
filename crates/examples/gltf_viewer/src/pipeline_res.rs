@@ -11,6 +11,7 @@ use app::vulkan::{
     RayTracingShaderGroup,
 };
 use asset_loader::globals::VkGlobal;
+use crate::compute_unit::ComputePipelineRes;
 
 pub struct PipelineRes {
     pub(crate) pipeline: RayTracingPipeline,
@@ -181,44 +182,4 @@ pub fn create_pipeline(
     })
 }
 //
-pub fn create_compute_pipeline(context: &Context) -> Result<ComputePipelineRes> {
-    let shader = load_spv("AnimationCompute.comp.spv");
-    let info = ComputePipelineCreateInfo {
-        shader_source: &shader,
-    };
-    let stage_flag = vk::ShaderStageFlags::COMPUTE;
-    let layout_bindings = [
-        vk::DescriptorSetLayoutBinding::builder()
-            .binding(VERTEX_BIND)
-            .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
-            .descriptor_count(1)
-            .stage_flags(stage_flag)
-            .build(),
-        vk::DescriptorSetLayoutBinding::builder()
-            .binding(ANIMATION_BIND)
-            .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
-            .descriptor_count(1)
-            .stage_flags(stage_flag)
-            .build(),
-        vk::DescriptorSetLayoutBinding::builder()
-            .binding(SKIN_BIND)
-            .descriptor_type(vk::DescriptorType::STORAGE_BUFFER)
-            .descriptor_count(1)
-            .stage_flags(stage_flag)
-            .build(),
-    ];
-    let dsl = context.create_descriptor_set_layout(&layout_bindings)?;
-    let pipeline_layout = context.create_pipeline_layout(&[&dsl])?;
-    let pipeline = ComputePipeline::new(context.device.clone(), &pipeline_layout, info)?;
-    Ok(ComputePipelineRes {
-        pipeline,
-        pipeline_layout,
-        dsl,
-    })
-}
 
-pub struct ComputePipelineRes {
-    pub(crate) pipeline: ComputePipeline,
-    pub(crate) pipeline_layout: PipelineLayout,
-    pub(crate) dsl: DescriptorSetLayout,
-}

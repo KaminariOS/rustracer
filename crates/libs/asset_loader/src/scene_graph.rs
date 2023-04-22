@@ -15,7 +15,7 @@ use std::collections::HashMap;
 
 use crate::animation::{Animation, PropertyOutput};
 use crate::light::{report_lights, Light, LightRaw};
-use crate::skinning::Skin;
+use crate::skinning::{MAX_JOINTS, Skin, SkinRaw};
 use gltf::scene::Transform;
 use log::info;
 use std::iter::once;
@@ -40,6 +40,7 @@ pub struct Doc {
     pub(crate) samplers: Vec<Sampler>,
     pub geo_builder: GeoBuilder,
     pub skins: Vec<Skin>,
+    pub aabb_trans: Mat4,
 }
 
 impl Doc {
@@ -183,6 +184,7 @@ impl Doc {
             geo_builder,
             lights,
             skins,
+            aabb_trans: Default::default(),
         }
     }
 
@@ -199,6 +201,22 @@ impl Doc {
             let (mut non_affine, affine): (Vec<_>, Vec<_>) = map.into_iter().partition(|x| x.1);
             if non_affine.is_empty() {
                 continue;
+            }
+            if affine.is_empty() {
+                let node = non_affine.pop().unwrap().0;
+                let skin_index = self.nodes[node].skin.unwrap();
+                for p_index in 0..self.meshes[mesh].primitives.len() {
+                    let geometry_id = self.meshes[mesh].primitives[p_index].geometry_id as usize;
+                    let geo_builder = &mut self.geo_builder;
+                    let [vertex_offset, index_offset, material_id] = geo_builder.offsets[geometry_id];
+                    let [vertex_offset, index_offset] = [vertex_offset as usize, index_offset as usize];
+                    let [vertex_length, index_length] = geo_builder.len[geometry_id];
+                    let dup_vertices = &mut geo_builder.vertices[vertex_offset..vertex_offset + vertex_length];
+                    dup_vertices.iter_mut().for_each(|v| {
+                        assert_eq!(v.skin_index, -1);
+                        v.skin_index = skin_index as i32;
+                    });
+                }
             }
             for (node, _) in non_affine {
                 self.duplicate_mesh_for_node(mesh, node);
@@ -228,6 +246,10 @@ impl Doc {
             let cur_vertex_len = geo_builder.vertices.len();
             let cur_index_len = geo_builder.indices.len();
             let mut dup_vertices = geo_builder.vertices[vertex_offset..vertex_offset + vertex_length].to_vec();
+            dup_vertices.iter_mut().for_each(|v| {
+                assert_eq!(v.skin_index, -1);
+                v.skin_index = skin_index as i32;
+            });
             // dup_vertices.
             geo_builder.vertices.extend(
                 dup_vertices
@@ -248,10 +270,11 @@ impl Doc {
         let root_nodes = scene.root_nodes.clone();
         let aabbs: Vec<_> = root_nodes.iter().filter_map(|i| self.get_node_aabb(*i)).collect();
         let aabb = Aabb::union(&aabbs).unwrap();
-
+        self.aabb_trans = aabb.get_transform();
+        self.aabb_trans = Mat4::IDENTITY;
         root_nodes
             .into_iter()
-            .for_each(|n| self.update_parent_transform(n, aabb.get_transform()));
+            .for_each(|n| self.update_parent_transform(n, self.aabb_trans));
 
     }
 
@@ -292,6 +315,13 @@ impl Doc {
 
     pub fn static_scene(&self) -> bool {
         self.animations.is_empty()
+    }
+
+    pub fn get_skins(&self) -> Vec<SkinRaw> {
+        let mut skins: Vec<_> = self.skins.iter()
+            .map(|s| s.get_skin_matrices(&self.nodes)).collect();
+
+        skins
     }
 
     pub fn get_node_aabb(&self, node: usize) -> Option<Aabb> {
@@ -374,11 +404,11 @@ impl Node {
     pub fn need_compute_pass(&self) -> bool {
         self.skin.is_some()
     }
+
 }
 
 impl<'a> From<gltf::Node<'_>> for Node {
     fn from(node: gltf::Node) -> Self {
-        // node.weights()
         Self {
             index: node.index(),
             skin: get_index!(node.skin()),
@@ -409,6 +439,7 @@ pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Doc> {
     if !doc.skins.is_empty() {
         doc.duplicate_mesh_for_non_affine_transform();
     }
+    info!("Skin length: {}", doc.skins.len());
     doc.load_scene(&document);
     if !doc.static_scene() {
         info!("Animation available.");

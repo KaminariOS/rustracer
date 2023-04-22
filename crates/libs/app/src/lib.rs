@@ -90,7 +90,9 @@ pub trait App: Sized {
     }
 
     fn on_recreate_swapchain(&mut self, base: &BaseApp<Self>) -> Result<()>;
-    fn state_change(&mut self, _base: &mut BaseApp<Self>, _gui_state: &mut Self::Gui) {}
+    fn state_change(&mut self, _base: &mut BaseApp<Self>, _gui_state: &mut Self::Gui) -> Result<()> {
+        Ok(())
+    }
 }
 
 pub trait Gui: Sized + Clone {
@@ -547,7 +549,7 @@ impl<B: App> BaseApp<B> {
         if self.raytracing_enabled {
             let storage_image = &self.storage_images[image_index].image;
             let _acc_image = &self.acc_images[0].image;
-
+            // base_app.compute(&self.context, buffer)?;
             base_app.record_raytracing_commands(self, buffer, image_index)?;
 
             // Copy ray tracing result into swapchain

@@ -17,6 +17,7 @@ mod gui_state;
 mod loader;
 mod pipeline_res;
 mod ubo;
+mod compute_unit;
 
 use crate::gui_state::{Scene, Skybox};
 use crate::loader::Loader;
@@ -28,6 +29,7 @@ use desc_sets::*;
 use gui_state::Gui;
 use pipeline_res::*;
 use ubo::UniformBufferObject;
+use crate::compute_unit::ComputeUnit;
 
 const WIDTH: u32 = 1920;
 const HEIGHT: u32 = 1080;
@@ -59,7 +61,6 @@ struct GltfViewer {
     _bottom_as: Vec<AccelerationStructure>,
     top_as: TopAS,
     pipeline_res: PipelineRes,
-    animation_pipeline: Option<PipelineRes>,
     sbt: ShaderBindingTable,
     descriptor_res: DescriptorRes,
     total_number_of_samples: u32,
@@ -72,6 +73,7 @@ struct GltfViewer {
     last_update: Instant,
     fully_opaque: bool,
     loader: Rc<Loader>,
+    compute_unit: Option<ComputeUnit>,
 }
 
 impl GltfViewer {
@@ -103,13 +105,13 @@ impl GltfViewer {
         let globals = create_global(context, &doc, skybox)?;
         let fully_opaque = doc.geo_builder.fully_opaque();
 
-        let need_compute = doc.need_compute();
-        let compute = if need_compute {
-            Some(create_compute_pipeline(context)?)
-        } else {
-            None
-        };
-        let buffers = Buffers::new(context, &doc.geo_builder, &globals, need_compute)?;
+        let buffers = Buffers::new(context, &doc.geo_builder, &globals)?;
+        let compute_unit = if buffers.animation_buffers.is_some() {
+            let compute_unit = ComputeUnit::new(context, &buffers)?;
+            compute_unit.dispatch(context, &buffers,
+                                  doc.geo_builder.vertices.len() as u32)?;
+            Some(compute_unit)
+        } else {None};
 
         let (_bottom_as, top_as) = create_as(
             context,
@@ -140,7 +142,6 @@ impl GltfViewer {
             _bottom_as,
             top_as,
             pipeline_res,
-            animation_pipeline: None,
             sbt,
             descriptor_res,
             total_number_of_samples: 0,
@@ -152,9 +153,11 @@ impl GltfViewer {
             last_update: Instant::now(),
             fully_opaque,
             loader,
+            compute_unit,
         })
     }
 }
+
 impl App for GltfViewer {
     type Gui = Gui;
 
@@ -174,7 +177,7 @@ impl App for GltfViewer {
         _image_index: usize,
         frame_stats: &FrameStats,
     ) -> Result<()> {
-        self.state_change(base, gui);
+        self.state_change(base, gui)?;
         let view = base.camera.view_matrix()
             * if gui.scale > 0. {
                 gui.scale
@@ -284,9 +287,9 @@ impl App for GltfViewer {
         Ok(())
     }
 
-    fn state_change(&mut self, base: &mut BaseApp<Self>, gui_state: &mut <Self as App>::Gui) {
+    fn state_change(&mut self, base: &mut BaseApp<Self>, gui_state: &mut <Self as App>::Gui) -> Result<()> {
         if let Some(doc) = self.loader.get_model() {
-            *self = Self::new_with_doc(base, doc, gui_state.skybox, self.loader.clone()).unwrap();
+            *self = Self::new_with_doc(base, doc, gui_state.skybox, self.loader.clone())?;
         }
         if self.old_camera.is_none() {
             self.old_camera = Some(base.camera);
@@ -306,7 +309,7 @@ impl App for GltfViewer {
                 // *self = Self::new_with_scene(base, gui_state.scene, gui_state.skybox, self.loader.clone()).unwrap();
             }
             if old_state.skybox != gui_state.skybox {
-                let skybox = SkyboxResource::new(&base.context, gui_state.skybox.path()).unwrap();
+                let skybox = SkyboxResource::new(&base.context, gui_state.skybox.path())?;
                 skybox.update_desc(&self.descriptor_res.static_set, SKYBOX_BIND);
                 self.globals.skybox = skybox;
             }
@@ -316,8 +319,7 @@ impl App for GltfViewer {
                 self.globals.d_lights[0] = gui_state.sun;
                 self.buffers
                     .dlights_buffer
-                    .copy_data_to_buffer(self.globals.d_lights.as_slice())
-                    .unwrap();
+                    .copy_data_to_buffer(self.globals.d_lights.as_slice())?;
             }
             if old_state.point_light_intensity != gui_state.point_light_intensity
                 || gui_state.point_light_radius != old_state.point_light_radius
@@ -329,8 +331,7 @@ impl App for GltfViewer {
                 });
                 self.buffers
                     .plights_buffer
-                    .copy_data_to_buffer(self.globals.p_lights.as_slice())
-                    .unwrap();
+                    .copy_data_to_buffer(self.globals.p_lights.as_slice())?;
             }
         }
 
@@ -338,16 +339,26 @@ impl App for GltfViewer {
             self.last_update = Instant::now();
             let t = self.clock.elapsed().as_secs_f32() * gui_state.animation_speed;
             self.doc.animate(t);
-            let tlas = create_top_as(
-                &base.context,
-                &self.doc,
-                &self._bottom_as,
-                vk::BuildAccelerationStructureFlagsKHR::PREFER_FAST_TRACE,
-            )
-            .unwrap();
+            let tlas = if let Some((skin, ani)) = &self.buffers.animation_buffers {
+                let new_skin = self.doc.get_skins();
+                skin.copy_data_to_buffer(&new_skin)?;
+                self.compute(&base.context)?;
+                let (blas, tlas) = create_as(&base.context, &self.doc, &self.buffers, vk::BuildAccelerationStructureFlagsKHR::empty())?;
+                self._bottom_as = blas;
+                tlas
+            } else {
+                create_top_as(
+                    &base.context,
+                    &self.doc,
+                    &self._bottom_as,
+                    vk::BuildAccelerationStructureFlagsKHR::PREFER_FAST_TRACE,
+                )?
+            };
             self.update_tlas(tlas);
         }
+        Ok(())
     }
+
 }
 
 impl GltfViewer {
@@ -363,5 +374,13 @@ impl GltfViewer {
 
     fn need_update(&self) -> bool {
         self.last_update.elapsed().as_secs_f32() >= 1. / 60.
+    }
+
+    fn compute(&mut self, context: &Context) -> Result<()>{
+        if let Some(compute) = &self.compute_unit {
+            let vertex_count = self.doc.geo_builder.vertices.len() as u32;
+            compute.dispatch(context, &self.buffers, vertex_count)?;
+        }
+        Ok(())
     }
 }

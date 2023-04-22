@@ -8,6 +8,7 @@ use anyhow::Result;
 use log::info;
 use std::mem::size_of;
 use std::time::Instant;
+use glam::Mat4;
 
 use vulkan::ash::vk;
 use vulkan::ash::vk::Packed24_8;
@@ -21,7 +22,11 @@ fn primitive_to_vk_geometry(
     geo_builder: &GeoBuilder,
     geo_id: u32,
 ) -> BlasInput {
-    let vertex_buffer_addr = buffers.vertex_buffer.get_device_address();
+    let vertex_buffer = if let Some(ani) = &buffers.animation_buffers {
+        &ani.1
+    }
+    else {&buffers.vertex_buffer};
+    let vertex_buffer_addr = vertex_buffer.get_device_address();
     let index_buffer_addr = buffers.index_buffer.get_device_address();
     let [v_len, i_len] = geo_builder.len[geo_id as usize];
     let [v_offset, i_offset, _mat] = geo_builder.offsets[geo_id as usize];
@@ -84,7 +89,10 @@ pub fn create_as(
         .iter()
         .map(|m| m.primitives.iter())
         .flatten()
-        .map(|p| primitive_to_vk_geometry(context, &buffers, &doc.geo_builder, p.geometry_id))
+        .map(|p| primitive_to_vk_geometry(context,
+                                          &buffers,
+                                          &doc.geo_builder, p.geometry_id,
+        ))
         .collect();
     blas_inputs.sort_by_key(|b| b.geo_id);
     let cmd_buffer = context
@@ -155,7 +163,13 @@ pub fn create_top_as(
     let mut ins = vec![];
     let mut f = |node: &Node| {
         // Row major.
-        let transform = node.get_world_transform().transpose().to_cols_array();
+        let transform =
+            if node.skin.is_none(){
+            node.get_world_transform().transpose().to_cols_array()
+        } else
+            {
+                Mat4::IDENTITY.to_cols_array()
+            };
         let mut matrix = [0.; 12];
         matrix.copy_from_slice(&transform[..12]);
         if let Some(mesh) = node.mesh.map(|m| &doc.meshes[m]) {

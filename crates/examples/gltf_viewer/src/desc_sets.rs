@@ -13,7 +13,7 @@ use asset_loader::acceleration_structures::TopAS;
 use asset_loader::globals::{Buffers, VkGlobal};
 
 pub struct DescriptorRes {
-    _pool: DescriptorPool,
+    pub(crate) _pool: DescriptorPool,
     pub(crate) static_set: DescriptorSet,
     pub(crate) dynamic_sets: Vec<DescriptorSet>,
 }

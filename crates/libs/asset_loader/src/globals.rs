@@ -10,6 +10,7 @@ use anyhow::Result;
 use log::info;
 use std::mem::size_of_val;
 use std::time::Instant;
+use glam::Mat4;
 use vulkan::ash::vk;
 use vulkan::ash::vk::SamplerAddressMode;
 use vulkan::gpu_allocator::MemoryLocation;
@@ -18,6 +19,7 @@ use vulkan::{
     Buffer, Context, DescriptorSet, Image, ImageBarrier, ImageView, Sampler, WriteDescriptorSet,
     WriteDescriptorSetKind,
 };
+use crate::skinning::{JointRaw, MAX_JOINTS};
 
 impl Into<vk::Format> for TexGamma {
     fn into(self) -> vk::Format {
@@ -30,7 +32,7 @@ impl Into<vk::Format> for TexGamma {
 
 pub struct Buffers {
     pub vertex_buffer: Buffer,
-    pub animation_buffer: Option<Buffer>,
+    pub animation_buffers: Option<(Buffer, Buffer)>,
     pub index_buffer: Buffer,
     pub geo_buffer: Buffer,
     pub material_buffer: Buffer,
@@ -43,10 +45,10 @@ impl Buffers {
         context: &Context,
         geo_builder: &GeoBuilder,
         globals: &VkGlobal,
-        need_compute: bool,
     ) -> Result<Self> {
         let vertices = geo_builder.vertices.as_slice();
         let indices = geo_builder.indices.as_slice();
+        let no_skin = globals.skins.is_empty();
         let now = Instant::now();
         let cmd_buffer = context
             .command_pool
@@ -61,7 +63,7 @@ impl Buffers {
             vertices,
             &cmd_buffer,
         )?;
-        let animation_buffer = if need_compute {
+        let animation_buffer = if !no_skin {
             Some(create_gpu_only_buffer_from_data_batch(
                 context,
                 vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS
@@ -125,6 +127,17 @@ impl Buffers {
             size_of_val(globals.p_lights.as_slice()) as _,
         )?;
         plights_buffer.copy_data_to_buffer(globals.p_lights.as_slice())?;
+
+        let animation_buffers = if let Some(ani) = animation_buffer {
+            let skins_buffer = context.create_buffer(
+                vk::BufferUsageFlags::SHADER_DEVICE_ADDRESS | vk::BufferUsageFlags::STORAGE_BUFFER,
+                MemoryLocation::CpuToGpu,
+                size_of_val(globals.skins.as_slice()) as _,
+            )?;
+            skins_buffer.copy_data_to_buffer(globals.skins.as_slice())?;
+            Some((skins_buffer, ani))
+        } else { None };
+
         info!("Buffers: {}s", now.elapsed().as_secs());
         // println!("v_b: {:#02x}, i_b: {:#02x}, g_b: {:#02x}, m_b: {:#02x}", vertex_buffer.as_raw(), index_buffer.as_raw(), geo_buffer.as_raw(), material_buffer.as_raw());
         let _src_stage = vk::PipelineStageFlags2::TRANSFER | vk::PipelineStageFlags2::ALL_COMMANDS;
@@ -173,7 +186,7 @@ impl Buffers {
         // ))?;
         Ok(Self {
             vertex_buffer,
-            animation_buffer,
+            animation_buffers,
             index_buffer,
             geo_buffer,
             material_buffer,
@@ -194,6 +207,7 @@ pub struct VkGlobal {
     pub d_lights: Vec<LightRaw>,
     pub p_lights: Vec<LightRaw>,
     pub skybox: SkyboxResource,
+    pub skins: Vec<[JointRaw; MAX_JOINTS]>,
 }
 
 pub struct SkyboxResource {
@@ -377,6 +391,7 @@ pub fn create_global(context: &Context, doc: &Doc, skybox: SkyboxResource) -> Re
         d_lights,
         p_lights,
         skybox,
+        skins: doc.get_skins(),
     })
 }
 

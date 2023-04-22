@@ -1,18 +1,38 @@
 #version 460
 #include "lib/RayTracingCommons.glsl"
 
-#define MAX_BONES_PER_SKIN 32
+#define MAX_BONES_PER_SKIN 256
 struct Skin {
-    mat4[MAX_BONES_PER_SKIN] bones;
+    mat4 bones[MAX_BONES_PER_SKIN];
 };
 layout (local_size_x = 256) in;
 
-layout(binding = VERTEX_BIND, set = 0) buffer Vertices { Vertex vertices[]; };
+layout(binding = VERTEX_BIND, set = 0) readonly buffer Vertices_in { Vertex vin[]; };
+layout(binding = ANIMATION_BIND, set = 0) writeonly buffer Vertices_out { Vertex vout[]; };
+layout(binding = SKIN_BIND, set = 0) readonly buffer Skins { Skin skins[]; };
 
 void main() {
     uint gID = gl_GlobalInvocationID.x;
-    if (gID < vertices.length()) {
-//        Vertex v = vin[gID];
-//        vout[gID] = v;
+    if (gID < vin.length()) {
+        Vertex v = vin[gID];
+        int skin_index = v.skin_index;
+        if (skin_index >= 0) {
+            Skin skin = skins[skin_index];
+            uvec4 joints = v.joints;
+            vec4 weights = v.weights;
+            mat4 transform =
+            weights.x * skin.bones[joints.x] +
+            weights.y * skin.bones[joints.y] +
+            weights.z * skin.bones[joints.z] +
+            weights.w * skin.bones[joints.w];
+
+            vec4 pos = transform * vec4(v.pos, 1.);
+            v.pos = (pos / pos.w).xyz;
+            v.normal = normalize((transform * vec4(v.normal, 0.)).xyz);
+            float w = v.tangent.w;
+            v.tangent = normalize((transform * vec4(v.tangent.xyz, 0.)));
+            v.tangent.w = w;
+        }
+        vout[gID] = v;
     }
 }

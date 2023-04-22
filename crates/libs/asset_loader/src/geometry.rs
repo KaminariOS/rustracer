@@ -31,7 +31,7 @@ pub struct Mesh {
 #[derive(Default)]
 pub struct GeoBuilder {
     pub(crate) buffers: Vec<buffer::Data>,
-    pub(crate) vertices: Vec<Vertex>,
+    pub vertices: Vec<Vertex>,
     pub(crate) indices: Vec<Index>,
     pub(crate) geo_counter: u32,
     // Vertex offset, indices offset, material id

@@ -5,6 +5,9 @@ use gltf::animation::util::ReadOutputs;
 use gltf::animation::{Channel, Interpolation, Sampler};
 use log::warn;
 
+type Float3 = [f32; 3];
+type Float4 = [f32; 4];
+
 pub struct Animation {
     pub index: usize,
     name: Name,
@@ -19,9 +22,9 @@ pub struct AnimationChannel {
 }
 
 enum Property {
-    Translation(Vec<[f32; 3]>),
+    Translation(Vec<Float3>),
     Rotation(Vec<[f32; 4]>),
-    Scale(Vec<[f32; 3]>),
+    Scale(Vec<Float3>),
     Morph(Vec<Vec<f32>>),
 }
 
@@ -35,22 +38,11 @@ impl Property {
     }
 }
 
-// impl From<gltf::animation::Property> for Property {
-//     fn from(prop: gltf::animation::Property) -> Self {
-//         match prop {
-//             gltf::animation::Property::Translation => Self::Transition,
-//             gltf::animation::Property::Rotation => Self::Rotation,
-//             gltf::animation::Property::Scale => Self::Scale,
-//             _ => unimplemented!()
-//         }
-//     }
-// }
-
 #[derive(Clone, Copy)]
 pub enum PropertyOutput {
-    Translation([f32; 3]),
+    Translation(Float3),
     Rotation([f32; 4]),
-    Scale([f32; 3]),
+    Scale(Float3),
     Morph,
 }
 
@@ -103,19 +95,53 @@ impl AnimationChannel {
                 e = s + 1;
             }
         }
-        let factor = (t - self.input[s]) / (self.input[e] - self.input[s]);
+
+        let s3 = s * 3;
+        let prev_time = self.input[s];
+        let next_time = self.input[e];
+        let factor = (t - prev_time) / (next_time - prev_time);
+        let interpolation = self.interpolation;
         match &self.property {
             Property::Translation(t) => {
-                PropertyOutput::Translation(interpolate_lerp3(t[s], t[e], factor))
+                let res= match interpolation {
+                    Interpolation::Linear => interpolate_lerp3(t[s], t[e], factor),
+                    Interpolation::Step => {t[s]}
+                    Interpolation::CubicSpline => {
+                        cubic_spline(
+                            [t[s3], t[s3 + 1], t[s3 + 2]],
+                            prev_time,
+                            [t[s3 + 3], t[s3 + 4], t[s3 + 5]],
+                            next_time,
+                            factor
+                        )
+                    }
+                };
+                PropertyOutput::Translation(res)
             }
             Property::Rotation(r) => {
                 let l = Quat::from_array(r[s]);
-                let r = Quat::from_array(r[e]);
-                PropertyOutput::Rotation(l.slerp(r, factor).to_array())
+                let right = Quat::from_array(r[e]);
+                let res= match interpolation {
+                    Interpolation::Linear | Interpolation::CubicSpline => l.slerp(right, factor).to_array(),
+                    Interpolation::Step => {r[s]}
+                };
+                PropertyOutput::Rotation(res)
             }
-            Property::Scale(sv) => {
-                PropertyOutput::Scale(interpolate_lerp3(sv[s], sv[e], factor))
-                // Mat4::from_scale(Vec3::from_slice(scale.as_slice()))
+            Property::Scale(t) => {
+                let res= match interpolation {
+                    Interpolation::Linear => interpolate_lerp3(t[s], t[e], factor),
+                    Interpolation::Step => {t[s]}
+                    Interpolation::CubicSpline => {
+                        cubic_spline(
+                            [t[s3], t[s3 + 1], t[s3 + 2]],
+                            prev_time,
+                            [t[s3 + 3], t[s3 + 4], t[s3 + 5]],
+                            next_time,
+                            factor
+                        )
+                    }
+                };
+                PropertyOutput::Scale(res)
             }
             Property::Morph(_) => {
                 warn!("Morph unimplemented. Ignore.");
@@ -125,11 +151,58 @@ impl AnimationChannel {
     }
 }
 
-fn interpolate_lerp3(s: [f32; 3], e: [f32; 3], factor: f32) -> [f32; 3] {
+fn interpolate_lerp3(s: Float3, e: Float3, factor: f32) -> Float3 {
     let start = Vec3::from_array(s);
     let end = Vec3::from_array(e);
     start.lerp(end, factor).to_array()
 }
+
+// Stole from Ben
+fn cubic_spline(
+    source: [Float3; 3],
+    source_time: f32,
+    target: [Float3; 3],
+    target_time: f32,
+    amount: f32,
+) -> Float3 {
+    let source = source.map(|i| Vec3::from_array(i));
+    let target = target.map(|i| Vec3::from_array(i));
+    let t = amount;
+    let p0 = source[1];
+    let m0 = (target_time - source_time) * source[2];
+    let p1 = target[1];
+    let m1 = (target_time - source_time) * target[0];
+
+    let res = (2.0 * t * t * t - 3.0 * t * t + 1.0) * p0
+        + (t * t * t - 2.0 * t * t + t) * m0
+        + (-2.0 * t * t * t + 3.0 * t * t) * p1
+        + (t * t * t - t * t) * m1;
+    res.to_array()
+}
+
+// https://web.mit.edu/2.998/www/QuaternionReport1.pdf
+// Todo: implement squad
+// fn cubic_spline4(
+//     source: [Float4; 3],
+//     source_time: f32,
+//     target: [Float4; 3],
+//     target_time: f32,
+//     amount: f32,
+// ) -> Float4 {
+//     let source = source.map(|i| Quat::from_array(i));
+//     let target = target.map(|i| Quat::from_array(i));
+//     let t = amount;
+//     let p0 = source[1];
+//     let m0 = (target_time - source_time) * source[2];
+//     let p1 = target[1];
+//     let m1 = (target_time - source_time) * target[0];
+//
+//     let res = (2.0 * t * t * t - 3.0 * t * t + 1.0) * p0
+//         + (t * t * t - 2.0 * t * t + t) * m0
+//         + (-2.0 * t * t * t + 3.0 * t * t) * p1
+//         + (t * t * t - t * t) * m1;
+//     res.to_array()
+// }
 
 struct AnimationSampler {}
 

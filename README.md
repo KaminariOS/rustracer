@@ -21,20 +21,19 @@ I stole the PBR shaders from the [referencePT](https://github.com/boksajak/refer
 ## Features
 * [x] Loading arbitrary glTF 2.0 models
   * [x] Full node hierarchy
-    * [ ] Camera
     * [x] Mesh
       * [x] Geometry normal generation
       * [x] Two sets of texture coords
       * [x] Mikktspace tangent generation
       * [x] Normal mapping
-      
+    * [ ] Camera
   * [x] Alpha blending and testing
   * [x] Full PBR material support
     * [x] Metallic-Roughness workflow
     * [x] Specular-Glossiness workflow
   * [x] Animations
     * [x] Articulated (translate, rotate, scale)
-    * [x] Skinning
+    * [x] Skinning(using compute shader)
     * [ ] Morph targets
   * [x] Extensions
       * [x] "KHR_materials_ior",

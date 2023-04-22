@@ -1,8 +1,9 @@
 use crate::geometry::GeoBuilder;
 use crate::{get_name, Name, NodeID};
-use glam::Quat;
+use glam::{Quat, Vec3};
 use gltf::animation::util::ReadOutputs;
 use gltf::animation::{Channel, Interpolation, Sampler};
+use log::warn;
 
 pub struct Animation {
     pub index: usize,
@@ -103,17 +104,9 @@ impl AnimationChannel {
             }
         }
         let factor = (t - self.input[s]) / (self.input[e] - self.input[s]);
-        //     interpolation::cub_bez()
-        use interpolation::lerp;
         match &self.property {
             Property::Translation(t) => {
-                let translation: Vec<_> = t[s]
-                    .iter()
-                    .zip(t[e].iter())
-                    .map(|(l, r)| lerp(l, r, &factor))
-                    .collect();
-                PropertyOutput::Translation([translation[0], translation[1], translation[2]])
-                // Mat4::from_translation(Vec3::from_slice(translation.as_slice()))
+                PropertyOutput::Translation(interpolate_lerp3(t[s], t[e], factor))
             }
             Property::Rotation(r) => {
                 let l = Quat::from_array(r[s]);
@@ -121,19 +114,21 @@ impl AnimationChannel {
                 PropertyOutput::Rotation(l.slerp(r, factor).to_array())
             }
             Property::Scale(sv) => {
-                let scale: Vec<_> = sv[s]
-                    .iter()
-                    .zip(sv[e].iter())
-                    .map(|(l, r)| lerp(l, r, &factor))
-                    .collect();
-                PropertyOutput::Scale([scale[0], scale[1], scale[2]])
+                PropertyOutput::Scale(interpolate_lerp3(sv[s], sv[e], factor))
                 // Mat4::from_scale(Vec3::from_slice(scale.as_slice()))
             }
-            _ => {
+            Property::Morph(_) => {
+                warn!("Morph unimplemented. Ignore.");
                 PropertyOutput::Scale([1.; 3])
             }
         }
     }
+}
+
+fn interpolate_lerp3(s: [f32; 3], e: [f32; 3], factor: f32) -> [f32; 3] {
+    let start = Vec3::from_array(s);
+    let end = Vec3::from_array(e);
+    start.lerp(end, factor).to_array()
 }
 
 struct AnimationSampler {}

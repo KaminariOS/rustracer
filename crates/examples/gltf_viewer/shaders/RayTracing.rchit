@@ -138,6 +138,7 @@ void main()
 
 //	Ray.instance_id = gl_InstanceID;
 	vec3 last_hit = Ray.hitPoint;
+	bool firstHit = Ray.t == 0.;
 	Ray.t = gl_HitTEXT;
 	// Fetch vertices
 	const uint vertexOffset = primInfo.v_offset;
@@ -305,7 +306,7 @@ void main()
 	uint seed = Ray.RandomSeed;
 	RngStateType rngState = Ray.rngState;
 
-	Ray.emittance = emittance * ubo.exposure;
+	Ray.emittance = emittance * (firstHit? 0.9: ubo.exposure);
 	Ray.needScatter = false;
 	uint brdfType;
 

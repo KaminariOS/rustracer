@@ -89,6 +89,7 @@ However, some external C libraries like Vulkan SDK may be missing on your system
   
 ## Assets
 Pointers to glTF models: 
+- [My collection](./assets/models/licenses)
 - [glTF sample models](https://github.com/KhronosGroup/glTF-Sample-Models).
 - [A ton of glTF models](https://sketchfab.com/search?features=downloadable&type=models)
 - [Open Research Content Archive](https://developer.nvidia.com/orca) can be converted to glTF with Blender.

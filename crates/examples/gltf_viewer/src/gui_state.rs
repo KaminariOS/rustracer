@@ -54,9 +54,8 @@ pub enum Scene {
     Emerald,
     BistroInterior,
     CornellBoxLucy,
-    #[default]
     CornellBox,
-
+    Game,
     ABeautifulGame,
     Sponza,
 
@@ -68,6 +67,10 @@ pub enum Scene {
     LightsPunctualLamp,
     BoomBoxWithAxes,
 
+    Test,
+    Anime,
+    LaocoonInBox,
+    Garage,
     Triss,
     EVA,
     Anakin,
@@ -93,7 +96,7 @@ pub enum Scene {
     Spartan,
     SciFiGirlWalk,
 
-    // SciFiGirl,
+    SciFiGirl,
     BathroomRPT,
     Xeno,
     CL4P,
@@ -133,8 +136,10 @@ pub enum Scene {
     SpecGlossVsMetalRough,
     AlphaBlendModeTest,
 
+
+    #[default]
     BrainStem,
-    // Fox,
+    Fox,
     NegativeScaleTest,
     TextureCoordinateTest,
     TextureLinearInterpolationTest,
@@ -155,6 +160,8 @@ pub enum Scene {
     GingaSpark,
     Katana,
     Valkyrie,
+    ValkyrieBronze,
+    AngelScottino,
     Aurelius,
     Nile,
     Liberty,
@@ -164,18 +171,20 @@ pub enum Scene {
     Kentaur,
     Tritonen,
     FrankAngel,
+    Angels,
 
     // Chief,
     // Avengers,
     // ShutterGirl,
     // DaedricGauntlet,
     Curiosity,
-    DragonFlying,
+    DragonThree,
+    //DragonFlying,
     Chernovan,
+    LotusFlower,
     // IcyDragon,
     // Zombie,
     // DragonThree,
-    // Lotus,
     // Trex,
     // Phoenix,
     // Wolf,

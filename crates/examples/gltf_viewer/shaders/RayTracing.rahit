@@ -89,7 +89,7 @@ bool testOpacityAnyHit() {
 		}
 		color4 = mix_vertex.color * diffuse_factor;
 
-		float opacity = color4.a;
+		opacity = color4.a;
 	}
 
 	// Decide whether this hit is opaque or not according to chosen alpha testing mode

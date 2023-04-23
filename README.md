@@ -14,7 +14,10 @@ Sample accumulation implementation, heatmap and Lucy obj model are from project 
 I stole the PBR shaders from the [referencePT](https://github.com/boksajak/referencePT) project and made some changes.
 
 ## Demos
-[Demo videos](https://www.youtube.com/playlist?list=PLD1H28onwV_mFsPySwOtlBn9h5ybzepir).
+[rustracer-0.2.0-Demo videos](https://www.youtube.com/watch?v=HYZCgwP7rmA&list=LLeDjbBFLvS94sHm_j6i3CHw).
+
+[rustracer-0.1.0-Demo videos](https://www.youtube.com/playlist?list=PLD1H28onwV_mFsPySwOtlBn9h5ybzepir).
+
 
 ![Lucy in Cornell](images/lucy.png)
 
@@ -74,7 +77,7 @@ I stole the PBR shaders from the [referencePT](https://github.com/boksajak/refer
   - Currently, I hard-coded all model paths in an enum(in [`gui_state.rs`](crates/examples/gltf_viewer/src/gui_state.rs)) and load models in the search paths(see [`resource manager`](crates/libs/resource_manager)). Later I will add cli and gui support for adding models without rebuild.
 - Windows not supported. Need some minor cfg tweaks to work on Windows. Open to pull requests.
 
-
+### Build command
 Thanks to the superior Rust package manager `Cargo`, building and running can be as brainless as a one-liner: `cargo run`. 
 
 However, some external C libraries like Vulkan SDK may be missing on your system(those libraries are necessary for basically any Vulkan or non-trivial graphics programming project, regardless of whatever programming language used). 

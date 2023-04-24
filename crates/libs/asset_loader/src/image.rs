@@ -159,7 +159,7 @@ impl<'a> Iterator for PixelIter<'a> {
                 pixels[index * 3],
                 pixels[index * 3 + 1],
                 pixels[index * 3 + 2],
-                std::u8::MAX,
+                u8::MAX,
             ],
             R8G8B8A8 => [
                 pixels[index * 4],

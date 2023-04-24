@@ -140,10 +140,10 @@ pub fn create_as(
     // Free
     context.command_pool.free_command_buffer(&cmd_buffer)?;
     let tlas = create_top_as(context, doc, &blases, flags)?;
-    info!(
-        "Finish building acceleration structure: {}s",
-        time.elapsed().as_secs()
-    );
+    // info!(
+    //     "Finish building acceleration structure: {}s",
+    //     time.elapsed().as_secs()
+    // );
     Ok((blases, tlas))
 }
 

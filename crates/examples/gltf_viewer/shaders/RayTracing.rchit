@@ -42,6 +42,7 @@ bool castShadowRay(vec3 hitPosition, vec3 surfaceNormal, vec3 directionToLight, 
 	//    payload.hasHit = true; //< Initialize hit flag to true, it will be set to false on a miss
 	float tMin = 0.1;
 	shadowRay.shadow = true;
+	shadowRay.rngState = Ray.rngState;
 	uint flags = gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsSkipClosestHitShaderEXT;
 	if (ubo.fully_opaque) {
 		flags |= gl_RayFlagsOpaqueEXT;
@@ -49,10 +50,11 @@ bool castShadowRay(vec3 hitPosition, vec3 surfaceNormal, vec3 directionToLight, 
 	// Trace the ray
 	traceRayEXT(
 	Scene,  flags, 0xff,
-//	SHADOW_RAY_INDEX
-	0
+	SHADOW_RAY_INDEX
 	/*sbtRecordOffset*/, 0 /*sbtRecordStride*/, 1 /*missIndex*/,
 	origin.xyz, tMin, direction.xyz, tMax, 0 /*payload*/);
+
+	Ray.rngState = shadowRay.rngState;
 	return !shadowRay.shadow;
 }
 

@@ -123,7 +123,7 @@ pub fn create_pipeline(
     let ray_miss = load_spv("RayTracing.rmiss.spv");
     let ray_chit = load_spv("RayTracing.rchit.spv");
     let ray_rahit = load_spv("RayTracing.rahit.spv");
-    let _shadow_rahit = load_spv("RayTracing.rahit.spv");
+    let shadow_rahit = load_spv("RayTracing.shadow.rahit.spv");
     let shadow_miss = load_spv("RayTracing.shadow.rmiss.spv");
     let mut shaders_create_info = vec![
         RayTracingShaderCreateInfo {
@@ -151,17 +151,18 @@ pub fn create_pipeline(
             stage: vk::ShaderStageFlags::CLOSEST_HIT_KHR,
             group: RayTracingShaderGroup::ClosestHit,
         },
-        // RayTracingShaderCreateInfo {
-        //     source: &shadow_rahit,
-        //     stage: vk::ShaderStageFlags::ANY_HIT_KHR,
-        //     group: RayTracingShaderGroup::ShadowAnyHit,
-        // },
+
     ];
     if !fully_opaque {
         shaders_create_info.push(RayTracingShaderCreateInfo {
             source: &ray_rahit,
             stage: vk::ShaderStageFlags::ANY_HIT_KHR,
             group: RayTracingShaderGroup::AnyHit,
+        });
+        shaders_create_info.push(RayTracingShaderCreateInfo {
+            source: &shadow_rahit,
+            stage: vk::ShaderStageFlags::ANY_HIT_KHR,
+            group: RayTracingShaderGroup::ShadowAnyHit,
         });
     }
 

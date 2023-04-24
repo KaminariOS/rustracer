@@ -25,6 +25,7 @@ struct RayPayload
 
 struct ShadowRay {
 	bool shadow;
+	RngStateType rngState;
 };
 
 

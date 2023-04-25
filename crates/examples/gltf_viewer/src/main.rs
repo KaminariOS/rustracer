@@ -83,7 +83,6 @@ impl GltfViewer {
         skybox: Skybox,
         loader: Rc<Loader>,
     ) -> Result<Self> {
-        let _context = &base.context;
         let doc = load_file(scene.path())?;
         Self::new_with_doc(base, doc, skybox, loader)
     }

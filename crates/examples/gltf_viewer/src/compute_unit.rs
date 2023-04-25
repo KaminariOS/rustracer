@@ -63,7 +63,6 @@ impl ComputeUnit {
             .graphics_queue
             .submit(&cmd_buffer, None, None, &fence)?;
         fence.wait(None)?;
-        // // Free
         context.command_pool.free_command_buffer(&cmd_buffer)?;
         Ok(())
     }

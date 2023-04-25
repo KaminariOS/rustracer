@@ -197,14 +197,23 @@ impl Doc {
             }
         };
         self.traverse_root_nodes(&mut f);
-        for (mesh, map) in mesh_to_node.into_iter().enumerate() {
-            let (mut non_affine, affine): (Vec<_>, Vec<_>) = map.into_iter().partition(|x| x.1);
+        let mut mesh_skin_record: HashMap<usize, usize> = HashMap::new();
+        for (mesh, map) in mesh_to_node.into_iter()
+            .enumerate() {
+            let (mut non_affine, affine): (Vec<_>, Vec<_>) = map
+                .into_iter().partition(|x| x.1);
             if non_affine.is_empty() {
                 continue;
             }
-            if affine.is_empty() {
-                let node = non_affine.pop().unwrap().0;
+            assert!(affine.is_empty());
+            for (node, _) in non_affine {
                 let skin_index = self.nodes[node].skin.unwrap();
+                // Each mesh should only has one skins
+                if let Some(&skin) = mesh_skin_record.get(&mesh) {
+                    assert_eq!(skin_index, skin);
+                    continue;
+                }
+                mesh_skin_record.insert(mesh, skin_index);
                 for p_index in 0..self.meshes[mesh].primitives.len() {
                     let geometry_id = self.meshes[mesh].primitives[p_index].geometry_id as usize;
                     let geo_builder = &mut self.geo_builder;
@@ -221,51 +230,51 @@ impl Doc {
                     });
                 }
             }
-            for (node, _) in non_affine {
-                self.duplicate_mesh_for_node(mesh, node);
-            }
+            // for (node, _) in non_affine {
+            //     self.duplicate_mesh_for_node(mesh, node);
+            // }
         }
     }
 
-    fn duplicate_mesh_for_node(&mut self, mesh: usize, node: usize) {
-        info!(
-            "Duplicating node: {} name: {:?}",
-            node, self.nodes[node].name
-        );
-        let new_mesh_id = self.meshes.len();
-        let skin_index = self.nodes[node].skin.unwrap();
-        assert_eq!(self.nodes[node].mesh.unwrap(), mesh);
-        *self.nodes[node].mesh.as_mut().unwrap() = new_mesh_id;
-        self.meshes.push(self.meshes[mesh].clone());
-
-        for p_index in 0..self.meshes[new_mesh_id].primitives.len() {
-            let geometry_id = self.meshes[new_mesh_id].primitives[p_index].geometry_id as usize;
-            let geo_builder = &mut self.geo_builder;
-            let [vertex_offset, index_offset, material_id] = geo_builder.offsets[geometry_id];
-            let [vertex_offset, index_offset] = [vertex_offset as usize, index_offset as usize];
-            let [vertex_length, index_length] = geo_builder.len[geometry_id];
-            let new_primitive_id = geo_builder.next_geo_id(material_id);
-            self.meshes[new_mesh_id].primitives[p_index].geometry_id = new_primitive_id;
-            let cur_vertex_len = geo_builder.vertices.len();
-            let cur_index_len = geo_builder.indices.len();
-            let mut dup_vertices =
-                geo_builder.vertices[vertex_offset..vertex_offset + vertex_length].to_vec();
-            dup_vertices.iter_mut().for_each(|v| {
-                assert_eq!(v.skin_index, -1);
-                v.skin_index = skin_index as i32;
-            });
-            // dup_vertices.
-            geo_builder.vertices.extend(dup_vertices);
-            geo_builder
-                .indices
-                .extend(geo_builder.indices[index_offset..index_offset + index_length].to_vec());
-            let [vertex_offset, index_offset] = [cur_vertex_len as u32, cur_index_len as u32];
-            geo_builder.len.push([vertex_length, index_length]);
-            geo_builder
-                .offsets
-                .push([vertex_offset, index_offset, material_id]);
-        }
-    }
+    // fn duplicate_mesh_for_node(&mut self, mesh: usize, node: usize) {
+    //     info!(
+    //         "Duplicating node: {} name: {:?}",
+    //         node, self.nodes[node].name
+    //     );
+    //     let new_mesh_id = self.meshes.len();
+    //     let skin_index = self.nodes[node].skin.unwrap();
+    //     assert_eq!(self.nodes[node].mesh.unwrap(), mesh);
+    //     *self.nodes[node].mesh.as_mut().unwrap() = new_mesh_id;
+    //     self.meshes.push(self.meshes[mesh].clone());
+    //
+    //     for p_index in 0..self.meshes[new_mesh_id].primitives.len() {
+    //         let geometry_id = self.meshes[new_mesh_id].primitives[p_index].geometry_id as usize;
+    //         let geo_builder = &mut self.geo_builder;
+    //         let [vertex_offset, index_offset, material_id] = geo_builder.offsets[geometry_id];
+    //         let [vertex_offset, index_offset] = [vertex_offset as usize, index_offset as usize];
+    //         let [vertex_length, index_length] = geo_builder.len[geometry_id];
+    //         let new_primitive_id = geo_builder.next_geo_id(material_id);
+    //         self.meshes[new_mesh_id].primitives[p_index].geometry_id = new_primitive_id;
+    //         let cur_vertex_len = geo_builder.vertices.len();
+    //         let cur_index_len = geo_builder.indices.len();
+    //         let mut dup_vertices =
+    //             geo_builder.vertices[vertex_offset..vertex_offset + vertex_length].to_vec();
+    //         dup_vertices.iter_mut().for_each(|v| {
+    //             assert_eq!(v.skin_index, -1);
+    //             v.skin_index = skin_index as i32;
+    //         });
+    //         // dup_vertices.
+    //         geo_builder.vertices.extend(dup_vertices);
+    //         geo_builder
+    //             .indices
+    //             .extend(geo_builder.indices[index_offset..index_offset + index_length].to_vec());
+    //         let [vertex_offset, index_offset] = [cur_vertex_len as u32, cur_index_len as u32];
+    //         geo_builder.len.push([vertex_length, index_length]);
+    //         geo_builder
+    //             .offsets
+    //             .push([vertex_offset, index_offset, material_id]);
+    //     }
+    // }
 
     fn load_scene(&mut self, _document: &Document) {
         let scene = &self.scenes[self.current_scene];

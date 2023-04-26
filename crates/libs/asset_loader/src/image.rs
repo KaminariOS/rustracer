@@ -90,9 +90,13 @@ impl TryFrom<&gltf::image::Data> for Image {
         let width = image.width;
         let height = image.height;
         let pixel_count = width * height;
-        let pixels = PixelIter::new(image, pixel_count as _)?
+        use gltf::image::Format::*;
+        let pixels = match image.format {
+            R8G8B8A8 => image.pixels.clone(),
+            _ => PixelIter::new(image, pixel_count as _)?
             .flatten()
-            .collect::<Vec<_>>();
+            .collect::<Vec<_>>()
+        };
 
         Ok(Self {
             pixels,
@@ -122,7 +126,7 @@ impl<'a> PixelIter<'a> {
             R8 => 1,
             R8G8 => 2,
             R8G8B8 => 3,
-            R8G8B8A8 => 4,
+            // R8G8B8A8 => 4,
             _ => return Err(Error::Support("16 bytes images".to_string())),
         };
 
@@ -161,12 +165,12 @@ impl<'a> Iterator for PixelIter<'a> {
                 pixels[index * 3 + 2],
                 u8::MAX,
             ],
-            R8G8B8A8 => [
-                pixels[index * 4],
-                pixels[index * 4 + 1],
-                pixels[index * 4 + 2],
-                pixels[index * 4 + 3],
-            ],
+            // R8G8B8A8 => [
+            //     pixels[index * 4],
+            //     pixels[index * 4 + 1],
+            //     pixels[index * 4 + 2],
+            //     pixels[index * 4 + 3],
+            // ],
             _ => unreachable!("Self::new already checks"),
         };
 

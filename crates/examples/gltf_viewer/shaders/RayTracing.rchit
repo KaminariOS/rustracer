@@ -308,7 +308,7 @@ void main()
 	uint seed = Ray.RandomSeed;
 	RngStateType rngState = Ray.rngState;
 
-	Ray.emittance = emittance * (firstHit? 0.9: ubo.exposure);
+	Ray.emittance = emittance * (firstHit? 1.: ubo.exposure);
 	Ray.needScatter = false;
 	uint brdfType;
 

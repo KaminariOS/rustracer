@@ -206,7 +206,7 @@ impl App for GltfViewer {
             gui.get_number_of_samples(self.total_number_of_samples, frame_stats.frame_time);
         // println!("nums {} total: {}", number_of_samples, self.total_number_of_samples);
         if !gui.acc() {
-            self.total_number_of_samples = 0;
+            self.reset_samples();
         }
         self.total_number_of_samples += number_of_samples;
 
@@ -302,6 +302,8 @@ impl App for GltfViewer {
         Ok(())
     }
 
+
+
     fn state_change(
         &mut self,
         base: &mut BaseApp<Self>,
@@ -310,6 +312,7 @@ impl App for GltfViewer {
         if let Some(doc) = self.loader.get_model() {
             self.inner.clear();
             self.inner.push(GltfViewerInner::new(base, doc, &self.ubo_buffer, &self.skybox)?);
+            self.reset_samples();
         }
         if self.old_camera.is_none() {
             self.old_camera = Some(base.camera);
@@ -320,7 +323,7 @@ impl App for GltfViewer {
 
         if self.old_camera.filter(|x| *x != base.camera).is_some() {
             self.old_camera = Some(base.camera);
-            self.total_number_of_samples = 0;
+            self.reset_samples();
         }
 
         if let Some(old_state) = self.prev_gui_state.filter(|x| x != gui_state) {
@@ -334,7 +337,7 @@ impl App for GltfViewer {
                 self.skybox = skybox;
             }
             self.prev_gui_state = Some(*gui_state);
-            self.total_number_of_samples = 0;
+            self.reset_samples();
             if old_state.sun != gui_state.sun {
                 let inner = self.get_inner_mut();
                 inner.globals.d_lights[0] = gui_state.sun;
@@ -414,6 +417,10 @@ impl GltfViewer {
 
     fn need_update(&self) -> bool {
         self.last_update.elapsed().as_secs_f32() >= 1. / 60.
+    }
+
+    fn reset_samples(&mut self) {
+        self.total_number_of_samples = 0;
     }
 
     fn compute(&self, context: &Context) -> Result<()> {

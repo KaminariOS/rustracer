@@ -74,7 +74,8 @@ I stole the PBR shaders from the [referencePT](https://github.com/boksajak/refer
 ## Building
 ### Prerequisites
 - Linux and a graphics card that supports KHR ray tracing
-  - Currently, I hard-coded all model paths in an enum(in [`gui_state.rs`](crates/examples/gltf_viewer/src/gui_state.rs)) and load models in the search paths(see [`resource manager`](crates/libs/resource_manager)). Later I will add cli and gui support for adding models without rebuild.
+  - Currently, I hard-coded all test model paths in an enum(in [`gui_state.rs`](crates/examples/gltf_viewer/src/gui_state.rs)) and load models in the search paths(see [`resource manager`](crates/libs/resource_manager)). 
+  - You can open arbitrary glTF file by `cargo run -- -f <filename>` or drag-and-drop
 - Windows not supported. Need some minor cfg tweaks to work on Windows. Open to pull requests.
 
 ### Build command

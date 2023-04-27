@@ -14,7 +14,7 @@ use vulkan::ash::vk;
 use vulkan::ash::vk::Packed24_8;
 
 use vulkan::utils::create_gpu_only_buffer_from_data_batch;
-use vulkan::{AccelerationStructure, Buffer, Context};
+use vulkan::{AccelerationStructure, Buffer, CommandBuffer, Context};
 
 fn primitive_to_vk_geometry(
     _context: &Context,
@@ -128,18 +128,20 @@ pub fn create_as(
         );
     }
     // End recording
-    cmd_buffer.end()?;
+    // cmd_buffer.end()?;
 
     // Submit and wait
-    let fence = context.create_fence(None)?;
+    // let fence = context.create_fence(None)?;
     // let fence = Fence::null(&context.device);
-    context
-        .graphics_queue
-        .submit(&cmd_buffer, None, None, &fence)?;
-    fence.wait(None)?;
+    // context
+    //     .graphics_queue
+    //     .submit(&cmd_buffer, None, None, &fence)?;
+    // fence.wait(None)?;
+
+    info!("Finish bot as");
     // Free
-    context.command_pool.free_command_buffer(&cmd_buffer)?;
-    let tlas = create_top_as(context, doc, &blases, flags)?;
+    // context.command_pool.free_command_buffer(&cmd_buffer)?;
+    let tlas = create_top_as(context, doc, &blases, flags, Some(cmd_buffer))?;
     // info!(
     //     "Finish building acceleration structure: {}s",
     //     time.elapsed().as_secs()
@@ -157,6 +159,7 @@ pub fn create_top_as(
     doc: &Doc,
     blases: &Vec<AccelerationStructure>,
     flags: vk::BuildAccelerationStructureFlagsKHR,
+    cmd_buffer_opt: Option<CommandBuffer>,
 ) -> Result<TopAS> {
     let mut ins = vec![];
     let mut f = |node: &Node| {
@@ -189,10 +192,16 @@ pub fn create_top_as(
     };
     doc.traverse_root_nodes(&mut f);
 
-    let cmd_buffer = context
-        .command_pool
-        .allocate_command_buffer(vk::CommandBufferLevel::PRIMARY)?;
-    cmd_buffer.begin(Some(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT))?;
+    let (cmd_buffer, batch) =
+    if let Some(cmd) = cmd_buffer_opt {
+        (cmd, true)
+    } else {
+        let cmd = context
+            .command_pool
+            .allocate_command_buffer(vk::CommandBufferLevel::PRIMARY)?;
+        cmd.begin(Some(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT))?;
+        (cmd, false)
+    };
 
     let (instance_buffer, _i) = create_gpu_only_buffer_from_data_batch(
         context,
@@ -253,7 +262,7 @@ pub fn create_top_as(
         .graphics_queue
         .submit(&cmd_buffer, None, None, &fence)?;
     fence.wait(None)?;
-    // // Free
+    info!("Finish top as");
     context.command_pool.free_command_buffer(&cmd_buffer)?;
 
     Ok(TopAS {

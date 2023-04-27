@@ -284,6 +284,8 @@ fn create_geo_normal(position: &[Vec4], indices: &[u32]) -> Vec<Vec4> {
         let n = v0.cross(v1).normalize();
         let n = Vec4::new(n[0], n[1], n[2], 0.);
         normals[i0] = n;
+        normals[i1] = n;
+        normals[i2] = n;
     }
     normals
 }

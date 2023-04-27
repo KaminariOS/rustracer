@@ -7,7 +7,6 @@ use app::vulkan::gpu_allocator::MemoryLocation;
 use app::{vulkan::*, BaseApp};
 use app::{App, FrameStats};
 use std::mem::size_of;
-use std::rc::Rc;
 
 use log::info;
 use std::time::Instant;
@@ -69,7 +68,12 @@ struct GltfViewerInner {
 }
 
 impl GltfViewerInner {
-    fn new(base: &BaseApp<GltfViewer>, doc: Doc, ubo_buffer: &Buffer, skybox: &SkyboxResource) -> Result<Self> {
+    fn new(
+        base: &BaseApp<GltfViewer>,
+        doc: Doc,
+        ubo_buffer: &Buffer,
+        skybox: &SkyboxResource,
+    ) -> Result<Self> {
         let context = &base.context;
         let globals = create_global(context, &doc)?;
         let fully_opaque = doc.geo_builder.fully_opaque();
@@ -135,20 +139,12 @@ struct GltfViewer {
 }
 
 impl GltfViewer {
-    fn new_with_scene(
-        base: &BaseApp<Self>,
-        scene: Scene,
-        loader: Loader,
-    ) -> Result<Self> {
+    fn new_with_scene(base: &BaseApp<Self>, scene: Scene, loader: Loader) -> Result<Self> {
         let doc = load_file(scene.path())?;
         Self::new_with_doc(base, doc, loader)
     }
 
-    fn new_with_doc(
-        base: &BaseApp<Self>,
-        doc: Doc,
-        loader: Loader,
-    ) -> Result<Self> {
+    fn new_with_doc(base: &BaseApp<Self>, doc: Doc, loader: Loader) -> Result<Self> {
         let start = Instant::now();
         let context = &base.context;
         let ubo_buffer = context.create_buffer(
@@ -177,11 +173,7 @@ impl App for GltfViewer {
     type Gui = Gui;
 
     fn new(base: &BaseApp<Self>) -> Result<Self> {
-        Self::new_with_scene(
-            base,
-            Default::default(),
-            Loader::new(),
-        )
+        Self::new_with_scene(base, Default::default(), Loader::new())
     }
 
     fn update(
@@ -302,8 +294,6 @@ impl App for GltfViewer {
         Ok(())
     }
 
-
-
     fn state_change(
         &mut self,
         base: &mut BaseApp<Self>,
@@ -312,7 +302,12 @@ impl App for GltfViewer {
         if let Some(doc) = self.loader.get_model() {
             base.wait_for_gpu()?;
             self.inner.clear();
-            self.inner.push(GltfViewerInner::new(base, doc, &self.ubo_buffer, &self.skybox)?);
+            self.inner.push(GltfViewerInner::new(
+                base,
+                doc,
+                &self.ubo_buffer,
+                &self.skybox,
+            )?);
             self.reset_samples();
         }
         if self.old_camera.is_none() {
@@ -342,7 +337,8 @@ impl App for GltfViewer {
             if old_state.sun != gui_state.sun {
                 let inner = self.get_inner_mut();
                 inner.globals.d_lights[0] = gui_state.sun;
-                inner.buffers
+                inner
+                    .buffers
                     .dlights_buffer
                     .copy_data_to_buffer(inner.globals.d_lights.as_slice())?;
             }
@@ -355,7 +351,8 @@ impl App for GltfViewer {
                     new_light.intensity = gui_state.point_light_intensity;
                     *x = new_light;
                 });
-                inner.buffers
+                inner
+                    .buffers
                     .plights_buffer
                     .copy_data_to_buffer(inner.globals.p_lights.as_slice())?;
             }
@@ -386,7 +383,7 @@ impl App for GltfViewer {
                         &inner.doc,
                         &inner._bottom_as,
                         vk::BuildAccelerationStructureFlagsKHR::PREFER_FAST_TRACE,
-                        None
+                        None,
                     )?
                 }
             };
@@ -408,12 +405,15 @@ impl GltfViewer {
 
     fn update_tlas(&mut self, tlas: TopAS) {
         let inner = self.get_inner_mut();
-        inner.descriptor_res.static_set.update(&[WriteDescriptorSet {
-            binding: AS_BIND,
-            kind: WriteDescriptorSetKind::AccelerationStructure {
-                acceleration_structure: &tlas.inner,
-            },
-        }]);
+        inner
+            .descriptor_res
+            .static_set
+            .update(&[WriteDescriptorSet {
+                binding: AS_BIND,
+                kind: WriteDescriptorSetKind::AccelerationStructure {
+                    acceleration_structure: &tlas.inner,
+                },
+            }]);
         inner.top_as = tlas;
     }
 

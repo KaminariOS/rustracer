@@ -198,10 +198,8 @@ impl Doc {
         };
         self.traverse_root_nodes(&mut f);
         let mut mesh_skin_record: HashMap<usize, usize> = HashMap::new();
-        for (mesh, map) in mesh_to_node.into_iter()
-            .enumerate() {
-            let (mut non_affine, affine): (Vec<_>, Vec<_>) = map
-                .into_iter().partition(|x| x.1);
+        for (mesh, map) in mesh_to_node.into_iter().enumerate() {
+            let (non_affine, affine): (Vec<_>, Vec<_>) = map.into_iter().partition(|x| x.1);
             if non_affine.is_empty() {
                 continue;
             }

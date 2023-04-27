@@ -7,7 +7,6 @@ use anyhow::Result;
 
 use glam::Mat4;
 use std::mem::size_of;
-use std::time::Instant;
 
 use vulkan::ash::vk;
 use vulkan::ash::vk::Packed24_8;
@@ -173,8 +172,7 @@ pub fn create_top_as(
     };
     doc.traverse_root_nodes(&mut f);
 
-    let cmd_buffer =
-    if let Some(cmd) = cmd_buffer_opt {
+    let cmd_buffer = if let Some(cmd) = cmd_buffer_opt {
         cmd
     } else {
         let cmd = context

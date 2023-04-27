@@ -94,8 +94,8 @@ impl TryFrom<&gltf::image::Data> for Image {
         let pixels = match image.format {
             R8G8B8A8 => image.pixels.clone(),
             _ => PixelIter::new(image, pixel_count as _)?
-            .flatten()
-            .collect::<Vec<_>>()
+                .flatten()
+                .collect::<Vec<_>>(),
         };
 
         Ok(Self {

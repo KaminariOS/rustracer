@@ -151,7 +151,6 @@ pub fn create_pipeline(
             stage: vk::ShaderStageFlags::CLOSEST_HIT_KHR,
             group: RayTracingShaderGroup::ClosestHit,
         },
-
     ];
     if !fully_opaque {
         shaders_create_info.push(RayTracingShaderCreateInfo {

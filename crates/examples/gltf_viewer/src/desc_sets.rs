@@ -1,7 +1,7 @@
 use crate::pipeline_res::PipelineRes;
 use crate::{
-    ACC_BIND, AS_BIND, DLIGHT_BIND, GEO_BIND, INDEX_BIND, MAT_BIND, PLIGHT_BIND, SKYBOX_BIND,
-    STORAGE_BIND, TEXTURE_BIND, UNIFORM_BIND, VERTEX_BIND,
+    ACC_BIND, AS_BIND, DLIGHT_BIND, GEO_BIND, INDEX_BIND, MAT_BIND, PLIGHT_BIND, STORAGE_BIND,
+    TEXTURE_BIND, UNIFORM_BIND, VERTEX_BIND,
 };
 use app::anyhow::Result;
 use app::vulkan::ash::vk;
@@ -11,7 +11,6 @@ use app::vulkan::{
 use app::ImageAndView;
 use asset_loader::acceleration_structures::TopAS;
 use asset_loader::globals::{Buffers, VkGlobal};
-use crate::gui_state::Skybox;
 
 pub struct DescriptorRes {
     pub(crate) _pool: DescriptorPool,

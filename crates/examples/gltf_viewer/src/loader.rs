@@ -10,7 +10,7 @@
 //! Users have to call `load` to load a new model and `get_model` to retrieve
 //! the loaded model.
 
-use log::info;
+use log::{error, info};
 
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
@@ -50,7 +50,7 @@ impl Loader {
                                 model_sender.send(pre_loaded_model).unwrap();
                             }
                             Err(error) => {
-                                log::error!("Failed to load {}. Cause: {:?}", path, error);
+                                error!("Failed to load {}. Cause: {:?}", path, error);
                             }
                         }
                     }

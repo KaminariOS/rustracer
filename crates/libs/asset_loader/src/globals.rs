@@ -140,48 +140,6 @@ impl Buffers {
         // println!("v_b: {:#02x}, i_b: {:#02x}, g_b: {:#02x}, m_b: {:#02x}", vertex_buffer.as_raw(), index_buffer.as_raw(), geo_buffer.as_raw(), material_buffer.as_raw());
         let _src_stage = vk::PipelineStageFlags2::TRANSFER | vk::PipelineStageFlags2::ALL_COMMANDS;
         let _ray_tracing_dst = vk::PipelineStageFlags2::ALL_COMMANDS;
-        // let as_build = vk::PipelineStageFlags2::ALL_COMMANDS;
-        // let src_access = vk::AccessFlags2::TRANSFER_WRITE;
-        // let des_access= vk::AccessFlags2::MEMORY_READ | vk::AccessFlags2::HOST_WRITE | vk::AccessFlags2::SHADER_STORAGE_READ | vk::AccessFlags2::HOST_READ;
-        // context.execute_one_time_commands(|cmd| cmd.pipeline_buffer_barriers(
-        //     &[
-        //         BufferBarrier {
-        //             buffer: &vertex_buffer,
-        //             src_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
-        //             dst_access_mask: des_access,
-        //             src_stage_mask: src_stage,
-        //             dst_stage_mask: as_build
-        //         },
-        //         BufferBarrier {
-        //             buffer: &index_buffer,
-        //             src_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
-        //             dst_access_mask: des_access,
-        //             src_stage_mask: src_stage,
-        //             dst_stage_mask: as_build
-        //         },
-        //         BufferBarrier {
-        //             buffer: &geo_buffer,
-        //             src_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
-        //             dst_access_mask: des_access,
-        //             src_stage_mask: src_stage,
-        //             dst_stage_mask: ray_tracing_dst
-        //         },
-        //         BufferBarrier {
-        //             buffer: &material_buffer,
-        //             src_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
-        //             dst_access_mask: des_access,
-        //             src_stage_mask: src_stage,
-        //             dst_stage_mask: ray_tracing_dst
-        //         },
-        //     BufferBarrier {
-        //         buffer: &lights_buffer,
-        //         src_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
-        //         dst_access_mask: des_access,
-        //         src_stage_mask: src_stage,
-        //         dst_stage_mask: ray_tracing_dst
-        //     }
-        //     ]
-        // ))?;
         Ok(Self {
             vertex_buffer,
             animation_buffers,

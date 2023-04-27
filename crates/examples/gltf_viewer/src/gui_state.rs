@@ -68,6 +68,9 @@ pub enum Scene {
     BoomBoxWithAxes,
 
     Test,
+    Ferris,
+    Erato,
+    Teapot,
     Anime,
     LaocoonInBox,
     Garage,
@@ -136,9 +139,8 @@ pub enum Scene {
     SpecGlossVsMetalRough,
     AlphaBlendModeTest,
 
-
-    #[default]
     BrainStem,
+    #[default]
     Fox,
     NegativeScaleTest,
     TextureCoordinateTest,
@@ -183,7 +185,7 @@ pub enum Scene {
     Chernovan,
     LotusFlower,
     // IcyDragon,
-    // Zombie,
+    Zombie,
     // DragonThree,
     // Trex,
     // Phoenix,
@@ -211,18 +213,6 @@ impl ToneMapMode {
     pub fn all() -> [ToneMapMode; 5] {
         use ToneMapMode::*;
         [Default, Uncharted, HejlRichard, Aces, None]
-    }
-
-    pub fn from_value(value: usize) -> Option<Self> {
-        use ToneMapMode::*;
-        match value {
-            0 => Some(Default),
-            1 => Some(Uncharted),
-            2 => Some(HejlRichard),
-            3 => Some(Aces),
-            4 => Some(None),
-            _ => Option::None,
-        }
     }
 }
 

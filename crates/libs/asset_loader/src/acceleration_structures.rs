@@ -6,7 +6,6 @@ use crate::scene_graph::{Doc, Node};
 use anyhow::Result;
 
 use glam::Mat4;
-use log::info;
 use std::mem::size_of;
 use std::time::Instant;
 
@@ -84,7 +83,6 @@ pub fn create_as(
     buffers: &Buffers,
     flags: vk::BuildAccelerationStructureFlagsKHR,
 ) -> Result<(Vec<AccelerationStructure>, TopAS)> {
-    let time = Instant::now();
     let mut blas_inputs: Vec<_> = doc
         .meshes
         .iter()
@@ -127,25 +125,8 @@ pub fn create_as(
                 .build(),
         );
     }
-    // End recording
-    // cmd_buffer.end()?;
 
-    // Submit and wait
-    // let fence = context.create_fence(None)?;
-    // let fence = Fence::null(&context.device);
-    // context
-    //     .graphics_queue
-    //     .submit(&cmd_buffer, None, None, &fence)?;
-    // fence.wait(None)?;
-
-    info!("Finish bot as");
-    // Free
-    // context.command_pool.free_command_buffer(&cmd_buffer)?;
     let tlas = create_top_as(context, doc, &blases, flags, Some(cmd_buffer))?;
-    // info!(
-    //     "Finish building acceleration structure: {}s",
-    //     time.elapsed().as_secs()
-    // );
     Ok((blases, tlas))
 }
 
@@ -192,15 +173,15 @@ pub fn create_top_as(
     };
     doc.traverse_root_nodes(&mut f);
 
-    let (cmd_buffer, batch) =
+    let cmd_buffer =
     if let Some(cmd) = cmd_buffer_opt {
-        (cmd, true)
+        cmd
     } else {
         let cmd = context
             .command_pool
             .allocate_command_buffer(vk::CommandBufferLevel::PRIMARY)?;
         cmd.begin(Some(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT))?;
-        (cmd, false)
+        cmd
     };
 
     let (instance_buffer, _i) = create_gpu_only_buffer_from_data_batch(
@@ -262,7 +243,6 @@ pub fn create_top_as(
         .graphics_queue
         .submit(&cmd_buffer, None, None, &fence)?;
     fence.wait(None)?;
-    info!("Finish top as");
     context.command_pool.free_command_buffer(&cmd_buffer)?;
 
     Ok(TopAS {

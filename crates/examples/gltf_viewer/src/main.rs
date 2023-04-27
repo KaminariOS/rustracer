@@ -55,25 +55,30 @@ fn main() -> Result<()> {
     app::run::<GltfViewer>(APP_NAME, WIDTH, HEIGHT, ENABLE_RAYTRACING)
 }
 
-struct GltfViewer {
-    ubo_buffer: Buffer,
+struct GltfViewerInner {
     doc: Doc,
     _bottom_as: Vec<AccelerationStructure>,
     top_as: TopAS,
     pipeline_res: PipelineRes,
     sbt: ShaderBindingTable,
     descriptor_res: DescriptorRes,
+    fully_opaque: bool,
+    buffers: Buffers,
+    globals: VkGlobal,
+    compute_unit: Option<ComputeUnit>,
+}
+
+struct GltfViewer {
+    ubo_buffer: Buffer,
     total_number_of_samples: u32,
     prev_gui_state: Option<Gui>,
     old_camera: Option<Camera>,
 
-    buffers: Buffers,
-    globals: VkGlobal,
     clock: Instant,
     last_update: Instant,
     fully_opaque: bool,
     loader: Rc<Loader>,
-    compute_unit: Option<ComputeUnit>,
+    inner: Vec<GltfViewerInner>
 }
 
 impl GltfViewer {
@@ -136,24 +141,28 @@ impl GltfViewer {
             &buffers,
         )?;
         info!("Uploading to GPU: {}", start.elapsed().as_secs());
-        Ok(GltfViewer {
-            ubo_buffer,
+        let inner = GltfViewerInner {
             doc,
             _bottom_as,
             top_as,
             pipeline_res,
             sbt,
             descriptor_res,
+            fully_opaque,
+            buffers,
+            globals,
+            compute_unit,
+        };
+        Ok(GltfViewer {
+            ubo_buffer,
             total_number_of_samples: 0,
             old_camera: None,
             prev_gui_state: None,
-            buffers,
-            globals,
             clock: Instant::now(),
             last_update: Instant::now(),
             fully_opaque,
             loader,
-            compute_unit,
+            inner: vec![inner],
         })
     }
 }
@@ -215,7 +224,7 @@ impl App for GltfViewer {
             antialiasing: gui.antialiasing.into(),
             frame_count: frame_stats.frame_count,
             debug: gui.debug,
-            fully_opaque: self.doc.geo_builder.fully_opaque().into(),
+            fully_opaque: self.get_inner_ref().doc.geo_builder.fully_opaque().into(),
             exposure: gui.exposure,
             tone_mapping_mode: gui.selected_tone_map_mode as _,
         };
@@ -231,20 +240,21 @@ impl App for GltfViewer {
         buffer: &CommandBuffer,
         image_index: usize,
     ) -> Result<()> {
-        let static_set = &self.descriptor_res.static_set;
-        let dynamic_set = &self.descriptor_res.dynamic_sets[image_index];
+        let inner = self.get_inner_ref();
+        let static_set = &inner.descriptor_res.static_set;
+        let dynamic_set = &inner.descriptor_res.dynamic_sets[image_index];
 
-        buffer.bind_rt_pipeline(&self.pipeline_res.pipeline);
+        buffer.bind_rt_pipeline(&inner.pipeline_res.pipeline);
 
         buffer.bind_descriptor_sets(
             vk::PipelineBindPoint::RAY_TRACING_KHR,
-            &self.pipeline_res.pipeline_layout,
+            &inner.pipeline_res.pipeline_layout,
             0,
             &[static_set, dynamic_set],
         );
 
         buffer.trace_rays(
-            &self.sbt,
+            &inner.sbt,
             base.swapchain.extent.width,
             base.swapchain.extent.height,
         );
@@ -257,7 +267,7 @@ impl App for GltfViewer {
             .iter()
             .enumerate()
             .for_each(|(index, img)| {
-                let set = &self.descriptor_res.dynamic_sets[index];
+                let set = &self.get_inner_ref().descriptor_res.dynamic_sets[index];
 
                 set.update(&[WriteDescriptorSet {
                     binding: STORAGE_BIND,
@@ -273,7 +283,7 @@ impl App for GltfViewer {
                 .iter()
                 .enumerate()
                 .for_each(|(_index, img)| {
-                    let set = &self.descriptor_res.dynamic_sets[i];
+                    let set = &self.get_inner_ref().descriptor_res.dynamic_sets[i];
 
                     set.update(&[WriteDescriptorSet {
                         binding: ACC_BIND,
@@ -314,55 +324,62 @@ impl App for GltfViewer {
             }
             if old_state.skybox != gui_state.skybox {
                 let skybox = SkyboxResource::new(&base.context, gui_state.skybox.path())?;
-                skybox.update_desc(&self.descriptor_res.static_set, SKYBOX_BIND);
-                self.globals.skybox = skybox;
+                skybox.update_desc(&self.get_inner_ref().descriptor_res.static_set, SKYBOX_BIND);
+                self.get_inner_mut().globals.skybox = skybox;
             }
             self.prev_gui_state = Some(*gui_state);
             self.total_number_of_samples = 0;
             if old_state.sun != gui_state.sun {
-                self.globals.d_lights[0] = gui_state.sun;
-                self.buffers
+                let inner = self.get_inner_mut();
+                inner.globals.d_lights[0] = gui_state.sun;
+                inner.buffers
                     .dlights_buffer
-                    .copy_data_to_buffer(self.globals.d_lights.as_slice())?;
+                    .copy_data_to_buffer(inner.globals.d_lights.as_slice())?;
             }
             if old_state.point_light_intensity != gui_state.point_light_intensity
                 || gui_state.point_light_radius != old_state.point_light_radius
             {
-                self.globals.p_lights.iter_mut().for_each(|x| {
+                let inner = self.get_inner_mut();
+                inner.globals.p_lights.iter_mut().for_each(|x| {
                     let mut new_light = LightRaw::random_light(gui_state.point_light_radius);
                     new_light.intensity = gui_state.point_light_intensity;
                     *x = new_light;
                 });
-                self.buffers
+                inner.buffers
                     .plights_buffer
-                    .copy_data_to_buffer(self.globals.p_lights.as_slice())?;
+                    .copy_data_to_buffer(inner.globals.p_lights.as_slice())?;
             }
         }
 
-        if !self.doc.static_scene() && gui_state.animation && self.need_update() {
+        if !self.get_inner_ref().doc.static_scene() && gui_state.animation && self.need_update() {
             self.last_update = Instant::now();
             let t = self.clock.elapsed().as_secs_f32() * gui_state.animation_speed;
-            self.doc.animate(t);
-            let tlas = if let Some((skin, _ani)) = &self.buffers.animation_buffers {
-                let new_skin = self.doc.get_skins();
-                skin.copy_data_to_buffer(&new_skin)?;
-                self.compute(&base.context)?;
-                let (blas, tlas) = create_as(
-                    &base.context,
-                    &self.doc,
-                    &self.buffers,
-                    vk::BuildAccelerationStructureFlagsKHR::empty(),
-                )?;
-                self._bottom_as = blas;
-                tlas
-            } else {
-                create_top_as(
-                    &base.context,
-                    &self.doc,
-                    &self._bottom_as,
-                    vk::BuildAccelerationStructureFlagsKHR::PREFER_FAST_TRACE,
-                )?
+            self.get_inner_mut().doc.animate(t);
+            let mut blas_opt = None;
+            let tlas = {
+                let inner = self.get_inner_ref();
+                if let Some((skin, _ani)) = &inner.buffers.animation_buffers {
+                    let new_skin = inner.doc.get_skins();
+                    skin.copy_data_to_buffer(&new_skin)?;
+                    self.compute(&base.context)?;
+                    let (blas, tlas) = create_as(
+                        &base.context,
+                        &inner.doc,
+                        &inner.buffers,
+                        vk::BuildAccelerationStructureFlagsKHR::empty(),
+                    )?;
+                    blas_opt = Some(blas);
+                    tlas
+                } else {
+                    create_top_as(
+                        &base.context,
+                        &inner.doc,
+                        &inner._bottom_as,
+                        vk::BuildAccelerationStructureFlagsKHR::PREFER_FAST_TRACE,
+                    )?
+                }
             };
+            blas_opt.map(|b| self.get_inner_mut()._bottom_as = b);
             self.update_tlas(tlas);
         }
         Ok(())
@@ -370,24 +387,35 @@ impl App for GltfViewer {
 }
 
 impl GltfViewer {
+    fn get_inner_mut(&mut self) -> &mut GltfViewerInner {
+        &mut self.inner[0]
+    }
+
+
+    fn get_inner_ref(&self) -> &GltfViewerInner {
+        &self.inner[0]
+    }
+
     fn update_tlas(&mut self, tlas: TopAS) {
-        self.descriptor_res.static_set.update(&[WriteDescriptorSet {
+        let inner = self.get_inner_mut();
+        inner.descriptor_res.static_set.update(&[WriteDescriptorSet {
             binding: AS_BIND,
             kind: WriteDescriptorSetKind::AccelerationStructure {
                 acceleration_structure: &tlas.inner,
             },
         }]);
-        self.top_as = tlas;
+        inner.top_as = tlas;
     }
 
     fn need_update(&self) -> bool {
         self.last_update.elapsed().as_secs_f32() >= 1. / 60.
     }
 
-    fn compute(&mut self, context: &Context) -> Result<()> {
-        if let Some(compute) = &self.compute_unit {
-            let vertex_count = self.doc.geo_builder.vertices.len() as u32;
-            compute.dispatch(context, &self.buffers, vertex_count)?;
+    fn compute(&self, context: &Context) -> Result<()> {
+        let inner = self.get_inner_ref();
+        if let Some(compute) = &inner.compute_unit {
+            let vertex_count = inner.doc.geo_builder.vertices.len() as u32;
+            compute.dispatch(context, &inner.buffers, vertex_count)?;
         }
         Ok(())
     }

@@ -310,6 +310,7 @@ impl App for GltfViewer {
         gui_state: &mut <Self as App>::Gui,
     ) -> Result<()> {
         if let Some(doc) = self.loader.get_model() {
+            base.wait_for_gpu()?;
             self.inner.clear();
             self.inner.push(GltfViewerInner::new(base, doc, &self.ubo_buffer, &self.skybox)?);
             self.reset_samples();
@@ -385,6 +386,7 @@ impl App for GltfViewer {
                         &inner.doc,
                         &inner._bottom_as,
                         vk::BuildAccelerationStructureFlagsKHR::PREFER_FAST_TRACE,
+                        None
                     )?
                 }
             };

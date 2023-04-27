@@ -6,11 +6,12 @@ use std::convert::AsRef;
 use std::time::Duration;
 use strum::IntoEnumIterator;
 use strum_macros::{AsRefStr, EnumIter, IntoStaticStr};
+use crate::gui_state::Scene::DragAndDrop;
 
 const FPS: f32 = 40.;
 const BUDGET: f32 = 1. / FPS;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Gui {
     pub aperture: f32,
     pub focus_distance: f32,
@@ -39,7 +40,7 @@ pub struct Gui {
     pub selected_tone_map_mode: usize,
 }
 
-#[derive(IntoStaticStr, AsRefStr, EnumIter, PartialEq, Clone, Copy, Debug, Default)]
+#[derive(IntoStaticStr, AsRefStr, EnumIter, PartialEq, Clone, Debug, Default)]
 pub enum Scene {
     ZeroDay,
     TransmissionRoughnessTest,
@@ -190,12 +191,14 @@ pub enum Scene {
     // Trex,
     // Phoenix,
     // Wolf,
+    DragAndDrop(String)
 }
 
 impl Scene {
-    pub fn path(&self) -> &'static str {
+    pub fn path(&self) -> String {
         match self {
-            scene => scene.into(),
+            DragAndDrop(path) => path.to_string(),
+            scene => scene.as_ref().to_string(),
         }
     }
 }
@@ -369,18 +372,18 @@ impl app::Gui for Gui {
 
                 let mut scenes: Vec<_> = Scene::iter().collect();
                 scenes.sort_by_key(|k| k.as_ref().to_string());
-                let mut selected = self.scene;
+                let mut selected = self.scene.clone();
                 if let Some(_) = ui.begin_combo("Scene", format!("{}", selected.as_ref())) {
-                    for cur in scenes {
-                        if selected == cur {
+                    for cur in scenes.iter() {
+                        if &selected == cur {
                             // Auto-scroll to selected item
                             ui.set_item_default_focus();
                         }
                         // Create a "selectable"
-                        let clicked = ui.selectable_config(cur).selected(selected == cur).build();
+                        let clicked = ui.selectable_config(cur).selected(&selected == cur).build();
                         // When item is clicked, store it
                         if clicked {
-                            selected = cur;
+                            selected = cur.clone();
                         }
                     }
                     self.scene = selected;

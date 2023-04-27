@@ -24,6 +24,7 @@ use std::{
     marker::PhantomData,
     time::{Duration, Instant},
 };
+use std::path::PathBuf;
 use vulkan::*;
 use winit::{
     dpi::PhysicalSize,
@@ -97,6 +98,7 @@ pub trait App: Sized {
     ) -> Result<()> {
         Ok(())
     }
+    fn drag_and_drop(&mut self, path: PathBuf, gui: &mut Self::Gui);
 }
 
 pub trait Gui: Sized + Clone {
@@ -219,6 +221,12 @@ pub fn run<A: App + 'static>(
                 if key_code == VirtualKeyCode::R && state == ElementState::Pressed {
                     base_app.toggle_stats();
                 }
+            }
+            Event::WindowEvent {
+               event: WindowEvent::DroppedFile(path),
+                ..
+            } => {
+                app.drag_and_drop(path, &mut ui)
             }
             // Mouse
             Event::WindowEvent {

@@ -65,9 +65,9 @@ I stole the PBR shaders from the [referencePT](https://github.com/boksajak/refer
   * [ ] Blue noise and Halton sequence
   
 * [x] Extras
+  * [x] Open file by drag-and-drop
   * [x] Skybox
   * [ ] Skydome(hdr)
-  * [ ] Drop file
   * [ ] Loading multiple glTF scene dynamically
   * [ ] Rigid-body simulation
     

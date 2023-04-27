@@ -7,6 +7,7 @@ use app::vulkan::gpu_allocator::MemoryLocation;
 use app::{vulkan::*, BaseApp};
 use app::{App, FrameStats};
 use std::mem::size_of;
+use std::path::PathBuf;
 
 use log::info;
 use std::time::Instant;
@@ -294,6 +295,12 @@ impl App for GltfViewer {
         Ok(())
     }
 
+    fn drag_and_drop(&mut self, path: PathBuf, gui: &mut Gui) {
+        let path = path.into_os_string().into_string().unwrap_or("".to_owned());
+        gui.scene = Scene::DragAndDrop(path.clone());
+        self.loader.load(path);
+    }
+
     fn state_change(
         &mut self,
         base: &mut BaseApp<Self>,
@@ -314,7 +321,7 @@ impl App for GltfViewer {
             self.old_camera = Some(base.camera);
         }
         if self.prev_gui_state.is_none() {
-            self.prev_gui_state = Some(*gui_state);
+            self.prev_gui_state = Some(gui_state.clone());
         }
 
         if self.old_camera.filter(|x| *x != base.camera).is_some() {
@@ -322,7 +329,7 @@ impl App for GltfViewer {
             self.reset_samples();
         }
 
-        if let Some(old_state) = self.prev_gui_state.filter(|x| x != gui_state) {
+        if let Some(old_state) = self.prev_gui_state.clone().filter(|x| x != gui_state) {
             if old_state.scene != gui_state.scene {
                 self.loader.load(gui_state.scene.path().to_string());
                 // *self = Self::new_with_scene(base, gui_state.scene, gui_state.skybox, self.loader.clone()).unwrap();
@@ -332,7 +339,7 @@ impl App for GltfViewer {
                 skybox.update_desc(&self.get_inner_ref().descriptor_res.static_set, SKYBOX_BIND);
                 self.skybox = skybox;
             }
-            self.prev_gui_state = Some(*gui_state);
+            self.prev_gui_state = Some(gui_state.clone());
             self.reset_samples();
             if old_state.sun != gui_state.sun {
                 let inner = self.get_inner_mut();

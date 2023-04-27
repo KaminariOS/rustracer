@@ -46,7 +46,7 @@ fn find_gltf(search: &PathBuf) -> Option<PathBuf> {
     None
 }
 
-pub fn load_model<P: AsRef<Path>>(path: P) -> PathBuf {
+pub fn load_model<P: AsRef<Path>>(path: P) -> Result<PathBuf> {
     let path_ref = path.as_ref();
     let mut res = None;
     let tails = ["", "glTF"];
@@ -67,11 +67,12 @@ pub fn load_model<P: AsRef<Path>>(path: P) -> PathBuf {
             }
         }
     }
-    res.expect(&*format!(
-        "Couldn't find model file {}, current path: {}",
-        path_ref.display(),
-        Path::new(".").canonicalize().unwrap().display()
-    ))
+    Ok(res.unwrap_or_default())
+    // res.expect(&*format!(
+    //     "Couldn't find model file {}, current path: {}",
+    //     path_ref.display(),
+    //     Path::new(".").canonicalize().unwrap().display()
+    // )
 }
 
 pub fn load_cubemap<P: AsRef<Path>>(path: P) -> Result<Vec<DirEntry>> {

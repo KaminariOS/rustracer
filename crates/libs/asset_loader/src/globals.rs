@@ -204,7 +204,6 @@ pub struct VkGlobal {
     materials: Vec<MaterialRaw>,
     pub d_lights: Vec<LightRaw>,
     pub p_lights: Vec<LightRaw>,
-    pub skybox: SkyboxResource,
     pub skins: Vec<[JointRaw; MAX_JOINTS]>,
 }
 
@@ -349,7 +348,7 @@ fn create_image_view(context: &Context, i: &crate::image::Image) -> Result<(Imag
     Ok((image, view))
 }
 
-pub fn create_global(context: &Context, doc: &Doc, skybox: SkyboxResource) -> Result<VkGlobal> {
+pub fn create_global(context: &Context, doc: &Doc) -> Result<VkGlobal> {
     info!("Fully opaque: {}", doc.geo_builder.fully_opaque());
     let mut images = vec![];
     let mut views = vec![];
@@ -388,7 +387,6 @@ pub fn create_global(context: &Context, doc: &Doc, skybox: SkyboxResource) -> Re
         materials: doc.get_materials_raw(),
         d_lights,
         p_lights,
-        skybox,
         skins: doc.get_skins(),
     })
 }

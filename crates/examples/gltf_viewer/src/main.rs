@@ -68,45 +68,10 @@ struct GltfViewerInner {
     compute_unit: Option<ComputeUnit>,
 }
 
-struct GltfViewer {
-    ubo_buffer: Buffer,
-    total_number_of_samples: u32,
-    prev_gui_state: Option<Gui>,
-    old_camera: Option<Camera>,
-
-    clock: Instant,
-    last_update: Instant,
-    fully_opaque: bool,
-    loader: Rc<Loader>,
-    inner: Vec<GltfViewerInner>
-}
-
-impl GltfViewer {
-    fn new_with_scene(
-        base: &BaseApp<Self>,
-        scene: Scene,
-        skybox: Skybox,
-        loader: Rc<Loader>,
-    ) -> Result<Self> {
-        let doc = load_file(scene.path())?;
-        Self::new_with_doc(base, doc, skybox, loader)
-    }
-
-    fn new_with_doc(
-        base: &BaseApp<Self>,
-        doc: Doc,
-        skybox: Skybox,
-        loader: Rc<Loader>,
-    ) -> Result<Self> {
-        let start = Instant::now();
+impl GltfViewerInner {
+    fn new(base: &BaseApp<GltfViewer>, doc: Doc, ubo_buffer: &Buffer, skybox: &SkyboxResource) -> Result<Self> {
         let context = &base.context;
-        let ubo_buffer = context.create_buffer(
-            vk::BufferUsageFlags::UNIFORM_BUFFER,
-            MemoryLocation::CpuToGpu,
-            size_of::<UniformBufferObject>() as _,
-        )?;
-        let skybox = SkyboxResource::new(context, skybox.path())?;
-        let globals = create_global(context, &doc, skybox)?;
+        let globals = create_global(context, &doc)?;
         let fully_opaque = doc.geo_builder.fully_opaque();
 
         let buffers = Buffers::new(context, &doc.geo_builder, &globals)?;
@@ -127,8 +92,6 @@ impl GltfViewer {
         let pipeline_res = create_pipeline(context, &globals, fully_opaque)?;
 
         let sbt = context.create_shader_binding_table(&pipeline_res.pipeline)?;
-        // base.camera.position = Point::new(0., 0.0, 16.0);
-        // base.camera.direction = Vec3::new(0.0, -0.0, -2.0);
 
         let descriptor_res = create_descriptor_sets(
             &base.context,
@@ -140,8 +103,10 @@ impl GltfViewer {
             &ubo_buffer,
             &buffers,
         )?;
-        info!("Uploading to GPU: {}", start.elapsed().as_secs());
-        let inner = GltfViewerInner {
+
+        skybox.update_desc(&descriptor_res.static_set, SKYBOX_BIND);
+
+        Ok(GltfViewerInner {
             doc,
             _bottom_as,
             top_as,
@@ -152,7 +117,48 @@ impl GltfViewer {
             buffers,
             globals,
             compute_unit,
-        };
+        })
+    }
+}
+
+struct GltfViewer {
+    ubo_buffer: Buffer,
+    total_number_of_samples: u32,
+    prev_gui_state: Option<Gui>,
+    old_camera: Option<Camera>,
+
+    clock: Instant,
+    last_update: Instant,
+    loader: Loader,
+    inner: Vec<GltfViewerInner>,
+    skybox: SkyboxResource,
+}
+
+impl GltfViewer {
+    fn new_with_scene(
+        base: &BaseApp<Self>,
+        scene: Scene,
+        loader: Loader,
+    ) -> Result<Self> {
+        let doc = load_file(scene.path())?;
+        Self::new_with_doc(base, doc, loader)
+    }
+
+    fn new_with_doc(
+        base: &BaseApp<Self>,
+        doc: Doc,
+        loader: Loader,
+    ) -> Result<Self> {
+        let start = Instant::now();
+        let context = &base.context;
+        let ubo_buffer = context.create_buffer(
+            vk::BufferUsageFlags::UNIFORM_BUFFER,
+            MemoryLocation::CpuToGpu,
+            size_of::<UniformBufferObject>() as _,
+        )?;
+        let skybox = SkyboxResource::new(context, Skybox::default().path())?;
+        let inner = GltfViewerInner::new(base, doc, &ubo_buffer, &skybox)?;
+        info!("Uploading to GPU: {}", start.elapsed().as_secs());
         Ok(GltfViewer {
             ubo_buffer,
             total_number_of_samples: 0,
@@ -160,8 +166,8 @@ impl GltfViewer {
             prev_gui_state: None,
             clock: Instant::now(),
             last_update: Instant::now(),
-            fully_opaque,
             loader,
+            skybox,
             inner: vec![inner],
         })
     }
@@ -174,8 +180,7 @@ impl App for GltfViewer {
         Self::new_with_scene(
             base,
             Default::default(),
-            Default::default(),
-            Rc::new(Loader::new()),
+            Loader::new(),
         )
     }
 
@@ -303,7 +308,8 @@ impl App for GltfViewer {
         gui_state: &mut <Self as App>::Gui,
     ) -> Result<()> {
         if let Some(doc) = self.loader.get_model() {
-            *self = Self::new_with_doc(base, doc, gui_state.skybox, self.loader.clone())?;
+            self.inner.clear();
+            self.inner.push(GltfViewerInner::new(base, doc, &self.ubo_buffer, &self.skybox)?);
         }
         if self.old_camera.is_none() {
             self.old_camera = Some(base.camera);
@@ -325,7 +331,7 @@ impl App for GltfViewer {
             if old_state.skybox != gui_state.skybox {
                 let skybox = SkyboxResource::new(&base.context, gui_state.skybox.path())?;
                 skybox.update_desc(&self.get_inner_ref().descriptor_res.static_set, SKYBOX_BIND);
-                self.get_inner_mut().globals.skybox = skybox;
+                self.skybox = skybox;
             }
             self.prev_gui_state = Some(*gui_state);
             self.total_number_of_samples = 0;
@@ -390,7 +396,6 @@ impl GltfViewer {
     fn get_inner_mut(&mut self) -> &mut GltfViewerInner {
         &mut self.inner[0]
     }
-
 
     fn get_inner_ref(&self) -> &GltfViewerInner {
         &self.inner[0]

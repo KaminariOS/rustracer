@@ -18,6 +18,7 @@ mod gui_state;
 mod loader;
 mod pipeline_res;
 mod ubo;
+mod args;
 
 use crate::compute_unit::ComputeUnit;
 use crate::gui_state::{Scene, Skybox};
@@ -30,6 +31,7 @@ use desc_sets::*;
 use gui_state::Gui;
 use pipeline_res::*;
 use ubo::UniformBufferObject;
+use crate::args::Args;
 
 const WIDTH: u32 = 1920;
 const HEIGHT: u32 = 1080;
@@ -174,7 +176,14 @@ impl App for GltfViewer {
     type Gui = Gui;
 
     fn new(base: &BaseApp<Self>) -> Result<Self> {
-        Self::new_with_scene(base, Default::default(), Loader::new())
+        use clap::Parser;
+        let args = Args::parse();
+        let scene = if args.file == "" {
+            Default::default()
+        } else {
+            Scene::DragAndDrop(args.file.clone())
+        };
+        Self::new_with_scene(base, scene, Loader::new())
     }
 
     fn update(

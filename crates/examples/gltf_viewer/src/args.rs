@@ -4,7 +4,7 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 pub struct Args {
-    /// Name of the person to greet
+    /// Path of the glTF file
     #[clap(short, long, value_parser, default_value = "")]
     pub file: String,
 }

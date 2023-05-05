@@ -1,6 +1,6 @@
 
 <div align="center">
-# `Rustracer`
+#Rustracer
 
 [![dependency status](https://deps.rs/repo/github/KaminariOS/rustracer/status.svg)](https://deps.rs/repo/github/KaminariOS/rustracer)
 </div>

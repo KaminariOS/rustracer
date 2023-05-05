@@ -92,6 +92,7 @@ pub enum Scene {
     Apollo,
 
     LamborghiniInterior,
+    #[default]
     Skull,
     Ironman85,
     Laocoon,
@@ -141,7 +142,6 @@ pub enum Scene {
     AlphaBlendModeTest,
 
     BrainStem,
-    #[default]
     Fox,
     NegativeScaleTest,
     TextureCoordinateTest,
@@ -179,18 +179,17 @@ pub enum Scene {
     // Chief,
     // Avengers,
     // ShutterGirl,
-    // DaedricGauntlet,
+    DaedricGauntlet,
     Curiosity,
     DragonThree,
-    //DragonFlying,
+    DragonFlying,
     Chernovan,
     LotusFlower,
-    // IcyDragon,
+    IcyDragon,
     Zombie,
-    // DragonThree,
     // Trex,
-    // Phoenix,
-    // Wolf,
+     Phoenix,
+     Wolf,
     DragAndDrop(String)
 }
 

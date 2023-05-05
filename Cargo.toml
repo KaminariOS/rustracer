@@ -1,16 +1,17 @@
 [workspace]
 members = [
-    "crates/examples/*",
-    "crates/libs/*",
+    "crates/examples/gltf_viewer",
+    "crates/libs/app",
+    "crates/libs/asset_loader",
+    "crates/libs/resource_manager",
+    "crates/libs/gui",
+    "crates/libs/vulkan",
 ]
 
 [workspace.package]
 authors = ["Kosumi <chankocyo@gmail.com>"]
 version = "0.2.0"
 edition = "2021"
-
-[profile.dev.package."*"]
-opt-level = 3
 
 [workspace.dependencies]
 winit = {version="0.27.5"}
@@ -63,3 +64,6 @@ clap = {version = "3.2.23", features = ["derive"]}
 version = "0.24.6"
 default-features = false
 features = ["png", "jpeg"]
+
+[profile.dev.package.gltf]
+opt-level = 3

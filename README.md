@@ -1,8 +1,12 @@
-
 <div align="center">
-#Rustracer
+
+# `Rustracer`
 
 [![dependency status](https://deps.rs/repo/github/KaminariOS/rustracer/status.svg)](https://deps.rs/repo/github/KaminariOS/rustracer)
+![GitHub](https://img.shields.io/github/license/KaminariOS/rustracer)
+[![Linux](https://svgshare.com/i/Zhy.svg)](https://svgshare.com/i/Zhy.svg)
+
+[![forthebadge made-with-rust](http://ForTheBadge.com/images/badges/made-with-rust.svg)](https://www.rust-lang.org/)
 </div>
 
 A PBR [glTF 2.0](https://www.khronos.org/gltf) renderer based on Vulkan ray-tracing, written in Rust.

@@ -40,7 +40,7 @@ dependencies = [
  "gpu-allocator",
  "gui",
  "log",
- "nalgebra",
+ "nalgebra 0.32.2",
  "pretty_env_logger",
  "resource_manager",
  "vulkan",
@@ -52,6 +52,15 @@ name = "approx"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f2a05fd1bd10b2527e20a2cd32d8873d115b8b39fe219ee25f42a8aca6ba278"
+dependencies = [
+ "num-traits",
+]
+
+[[package]]
+name = "approx"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cab112f0a86d568ea0e627cc1d6be74a1e9cd55214684db5561995f6dad897c6"
 dependencies = [
  "num-traits",
 ]
@@ -642,9 +651,9 @@ checksum = "ad0a93d233ebf96623465aad4046a8d3aa4da22d4f4beba5388838c8a434bbb4"
 
 [[package]]
 name = "glam"
-version = "0.23.0"
+version = "0.24.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e4afd9ad95555081e109fe1d21f2a30c691b5f0919c67dfa690a2e1eb6bd51c"
+checksum = "ad83ab008a4fa3b31dfa713dd41b5a9bdea1e94e4cf1e2fc274ffbd49b0271d3"
 dependencies = [
  "serde",
 ]
@@ -991,7 +1000,7 @@ version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7d0b56b403871a8f992ca626d52cc0a690d4841baea8955dc4af6304ac62f8b0"
 dependencies = [
- "nalgebra",
+ "nalgebra 0.26.2",
 ]
 
 [[package]]
@@ -1033,13 +1042,40 @@ version = "0.26.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "476d1d59fe02fe54c86356e91650cd892f392782a1cb9fc524ec84f7aa9e1d06"
 dependencies = [
- "approx",
+ "approx 0.4.0",
  "matrixmultiply",
- "num-complex",
+ "num-complex 0.3.1",
  "num-rational 0.3.2",
  "num-traits",
- "simba",
+ "simba 0.4.0",
  "typenum",
+]
+
+[[package]]
+name = "nalgebra"
+version = "0.32.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d68d47bba83f9e2006d117a9a33af1524e655516b8919caac694427a6fb1e511"
+dependencies = [
+ "approx 0.5.1",
+ "matrixmultiply",
+ "nalgebra-macros",
+ "num-complex 0.4.3",
+ "num-rational 0.4.1",
+ "num-traits",
+ "simba 0.8.1",
+ "typenum",
+]
+
+[[package]]
+name = "nalgebra-macros"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d232c68884c0c99810a5a4d333ef7e47689cfd0edc85efc9e54e1e6bf5212766"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -1149,6 +1185,15 @@ name = "num-complex"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "747d632c0c558b87dbabbe6a82f3b4ae03720d0646ac5b7b4dae89394be5f2c5"
+dependencies = [
+ "num-traits",
+]
+
+[[package]]
+name = "num-complex"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "02e0d21255c828d6f128a1e41534206671e8c3ea0c62f32291e808dc82cff17d"
 dependencies = [
  "num-traits",
 ]
@@ -1568,9 +1613,6 @@ name = "serde"
 version = "1.0.152"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bb7d1f0d3021d347a83e556fc4683dea2ea09d87bccdf88ff5c12545d89d5efb"
-dependencies = [
- "serde_derive",
-]
 
 [[package]]
 name = "serde_derive"
@@ -1640,10 +1682,23 @@ version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5132a955559188f3d13c9ba831e77c802ddc8782783f050ed0c52f5988b95f4c"
 dependencies = [
- "approx",
- "num-complex",
+ "approx 0.4.0",
+ "num-complex 0.3.1",
  "num-traits",
  "paste",
+]
+
+[[package]]
+name = "simba"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "061507c94fc6ab4ba1c9a0305018408e312e17c041eb63bef8aa726fa33aceae"
+dependencies = [
+ "approx 0.5.1",
+ "num-complex 0.4.3",
+ "num-traits",
+ "paste",
+ "wide",
 ]
 
 [[package]]

@@ -14,10 +14,9 @@ opt-level = 3
 
 [workspace.dependencies]
 winit = {version="0.27.5"}
-nalgebra = "*"
+nalgebra = "0.32.2"
 ash = {version = "0.37.2", features = ["linked", "debug"]}
 memoffset = "0.8.0"
-tobj = "3.2.4"
 gltf = {version = "1.1.0", features = [
     "names",
     "extras",
@@ -37,7 +36,7 @@ gltf = {version = "1.1.0", features = [
 #egui-winit = "0.21.1"
 #egui-winit-ash-integration = "0.3.0"
 log = "0.4.17"
-anyhow = "*"
+anyhow = "1.0.0"
 pretty_env_logger = "0.4.0"
 gpu-allocator = { version = "0.22", default-features = false, features = ["vulkan"] }
 
@@ -47,7 +46,7 @@ imgui-rs-vulkan-renderer = { version = "1.6", features = ["gpu-allocator", "dyna
 
 thiserror = "1.0"
 
-glam = { version = "0.23.0", features = ["serde"] }
+glam = { version = "0.24.0", features = ["serde"] }
 
 glsl-to-spirv = "0.1.7"
 

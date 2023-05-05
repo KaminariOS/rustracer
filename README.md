@@ -2,6 +2,8 @@
 
 # `Rustracer`
 
+![Lines of code](https://img.shields.io/tokei/lines/github/KaminariOS/rustracer)
+![GitHub repo size](https://img.shields.io/github/repo-size/KaminariOS/rustracer)
 [![dependency status](https://deps.rs/repo/github/KaminariOS/rustracer/status.svg)](https://deps.rs/repo/github/KaminariOS/rustracer)
 ![GitHub](https://img.shields.io/github/license/KaminariOS/rustracer)
 [![Linux](https://svgshare.com/i/Zhy.svg)](https://svgshare.com/i/Zhy.svg)

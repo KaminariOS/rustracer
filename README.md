@@ -1,4 +1,9 @@
-# [Rustracer](https://github.com/KaminariOS/rustracer)
+
+<div align="center">
+# `Rustracer`
+
+[![dependency status](https://deps.rs/repo/github/KaminariOS/rustracer/status.svg)](https://deps.rs/repo/github/KaminariOS/rustracer)
+</div>
 
 A PBR [glTF 2.0](https://www.khronos.org/gltf) renderer based on Vulkan ray-tracing, written in Rust.
 

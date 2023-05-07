@@ -269,7 +269,7 @@ impl Context {
         let ray_tracing_dst = vk::PipelineStageFlags2::ALL_COMMANDS;
         self.execute_one_time_commands(|cmd| {
             cmd.pipeline_buffer_barriers(&[BufferBarrier {
-                buffer: &buffer,
+                buffer,
                 src_access_mask: vk::AccessFlags2::TRANSFER_WRITE,
                 dst_access_mask: vk::AccessFlags2::MEMORY_READ,
                 src_stage_mask: src_stage,

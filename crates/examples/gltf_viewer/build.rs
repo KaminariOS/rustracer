@@ -13,7 +13,7 @@ fn main() -> Result<()> {
             let in_path = entry.path();
             let path_str = in_path.to_str().unwrap();
             let stat = Command::new("glslc")
-                .args(&[path_str, "--target-env=vulkan1.2", "-o"])
+                .args([path_str, "--target-env=vulkan1.2", "-o"])
                 .arg(&format!(
                     "../../../spv/{}.spv",
                     entry.file_name().into_string().unwrap()
@@ -83,7 +83,7 @@ fn handle_program_result(result: Result<Output>) {
             }
         }
         Err(error) => {
-            panic!("Failed to compile shader. Cause: {}", error);
+            panic!("Failed to compile shader. Cause: {error}");
         }
     }
 }

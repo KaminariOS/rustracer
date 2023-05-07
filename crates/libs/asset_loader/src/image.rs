@@ -63,7 +63,7 @@ impl Image {
 
         let width = img.width();
         let height = img.height();
-        let iter = img.pixels().map(|(_x, _y, c)| c.0).flatten();
+        let iter = img.pixels().flat_map(|(_x, _y, c)| c.0);
         let pixels =
         //     if let Some(collecter) = collector {
         //     collecter.extend(iter);
@@ -196,7 +196,7 @@ pub fn process_images_par(
                 .map(Result::unwrap)
                 .zip(image_infos)
                 .map(|(mut img, info)| {
-                    img.update_info(info, &linear);
+                    img.update_info(info, linear);
                     img
                 }),
         )
@@ -212,9 +212,9 @@ pub fn process_images_unified(
 ) -> Vec<Image> {
     cfg_if! {
         if #[cfg(feature = "rayon")] {
-            process_images_par(&gltf_images, &doc, &linear)
+            process_images_par(gltf_images, doc, linear)
         } else {
-            process_images(&gltf_images, &doc, &linear)
+            process_images(gltf_images, doc, linear)
         }
     }
 }

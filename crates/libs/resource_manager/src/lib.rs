@@ -25,7 +25,7 @@ pub fn load_spv<P: AsRef<Path>>(path: P) -> Vec<u8> {
             break;
         }
     }
-    res.expect(&*format!(
+    res.unwrap_or_else(|| panic!(
         "Couldn't find spv file {}, current path: {}",
         path.as_ref().display(),
         Path::new(".").canonicalize().unwrap().display()
@@ -47,7 +47,6 @@ fn find_gltf(search: &PathBuf) -> Option<PathBuf> {
 }
 
 pub fn load_model<P: AsRef<Path>>(path: P) -> Result<PathBuf> {
-    let path_ref = path.as_ref();
     let mut res = None;
     let tails = ["", "glTF"];
     for pre in MODEL_SEARCH_PATHS {
@@ -96,7 +95,7 @@ pub fn load_cubemap<P: AsRef<Path>>(path: P) -> Result<Vec<DirEntry>> {
         })
         .collect();
     assert_eq!(res.len(), 6);
-    return Ok(res);
+    Ok(res)
 }
 
 // pub fn select_gltf<P: AsRef<Path>>(path: P) -> Option<PathBuf> {

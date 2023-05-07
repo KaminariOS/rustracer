@@ -132,12 +132,11 @@ impl Primitive {
     fn from(primitive: gltf::Primitive, builder: &mut GeoBuilder) -> Self {
         let mapping: HashMap<_, _> = primitive
             .mappings()
-            .map(|m| {
+            .flat_map(|m| {
                 let variants = m.variants();
                 let material = m.material().index().unwrap_or(DEFAULT_MATERIAL_INDEX);
                 variants.iter().map(move |v| (*v, material))
             })
-            .flatten()
             .collect();
 
         let material = primitive.material();

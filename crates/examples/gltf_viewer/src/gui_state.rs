@@ -244,27 +244,27 @@ impl Skybox {
 #[derive(Default, Debug, AsRefStr, EnumIter, Copy, Clone, PartialEq)]
 pub enum Mapping {
     #[default]
-    RENDER = 0,
-    HEAT = 1,
-    INSTANCE = 2,
-    TRIANGLE = 3,
-    DISTANCE = 4,
-    ALBEDO = 5,
-    METALLIC = 6,
-    ROUGHNESS = 7,
-    NORMAL = 8,
-    TANGENT = 9,
-    TRANSMISSION = 10,
-    GEO_ID = 11,
+    Render = 0,
+    Heat = 1,
+    Instance = 2,
+    Triangle = 3,
+    Distance = 4,
+    Albedo = 5,
+    Metallic = 6,
+    Roughness = 7,
+    Normal = 8,
+    Tangent = 9,
+    Transmission = 10,
+    GeoId = 11,
 }
 
 impl Gui {
     pub fn is_mapping(&self) -> bool {
-        self.mapping != Mapping::RENDER
+        self.mapping != Mapping::Render
     }
 
     pub fn ray_query(&self) -> bool {
-        self.mapping != Mapping::RENDER && self.mapping != Mapping::HEAT
+        self.mapping != Mapping::Render && self.mapping != Mapping::Heat
     }
 
     pub fn get_number_of_samples(
@@ -342,7 +342,7 @@ impl app::Gui for Gui {
                 let mut number_of_samples = self.number_of_samples as _;
                 ui.input_int("Number of samples", &mut number_of_samples)
                     .build();
-                self.number_of_samples = number_of_samples.abs() as _;
+                self.number_of_samples = number_of_samples.unsigned_abs();
                 if ui.radio_button_bool(
                     format!("Dynamic sampling(target: {}fps)", FPS as u32),
                     self.dynamic_samples,
@@ -353,16 +353,16 @@ impl app::Gui for Gui {
                 let mut max_number_of_samples = self.max_number_of_samples as _;
                 ui.input_int("Max Number of samples", &mut max_number_of_samples)
                     .build();
-                self.max_number_of_samples = max_number_of_samples.abs() as _;
+                self.max_number_of_samples = max_number_of_samples.unsigned_abs();
 
                 let mut number_of_bounces = self.number_of_bounces as _;
                 ui.input_int("Max Number of bounces", &mut number_of_bounces)
                     .build();
-                self.number_of_bounces = number_of_bounces as _;
+                self.number_of_bounces = number_of_bounces.unsigned_abs();
 
                 let mut debug_number = self.debug as _;
                 ui.input_int("Debug control", &mut debug_number).build();
-                self.debug = debug_number.abs() as _;
+                self.debug = debug_number.unsigned_abs();
                 ui.slider("scale", -40., 40., &mut self.scale);
                 ui.slider("Apertures", 0., 1., &mut self.aperture);
                 ui.slider("Focus", 0.1, 20., &mut self.focus_distance);
@@ -372,7 +372,7 @@ impl app::Gui for Gui {
                 let mut scenes: Vec<_> = Scene::iter().collect();
                 scenes.sort_by_key(|k| k.as_ref().to_string());
                 let mut selected = self.scene.clone();
-                if let Some(_) = ui.begin_combo("Scene", format!("{}", selected.as_ref())) {
+                if ui.begin_combo("Scene", selected.as_ref()).is_some() {
                     for cur in scenes.iter() {
                         if &selected == cur {
                             // Auto-scroll to selected item
@@ -393,11 +393,11 @@ impl app::Gui for Gui {
                     "Tone Map mode",
                     &mut self.selected_tone_map_mode,
                     &ToneMapMode::all(),
-                    |mode| Cow::Owned(format!("{:?}", mode)),
+                    |mode| Cow::Owned(format!("{mode:?}")),
                 );
                 ui.separator();
                 let mut selected = self.mapping;
-                if let Some(_) = ui.begin_combo("Mapping", format!("{}", selected.as_ref())) {
+                if ui.begin_combo("Mapping", selected.as_ref()).is_some() {
                     for cur in Mapping::iter() {
                         if selected == cur {
                             // Auto-scroll to selected item
@@ -413,8 +413,8 @@ impl app::Gui for Gui {
                     self.mapping = selected;
                 }
                 match self.mapping {
-                    Mapping::HEAT => ui.slider("Heatmap Scale", 0.1, 10., &mut self.map_scale),
-                    Mapping::DISTANCE => {
+                    Mapping::Heat => ui.slider("Heatmap Scale", 0.1, 10., &mut self.map_scale),
+                    Mapping::Distance => {
                         ui.slider("dis_map Scale", 10., 1000., &mut self.map_scale)
                     }
                     _ => false,
@@ -427,7 +427,7 @@ impl app::Gui for Gui {
                 // ui.input_float3("direction", &mut self.light.direction)
                 //     .build();
                 let mut selected = self.skybox;
-                if let Some(_) = ui.begin_combo("Skybox", format!("{}", selected.as_ref())) {
+                if ui.begin_combo("Skybox", selected.as_ref()).is_some() {
                     for cur in Skybox::iter() {
                         if selected == cur {
                             // Auto-scroll to selected item

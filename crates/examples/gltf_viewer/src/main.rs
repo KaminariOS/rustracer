@@ -107,7 +107,7 @@ impl GltfViewerInner {
             &top_as,
             base.storage_images.as_slice(),
             base.acc_images.as_slice(),
-            &ubo_buffer,
+            ubo_buffer,
             &buffers,
         )?;
 
@@ -178,10 +178,10 @@ impl App for GltfViewer {
     fn new(base: &BaseApp<Self>) -> Result<Self> {
         use clap::Parser;
         let args = Args::parse();
-        let scene = if args.file == "" {
+        let scene = if args.file.is_empty() {
             Default::default()
         } else {
-            Scene::DragAndDrop(args.file.clone())
+            Scene::DragAndDrop(args.file)
         };
         Self::new_with_scene(base, scene, Loader::new())
     }
@@ -340,7 +340,7 @@ impl App for GltfViewer {
 
         if let Some(old_state) = self.prev_gui_state.clone().filter(|x| x != gui_state) {
             if old_state.scene != gui_state.scene {
-                self.loader.load(gui_state.scene.path().to_string());
+                self.loader.load(gui_state.scene.path());
                 // *self = Self::new_with_scene(base, gui_state.scene, gui_state.skybox, self.loader.clone()).unwrap();
             }
             if old_state.skybox != gui_state.skybox {
@@ -403,7 +403,9 @@ impl App for GltfViewer {
                     )?
                 }
             };
-            blas_opt.map(|b| self.get_inner_mut()._bottom_as = b);
+            if let Some(b ) = blas_opt{
+                self.get_inner_mut()._bottom_as = b
+            };
             self.update_tlas(tlas);
         }
         Ok(())

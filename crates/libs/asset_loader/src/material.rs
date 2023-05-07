@@ -58,10 +58,6 @@ impl TextureInfo {
     fn is_none(&self) -> bool {
         self.texture_index == -1
     }
-
-    fn is_some(&self) -> bool {
-        !self.is_none()
-    }
 }
 
 #[derive(Clone)]
@@ -279,7 +275,7 @@ struct SpecularGlossiness {
     specular_glossiness_texture: TextureInfo,
 }
 
-impl<'a> From<PbrSpecularGlossiness<'_>> for SpecularGlossiness {
+impl From<PbrSpecularGlossiness<'_>> for SpecularGlossiness {
     fn from(pbr: PbrSpecularGlossiness<'_>) -> Self {
         Self {
             diffuse_factor: pbr.diffuse_factor(),
@@ -302,7 +298,7 @@ struct SpecularInfo {
     _padding: f64,
 }
 
-impl<'a> From<Specular<'_>> for SpecularInfo {
+impl From<Specular<'_>> for SpecularInfo {
     fn from(sp: Specular) -> Self {
         Self {
             specular_texture: TextureInfo::new(sp.specular_texture()),
@@ -333,7 +329,7 @@ enum Workflow {
     SpecularGlossiness = 1,
 }
 
-impl<'a> From<gltf::Material<'_>> for Material {
+impl From<gltf::Material<'_>> for Material {
     fn from(material: gltf::Material) -> Self {
         let index = material.index().unwrap_or(DEFAULT_MATERIAL_INDEX);
         let pbr = material.pbr_metallic_roughness();

@@ -65,7 +65,7 @@ impl AnimationChannel {
                 Property::Morph(
                     weights
                         .chunks(chuck_size)
-                        .map(|x| x.iter().map(|e| *e).collect())
+                        .map(|x| x.to_vec())
                         .collect(),
                 )
             }
@@ -166,8 +166,8 @@ fn cubic_spline(
     target_time: f32,
     amount: f32,
 ) -> Float3 {
-    let source = source.map(|i| Vec3::from_array(i));
-    let target = target.map(|i| Vec3::from_array(i));
+    let source = source.map(Vec3::from_array);
+    let target = target.map(Vec3::from_array);
     let t = amount;
     let p0 = source[1];
     let m0 = (target_time - source_time) * source[2];
@@ -207,7 +207,7 @@ fn cubic_spline(
 
 struct AnimationSampler {}
 
-impl<'a> From<Sampler<'_>> for AnimationSampler {
+impl From<Sampler<'_>> for AnimationSampler {
     fn from(sampler: Sampler<'_>) -> Self {
         sampler.input();
         sampler.output();

@@ -146,7 +146,7 @@ impl Doc {
         let linear = find_linear_textures(doc);
 
         let now = Instant::now();
-        let images = process_images_unified(&gltf_images, &doc, &linear);
+        let images = process_images_unified(&gltf_images, doc, &linear);
         info!(
             "Finish processing images, time:{}s",
             now.elapsed().as_secs()
@@ -309,8 +309,7 @@ impl Doc {
         let all: Vec<_> = self
             .animations
             .iter()
-            .map(|a| &a.channels)
-            .flatten()
+            .flat_map(|a| &a.channels)
             .map(|c| {
                 let target = c.target;
                 let trans = c.get_transform(t);
@@ -360,7 +359,7 @@ pub struct Scene {
     pub root_nodes: Vec<NodeID>,
 }
 
-impl<'a> From<gltf::Scene<'_>> for Scene {
+impl From<gltf::Scene<'_>> for Scene {
     fn from(scene: gltf::Scene) -> Self {
         Self {
             index: scene.index(),
@@ -421,7 +420,7 @@ impl Node {
     }
 }
 
-impl<'a> From<gltf::Node<'_>> for Node {
+impl From<gltf::Node<'_>> for Node {
     fn from(node: gltf::Node) -> Self {
         Self {
             index: node.index(),

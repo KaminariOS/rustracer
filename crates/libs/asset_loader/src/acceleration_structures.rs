@@ -85,9 +85,8 @@ pub fn create_as(
     let mut blas_inputs: Vec<_> = doc
         .meshes
         .iter()
-        .map(|m| m.primitives.iter())
-        .flatten()
-        .map(|p| primitive_to_vk_geometry(context, &buffers, &doc.geo_builder, p.geometry_id))
+        .flat_map(|m| m.primitives.iter())
+        .map(|p| primitive_to_vk_geometry(context, buffers, &doc.geo_builder, p.geometry_id))
         .collect();
     blas_inputs.sort_by_key(|b| b.geo_id);
     let cmd_buffer = context
@@ -137,7 +136,7 @@ pub struct TopAS {
 pub fn create_top_as(
     context: &Context,
     doc: &Doc,
-    blases: &Vec<AccelerationStructure>,
+    blases: &[AccelerationStructure],
     flags: vk::BuildAccelerationStructureFlagsKHR,
     cmd_buffer_opt: Option<CommandBuffer>,
 ) -> Result<TopAS> {

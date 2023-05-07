@@ -28,7 +28,7 @@ enum Face {
 
 impl Face {
     fn get_index(name: &str) -> usize {
-        let name = name.split(".").next().unwrap();
+        let name = name.split('.').next().unwrap();
         let index = Self::from_str(name);
         let i = if let Ok(index) = index {
             index

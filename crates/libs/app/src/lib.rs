@@ -13,8 +13,6 @@ use gui::{
     imgui_rs_vulkan_renderer::Renderer,
     GuiContext,
 };
-use log;
-use pretty_env_logger;
 pub use resource_manager::load_spv;
 
 use crate::types::Vec3;
@@ -142,7 +140,7 @@ pub fn run<A: App + 'static>(
     let (window, event_loop) = create_window(app_name, width, height);
     let mut base_app = BaseApp::new(&window, app_name, enable_raytracing)?;
     let mut ui = Gui::new()?;
-    let mut app = A::new(&mut base_app)?;
+    let mut app = A::new(&base_app)?;
     let mut gui_context = GuiContext::new(
         &base_app.context,
         &base_app.context.command_pool,
@@ -366,14 +364,14 @@ impl<B: App> BaseApp<B> {
 
         // Recreate storage image for RT and update descriptor set
         let storage_images = create_storage_images(
-            &mut self.context,
+            &self.context,
             self.swapchain.format,
             self.swapchain.extent,
             self.swapchain.images.len(),
         )?;
 
         let acc_images = create_storage_images(
-            &mut self.context,
+            &self.context,
             vk::Format::R32G32B32A32_SFLOAT,
             self.swapchain.extent,
             self.swapchain.images.len(),
@@ -420,7 +418,7 @@ impl<B: App> BaseApp<B> {
             Ok(AcquiredImage { index, .. }) => index as usize,
             Err(err) => match err.downcast_ref::<vk::Result>() {
                 Some(&vk::Result::ERROR_OUT_OF_DATE_KHR) => return Ok(true),
-                _ => panic!("Error while acquiring next image. Cause: {}", err),
+                _ => panic!("Error while acquiring next image. Cause: {err}"),
             },
         };
         self.in_flight_frames.fence().reset()?;
@@ -431,10 +429,10 @@ impl<B: App> BaseApp<B> {
             .prepare_frame(gui_context.imgui.io_mut(), window)?;
         let ui = gui_context.imgui.frame();
 
-        gui.build(&ui);
-        self.build_perf_ui(&ui, frame_stats, window.scale_factor() as _);
+        gui.build(ui);
+        self.build_perf_ui(ui, frame_stats, window.scale_factor() as _);
 
-        gui_context.platform.prepare_render(&ui, window);
+        gui_context.platform.prepare_render(ui, window);
         let draw_data = gui_context.imgui.render();
 
         base_app.update(self, gui, image_index, frame_stats)?;
@@ -472,7 +470,7 @@ impl<B: App> BaseApp<B> {
             Ok(true) => return Ok(true),
             Err(err) => match err.downcast_ref::<vk::Result>() {
                 Some(&vk::Result::ERROR_OUT_OF_DATE_KHR) => return Ok(true),
-                _ => panic!("Failed to present queue. Cause: {}", err),
+                _ => panic!("Failed to present queue. Cause: {err}"),
             },
             _ => {}
         }

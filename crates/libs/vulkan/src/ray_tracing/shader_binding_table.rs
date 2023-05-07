@@ -80,15 +80,11 @@ impl ShaderBindingTable {
                 }
 
                 // pad handle to alignment
-                for _ in 0..handle_pad {
-                    stb_data.push(0);
-                }
+                stb_data.extend(vec![0; handle_pad as usize]);
             }
 
             // pad group to alignment
-            for _ in 0..group_pad {
-                stb_data.push(0);
-            }
+            stb_data.extend(vec![0;group_pad as usize]);
         }
 
         // Create buffer

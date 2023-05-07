@@ -62,8 +62,10 @@ impl Device {
             .shader_subgroup_clock(true)
             .shader_device_clock(true);
 
-        let mut pf = vk::PhysicalDeviceFeatures::default();
-        pf.shader_int64 = vk::TRUE;
+        let pf = vk::PhysicalDeviceFeatures {
+            shader_int64: vk::TRUE,
+            ..Default::default()
+        };
 
         let mut features = vk::PhysicalDeviceFeatures2::builder()
             .features(pf)

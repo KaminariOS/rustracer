@@ -28,17 +28,17 @@ impl Light {
 
 #[derive(Copy, Clone, PartialEq)]
 enum LightType {
-    DIRECTIONAL = 0,
-    POINT = 1,
-    SPOT = 2,
+    Directional = 0,
+    Point = 1,
+    Spot = 2,
 }
 
 impl LightType {
     fn get_transform(&self, transform: Mat4) -> Vec4 {
         transform
             * match self {
-                LightType::DIRECTIONAL => Vec4::from_array([0., 0., 0.1, 0.]),
-                LightType::POINT | LightType::SPOT => Vec4::from_array([0.; 4]),
+                LightType::Directional => Vec4::from_array([0., 0., 0.1, 0.]),
+                LightType::Point | LightType::Spot => Vec4::from_array([0.; 4]),
             }
     }
 }
@@ -46,14 +46,14 @@ impl LightType {
 impl From<Kind> for LightType {
     fn from(value: Kind) -> Self {
         match value {
-            Kind::Directional => Self::DIRECTIONAL,
-            Kind::Point => Self::POINT,
+            Kind::Directional => Self::Directional,
+            Kind::Point => Self::Point,
             Kind::Spot {
                 inner_cone_angle: _,
                 outer_cone_angle: _,
             } => {
                 error!("Unimplemented; treat spot light as point light");
-                Self::POINT
+                Self::Point
             }
         }
     }
@@ -72,7 +72,7 @@ pub struct LightRaw {
 
 impl LightRaw {
     pub fn is_dir(&self) -> bool {
-        self.kind == LightType::DIRECTIONAL as u32
+        self.kind == LightType::Directional as u32
     }
 
     pub fn update_angles(&mut self, [theta, phi]: [f32; 2]) {
@@ -95,7 +95,7 @@ impl LightRaw {
         Self {
             color: Vec4::ONE,
             transform: (get_random() - 0.5) * 2. * distance,
-            kind: LightType::POINT as _,
+            kind: LightType::Point as _,
             range: f32::INFINITY,
             intensity: 0.0,
             _padding: 0,
@@ -117,7 +117,7 @@ impl Default for LightRaw {
         Self {
             color: Vec4::from_array([1.; 4]),
             transform: Vec4::ONE,
-            kind: LightType::DIRECTIONAL as _,
+            kind: LightType::Directional as _,
             range: f32::INFINITY,
             intensity: 0.,
             _padding: 0,
@@ -141,8 +141,8 @@ impl<'a> From<gltf::khr_lights_punctual::Light<'a>> for Light {
 pub fn report_lights(lights: &[Light]) {
     let dirs = lights
         .iter()
-        .filter(|l| l.kind == LightType::DIRECTIONAL)
+        .filter(|l| l.kind == LightType::Directional)
         .count();
-    let points = lights.iter().filter(|l| l.kind == LightType::POINT).count();
+    let points = lights.iter().filter(|l| l.kind == LightType::Point).count();
     info!("Directional lights: {}; point lights: {}", dirs, points);
 }

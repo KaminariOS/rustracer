@@ -26,8 +26,6 @@ type Index = u32;
 type SceneID = usize;
 type NodeID = usize;
 type MeshID = usize;
-type MaterialID = usize;
-type SamplerID = usize;
 
 // fn to_owned_string(r: &str) -> String {
 //     r.to_string()

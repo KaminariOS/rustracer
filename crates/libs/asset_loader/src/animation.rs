@@ -6,7 +6,6 @@ use gltf::animation::{Channel, Interpolation, Sampler};
 use log::warn;
 
 type Float3 = [f32; 3];
-type Float4 = [f32; 4];
 
 pub struct Animation {
     pub index: usize,

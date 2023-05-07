@@ -439,9 +439,7 @@ pub fn load_file<P: AsRef<Path>>(path: P) -> Result<Doc> {
     let now = Instant::now();
     let name = path.as_ref().to_str().unwrap_or_default().to_string();
     info!("Start loading glTF <<{}>>", name);
-    let path = resource_manager::load_model(path).map_err(|e|
-        Error::Load(e.to_string())
-    )?;
+    let path = resource_manager::load_model(path).map_err(|e| Error::Load(e.to_string()))?;
     let (document, buffers, gltf_images) =
         gltf::import(path).map_err(|e| Error::Load(e.to_string()))?;
 

@@ -12,14 +12,15 @@ use std::path::PathBuf;
 use log::info;
 use std::time::Instant;
 
+mod args;
 mod compute_unit;
 mod desc_sets;
 mod gui_state;
 mod loader;
 mod pipeline_res;
 mod ubo;
-mod args;
 
+use crate::args::Args;
 use crate::compute_unit::ComputeUnit;
 use crate::gui_state::{Scene, Skybox};
 use crate::loader::Loader;
@@ -31,7 +32,6 @@ use desc_sets::*;
 use gui_state::Gui;
 use pipeline_res::*;
 use ubo::UniformBufferObject;
-use crate::args::Args;
 
 const WIDTH: u32 = 1920;
 const HEIGHT: u32 = 1080;
@@ -403,7 +403,7 @@ impl App for GltfViewer {
                     )?
                 }
             };
-            if let Some(b ) = blas_opt{
+            if let Some(b) = blas_opt {
                 self.get_inner_mut()._bottom_as = b
             };
             self.update_tlas(tlas);

@@ -25,11 +25,13 @@ pub fn load_spv<P: AsRef<Path>>(path: P) -> Vec<u8> {
             break;
         }
     }
-    res.unwrap_or_else(|| panic!(
-        "Couldn't find spv file {}, current path: {}",
-        path.as_ref().display(),
-        Path::new(".").canonicalize().unwrap().display()
-    ))
+    res.unwrap_or_else(|| {
+        panic!(
+            "Couldn't find spv file {}, current path: {}",
+            path.as_ref().display(),
+            Path::new(".").canonicalize().unwrap().display()
+        )
+    })
 }
 
 fn find_gltf(search: &PathBuf) -> Option<PathBuf> {

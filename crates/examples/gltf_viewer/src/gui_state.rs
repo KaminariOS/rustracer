@@ -1,3 +1,4 @@
+use crate::gui_state::Scene::DragAndDrop;
 use app::anyhow::Result;
 use asset_loader::light::LightRaw;
 use gui::imgui::{Condition, Ui};
@@ -6,7 +7,6 @@ use std::convert::AsRef;
 use std::time::Duration;
 use strum::IntoEnumIterator;
 use strum_macros::{AsRefStr, EnumIter, IntoStaticStr};
-use crate::gui_state::Scene::DragAndDrop;
 
 const FPS: f32 = 40.;
 const BUDGET: f32 = 1. / FPS;
@@ -188,9 +188,9 @@ pub enum Scene {
     IcyDragon,
     Zombie,
     // Trex,
-     Phoenix,
-     Wolf,
-    DragAndDrop(String)
+    Phoenix,
+    Wolf,
+    DragAndDrop(String),
 }
 
 impl Scene {

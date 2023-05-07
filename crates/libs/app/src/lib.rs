@@ -17,12 +17,12 @@ pub use resource_manager::load_spv;
 
 use crate::types::Vec3;
 use nalgebra::Point3;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::{
     marker::PhantomData,
     time::{Duration, Instant},
 };
-use std::path::PathBuf;
 use vulkan::*;
 use winit::{
     dpi::PhysicalSize,
@@ -221,11 +221,9 @@ pub fn run<A: App + 'static>(
                 }
             }
             Event::WindowEvent {
-               event: WindowEvent::DroppedFile(path),
+                event: WindowEvent::DroppedFile(path),
                 ..
-            } => {
-                app.drag_and_drop(path, &mut ui)
-            }
+            } => app.drag_and_drop(path, &mut ui),
             // Mouse
             Event::WindowEvent {
                 event: WindowEvent::MouseInput { state, button, .. },

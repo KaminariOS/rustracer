@@ -62,12 +62,7 @@ impl AnimationChannel {
             ReadOutputs::MorphTargetWeights(m) => {
                 let weights: Vec<_> = m.into_f32().collect();
                 let chuck_size = weights.len() / input_len;
-                Property::Morph(
-                    weights
-                        .chunks(chuck_size)
-                        .map(|x| x.to_vec())
-                        .collect(),
-                )
+                Property::Morph(weights.chunks(chuck_size).map(|x| x.to_vec()).collect())
             }
         };
         let sampler = channel.sampler();

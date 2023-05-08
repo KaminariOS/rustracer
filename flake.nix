@@ -31,7 +31,14 @@
       rustc = pinnedRust;
       cargo = pinnedRust;
     };
-    #cargoExpand = pkgs.cargo-expand.override { inherit rustPlatform; };
+    cargoExpand = pkgs.cargo-expand.override { inherit rustPlatform; };
+    cargoFlame = pkgs.cargo-flamegraph.override { inherit rustPlatform; };
+    #cargoMSRV = pkgs.cargo-msrv.override { inherit rustPlatform; };
+    cargoBloat = pkgs.cargo-bloat.override { inherit rustPlatform; };
+    cargoLicense = pkgs.cargo-license.override { inherit rustPlatform; };
+    cargo-supply-chain = pkgs.cargo-supply-chain.override { inherit rustPlatform; };
+    #cargoFeature = pkgs.cargo-feature.override { inherit rustPlatform; };
+    #cargoGeiger = pkgs.cargo-geiger.override { inherit rustPlatform; };
   in {
     
 devShell = pkgs.mkShell rec {
@@ -40,7 +47,14 @@ devShell = pkgs.mkShell rec {
   ];
   nativeBuildInputs = [
     pinnedRust 
-    #cargoExpand
+    cargoExpand
+    cargoFlame
+    cargoBloat
+    cargoLicense
+    cargo-supply-chain
+    #cargoFeature
+    #cargoGeiger
+    #cargoMSRV
   ];
   buildInputs = with pkgs; [
 #    alsaLib

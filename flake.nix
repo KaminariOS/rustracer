@@ -37,6 +37,7 @@
     cargoBloat = pkgs.cargo-bloat.override { inherit rustPlatform; };
     cargoLicense = pkgs.cargo-license.override { inherit rustPlatform; };
     cargo-supply-chain = pkgs.cargo-supply-chain.override { inherit rustPlatform; };
+    #cargoREADME = pkgs.cargo-readme.override { inherit rustPlatform; };
     #cargoFeature = pkgs.cargo-feature.override { inherit rustPlatform; };
     #cargoGeiger = pkgs.cargo-geiger.override { inherit rustPlatform; };
   in {
@@ -52,6 +53,7 @@ devShell = pkgs.mkShell rec {
     cargoBloat
     cargoLicense
     cargo-supply-chain
+    #cargoREADME
     #cargoFeature
     #cargoGeiger
     #cargoMSRV

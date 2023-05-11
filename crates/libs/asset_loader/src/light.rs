@@ -37,8 +37,8 @@ impl LightType {
     fn get_transform(&self, transform: Mat4) -> Vec4 {
         transform
             * match self {
-                LightType::Directional => Vec4::from_array([0., 0., 0.1, 0.]),
-                LightType::Point | LightType::Spot => Vec4::from_array([0.; 4]),
+                LightType::Directional => Vec4::from_array([0., 0., -1.0, 0.]),
+                LightType::Point | LightType::Spot => Vec4::from_array([0., 0., 0., 1.]),
             }
     }
 }
